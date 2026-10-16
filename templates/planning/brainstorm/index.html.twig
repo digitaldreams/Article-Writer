@@ -1,0 +1,78 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title }} · Brainstorming · {{ parent() }}{% endblock %}
+
+{% block body %}
+    {% set chip_tones = {pending: 'primary', done: 'success', unreadable: 'error'} %}
+    {% set editable = article.state.value == 'plan' %}
+
+    <p><a href="{{ path('planning_list_plans') }}">Back to plans</a></p>
+    {% include 'planning/_steps.html.twig' %}
+    <h1>{{ article.title }}</h1>
+
+    <section>
+        <h2>Idea</h2>
+        {% if editable %}
+            {# Permanent: the reference poll below morphs the page and must not reset the editor. #}
+            <form id="brainstorm-notes" data-turbo-permanent method="post" action="{{ path('planning_save_notes', {id: article.id}) }}" data-controller="autosave" data-action="input->autosave#queue">
+                <div>
+                    <label for="audience">Audience</label>
+                    <input id="audience" name="audience" value="{{ input.audience }}">
+                </div>
+                <div>
+                    <label for="reader-level">Reader level</label>
+                    <input id="reader-level" name="readerLevel" value="{{ input.readerLevel }}">
+                </div>
+                <div>
+                    <label for="rough-flow">Idea</label>
+                    <textarea id="rough-flow" name="roughFlow" rows="14" data-controller="markdown-editor">{{ input.roughFlow }}</textarea>
+                </div>
+                <p class="form-actions"><span class="muted" data-autosave-target="status" aria-live="polite"></span></p>
+            </form>
+        {% else %}
+            <dl class="plan-input">
+                <dt>Audience</dt><dd>{{ input.audience ?: '—' }}</dd>
+                <dt>Reader level</dt><dd>{{ input.readerLevel ?: '—' }}</dd>
+            </dl>
+            {% if input.roughFlow %}<div class="notes">{{ input.roughFlow|markdown_to_html }}</div>{% endif %}
+        {% endif %}
+    </section>
+
+    <div {% if reading %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
+        <section>
+            <h2>References</h2>
+            {% if references is empty %}
+                <p class="muted">No references.</p>
+            {% else %}
+                <ul class="references">
+                    {% for reference in references %}
+                        <li>
+                            <span class="badge badge-{{ chip_tones[reference.status.value] }}">{{ reference.status.value|capitalize }}</span>
+                            {{ reference.location }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% for job in failed_jobs %}
+                {% include 'shared/llm/job_card/_frame.html.twig' with {job: job} only %}
+            {% endfor %}
+        </section>
+
+        {% if editable %}
+            <section>
+                <h2>Add references</h2>
+                {{ form_start(form) }}
+                    {{ form_row(form.links, {attr: {rows: 4}}) }}
+                    {{ form_row(form.docs, {label: 'Docs (md, pdf)', attr: {accept: '.md,.pdf'}}) }}
+                    {{ form_row(form.images, {attr: {accept: 'image/*'}}) }}
+                    {{ form_row(form.add, {attr: {class: 'button button-secondary'}}) }}
+                {{ form_end(form) }}
+            </section>
+
+            <form method="post" action="{{ path('planning_finish_brainstorm', {id: article.id}) }}" class="form-actions">
+                {% if reading %}<span class="muted">Reading {{ reading }} {{ reading == 1 ? 'reference' : 'references' }}…</span>{% endif %}
+                <button class="button button-primary" type="submit" {{ reading ? 'disabled' : '' }}>Next: questions</button>
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}

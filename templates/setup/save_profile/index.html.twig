@@ -6,7 +6,7 @@
     <h1>Setup</h1>
     {{ form_start(form) }}
         {{ form_row(form.shortBio) }}
-        {{ form_row(form.longBio) }}
+        {{ form_row(form.longBio, {attr: {'data-controller': 'markdown-editor'}}) }}
         {{ form_row(form.languageLevel) }}
         {{ form_row(form.save, {attr: {class: 'button button-primary'}}) }}
     {{ form_end(form) }}

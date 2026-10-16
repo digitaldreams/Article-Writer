@@ -3,8 +3,7 @@
 {% block title %}{{ article.title }} · Questions · {{ parent() }}{% endblock %}
 
 {% block body %}
-    {% set chip_tones = {pending: 'primary', done: 'success', unreadable: 'error'} %}
-    {% set waiting = digesting or (ask_job and ask_job.status.value in ['queued', 'working']) %}
+    {% set waiting = ask_job and ask_job.status.value in ['queued', 'working'] %}
     {% set editable = article.state.value == 'questions' %}
 
     <p><a href="{{ path('planning_list_plans') }}">Back to plans</a></p>
@@ -13,28 +12,9 @@
 
     <div {% if waiting %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
         <section>
-            <h2>References</h2>
-            {% if references is empty %}
-                <p class="muted">No references.</p>
-            {% else %}
-                <ul class="references">
-                    {% for reference in references %}
-                        <li>
-                            <span class="badge badge-{{ chip_tones[reference.status.value] }}">{{ reference.status.value|capitalize }}</span>
-                            {{ reference.location }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-            {% for job in failed_jobs %}
-                {% include 'shared/llm/job_card/_frame.html.twig' with {job: job} only %}
-            {% endfor %}
-        </section>
-
-        <section>
             <h2>Questions</h2>
             {% if article.state.value == 'plan' %}
-                <p class="muted">The questions come once the references are read.</p>
+                <p class="muted">The questions come once you finish <a href="{{ path('planning_brainstorm', {id: article.id}) }}">brainstorming</a>.</p>
             {% endif %}
             {% if ask_job and ask_job.status.value != 'done' %}
                 {% include 'shared/llm/job_card/_frame.html.twig' with {job: ask_job} only %}

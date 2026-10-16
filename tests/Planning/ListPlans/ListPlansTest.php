@@ -29,7 +29,7 @@ final class ListPlansTest extends WebTestCase
 
         $client->request('GET', '/plans');
         self::assertSelectorTextContains('table.plans', 'Listed topic');
-        self::assertSelectorTextSame('tbody tr td:nth-child(2)', 'questions');
+        self::assertSelectorTextSame('tbody tr td:nth-child(2)', 'plan');
     }
 
     public function testMissingTopicShowsTheErrorInline(): void

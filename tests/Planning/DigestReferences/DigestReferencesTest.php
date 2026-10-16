@@ -4,9 +4,7 @@ namespace App\Tests\Planning\DigestReferences;
 
 use App\Planning\CreatePlan\PlanTitleAnswer;
 use App\Planning\DigestReferences\DigestReferenceHandler;
-use App\Planning\DigestReferences\SettleReferences;
 use App\Planning\Reference;
-use App\Planning\ReferencesSettled;
 use App\Planning\ReferenceStatus;
 use App\Shared\Article\Article;
 use App\Shared\Llm\LlmJob;
@@ -27,10 +25,7 @@ use Symfony\Component\Messenger\Worker;
 
 final class DigestReferencesTest extends WebTestCase
 {
-    /** @var list<int> pending references counted at each ReferencesSettled */
-    private array $settled = [];
-
-    public function testThreeReferencesFireReferencesSettledOnceAfterTheLastOne(): void
+    public function testThreeReferencesAreEachDigested(): void
     {
         $client = $this->client();
         $this->fakeWeb();
@@ -39,14 +34,13 @@ final class DigestReferencesTest extends WebTestCase
 
         $this->consume();
 
-        self::assertSame([0], $this->settled);
         $references = $this->references();
         self::assertSame([ReferenceStatus::Done, ReferenceStatus::Done, ReferenceStatus::Done], array_map(static fn (Reference $r) => $r->getStatus(), $references));
         self::assertSame('digest of: Property hooks page a', $references[0]->getDigest());
         self::assertSame('digest of: # Notes about hooks', $references[2]->getDigest());
     }
 
-    public function testBadUrlBecomesUnreadableAndThePlanStillSettles(): void
+    public function testBadUrlBecomesUnreadable(): void
     {
         $client = $this->client();
         $this->fakeWeb();
@@ -56,22 +50,6 @@ final class DigestReferencesTest extends WebTestCase
         $this->consume();
 
         self::assertSame([ReferenceStatus::Done, ReferenceStatus::Unreadable], array_map(static fn (Reference $r) => $r->getStatus(), $this->references()));
-        self::assertSame([0], $this->settled);
-    }
-
-    public function testTwoReferencesFinishingTogetherSettleOnce(): void
-    {
-        $client = $this->client();
-        $this->fakeWeb();
-        $this->createPlan($client, "https://example.com/a\nhttps://example.com/b");
-        $this->consume(['io']);
-
-        $settle = self::getContainer()->get(SettleReferences::class);
-        [$a, $b] = $this->references();
-        $settle->finish((int) $a->getId(), 'digest a');
-        $settle->finish((int) $b->getId(), 'digest b');
-
-        self::assertSame([0], $this->settled);
     }
 
     public function testLongTextIsDigestedInPartsThenThePartDigestsAreMerged(): void
@@ -107,7 +85,6 @@ final class DigestReferencesTest extends WebTestCase
         self::assertSame('A diagram of a property hook', $reference->getExtractedText());
         self::assertSame('digest of: A diagram of a property hook', $reference->getDigest());
         self::assertSame('test-vision', $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'describe_image'])?->getModel());
-        self::assertSame([0], $this->settled);
     }
 
     public function testAFailedImageDescriptionMakesTheReferenceUnreadable(): void
@@ -119,10 +96,9 @@ final class DigestReferencesTest extends WebTestCase
         $this->consume(['llm_secondary']);
 
         self::assertSame(ReferenceStatus::Unreadable, $this->references()[0]->getStatus());
-        self::assertSame([0], $this->settled);
     }
 
-    public function testQuestionsPageShowsAStatusChipPerReference(): void
+    public function testBrainstormPageShowsAStatusChipPerReference(): void
     {
         $client = $this->client();
         $this->fakeWeb();
@@ -131,7 +107,7 @@ final class DigestReferencesTest extends WebTestCase
         $this->consume();
 
         $article = $this->em()->getRepository(Article::class)->findOneBy([]) ?? throw new \LogicException();
-        $client->request('GET', '/plans/'.$article->getId().'/questions');
+        $client->request('GET', '/plans/'.$article->getId().'/brainstorm');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.references li:nth-child(1) .badge', 'Done');
@@ -143,9 +119,6 @@ final class DigestReferencesTest extends WebTestCase
     {
         $client = static::createClient();
         $client->disableReboot();
-        self::getContainer()->get(EventDispatcherInterface::class)->addListener(ReferencesSettled::class, function (ReferencesSettled $event): void {
-            $this->settled[] = $this->em()->getRepository(Reference::class)->count(['article' => $event->articleId, 'status' => ReferenceStatus::Pending]);
-        });
 
         return $client;
     }
@@ -187,21 +160,20 @@ final class DigestReferencesTest extends WebTestCase
     private function createPlan(KernelBrowser $client, string $links, array $docs = [], array $images = []): void
     {
         $crawler = $client->request('GET', '/plans/new');
-        $form = $crawler->selectButton('Create')->form([
-            'create_plan[topic]' => 'PHP 8 features '.uniqid(),
-            'create_plan[links]' => $links,
-        ]);
+        $client->submit($crawler->selectButton('Create')->form(['create_plan[topic]' => 'PHP 8 features '.uniqid()]));
+        $crawler = $client->followRedirect();
+        $form = $crawler->selectButton('Add references')->form(['add_references[links]' => $links]);
         $i = 0;
         foreach ($docs as $name => $content) {
             $path = sys_get_temp_dir().'/'.$name;
             file_put_contents($path, $content);
-            $form['create_plan[docs]'][$i++]->upload($path);
+            $form['add_references[docs]'][$i++]->upload($path);
         }
         foreach ($images as $i => $name) {
             $path = sys_get_temp_dir().'/'.$name;
             // 1x1 transparent PNG
             file_put_contents($path, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='));
-            $form['create_plan[images]'][$i]->upload($path);
+            $form['add_references[images]'][$i]->upload($path);
         }
         $client->submit($form);
     }

@@ -96,6 +96,9 @@ final class AnswerQuestionsTest extends WebTestCase
 
         $em = $this->em();
         $article = $em->getRepository(Article::class)->findOneBy([]) ?? throw new \LogicException('No article.');
+        $client->request('POST', '/plans/'.$article->getId().'/brainstorm/next');
+        $em->clear();
+        $article = $em->find(Article::class, $article->getId()) ?? throw new \LogicException('No article.');
         $em->getRepository(LlmJob::class)->findOneBy(['step' => 'ask_questions'])?->markDone();
         $questions = [
             new Question($article, QuestionRole::Interviewer, 'Which problem does it solve?', 0),

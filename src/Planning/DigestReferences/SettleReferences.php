@@ -3,24 +3,15 @@
 namespace App\Planning\DigestReferences;
 
 use App\Planning\Reference;
-use App\Planning\ReferencesSettled;
-use App\Planning\ReferenceStatus;
-use App\Shared\Article\ArticleState;
-use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
-use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 
-/**
- * Finishes a reference (digest saved, or unreadable) and fires ReferencesSettled once the last one is finished.
- * The status change and the check share one transaction under the article row lock,
- * so two references that finish together can't both see "none pending".
- */
+/** Finishes a reference: digest saved, or unreadable. Brainstorm's Next waits until none is pending. */
 final readonly class SettleReferences
 {
-    public function __construct(private ManagerRegistry $doctrine, private EventDispatcherInterface $events)
+    public function __construct(private ManagerRegistry $doctrine)
     {
     }
 
@@ -43,21 +34,11 @@ final readonly class SettleReferences
         }
         \assert($em instanceof EntityManagerInterface);
 
-        $em->wrapInTransaction(function () use ($em, $referenceId, $digest): void {
-            $reference = $em->find(Reference::class, $referenceId);
-            if (null === $reference) {
-                return;
-            }
-            $article = $reference->getArticle();
-            $em->lock($article, LockMode::PESSIMISTIC_WRITE);
-
-            null === $digest ? $reference->markUnreadable() : $reference->markDone($digest);
-            $em->flush();
-
-            $pending = $em->getRepository(Reference::class)->count(['article' => $article, 'status' => ReferenceStatus::Pending]);
-            if (0 === $pending && ArticleState::Plan === $article->getState()) {
-                $this->events->dispatch(new ReferencesSettled((int) $article->getId()));
-            }
-        });
+        $reference = $em->find(Reference::class, $referenceId);
+        if (null === $reference) {
+            return;
+        }
+        null === $digest ? $reference->markUnreadable() : $reference->markDone($digest);
+        $em->flush();
     }
 }

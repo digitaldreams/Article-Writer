@@ -3,7 +3,8 @@
 <nav class="steps" aria-label="Steps">
     <ol>
         {% for step in [
-            {label: 'Questions', route: 'planning_answer_questions', from: 0},
+            {label: 'Brainstorming', route: 'planning_brainstorm', from: 0},
+            {label: 'Questions', route: 'planning_answer_questions', from: 1},
             {label: 'Flows', route: 'planning_show_flows', from: 2},
             {label: 'Outline', route: 'planning_show_outline', from: 3},
             {label: 'Review', route: 'planning_show_review', from: 4},

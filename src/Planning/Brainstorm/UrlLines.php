@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Planning\CreatePlan;
+namespace App\Planning\Brainstorm;
 
 final class UrlLines
 {

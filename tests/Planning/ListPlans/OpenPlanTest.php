@@ -13,7 +13,7 @@ final class OpenPlanTest extends WebTestCase
     /** @return iterable<string, array{list<ArticleState>, string}> */
     public static function steps(): iterable
     {
-        yield 'plan' => [[], 'questions'];
+        yield 'plan' => [[], 'brainstorm'];
         yield 'questions' => [[ArticleState::Questions], 'questions'];
         yield 'flows' => [[ArticleState::Questions, ArticleState::Flows], 'flows'];
         yield 'outline' => [[ArticleState::Questions, ArticleState::Flows, ArticleState::Outline], 'outline'];

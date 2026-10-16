@@ -15,7 +15,8 @@ final class OpenPlanController extends AbstractController
     public function __invoke(?Article $article): Response
     {
         $step = match ($article?->getState()) {
-            ArticleState::Plan, ArticleState::Questions => 'questions',
+            ArticleState::Plan => 'brainstorm',
+            ArticleState::Questions => 'questions',
             ArticleState::Flows => 'flows',
             ArticleState::Outline => 'outline',
             ArticleState::Finalize => 'review',

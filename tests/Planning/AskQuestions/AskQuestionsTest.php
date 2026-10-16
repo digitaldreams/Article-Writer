@@ -24,7 +24,7 @@ use Symfony\Component\Messenger\Worker;
 
 final class AskQuestionsTest extends WebTestCase
 {
-    public function testSettledPlanMovesToQuestionsAndSavesTheTaggedQuestions(): void
+    public function testNextAfterBrainstormingMovesToQuestionsAndSavesTheTaggedQuestions(): void
     {
         $client = $this->client();
         $prompt = '';
@@ -112,8 +112,10 @@ final class AskQuestionsTest extends WebTestCase
         $crawler = $client->request('GET', '/plans/new');
         $client->submit($crawler->selectButton('Create')->form([
             'create_plan[topic]' => 'PHP 8 features '.uniqid(),
-            'create_plan[audience]' => 'PHP developers',
         ]));
+        $id = $this->article()->getId();
+        $client->request('POST', '/plans/'.$id.'/brainstorm/notes', ['audience' => 'PHP developers', 'readerLevel' => '', 'roughFlow' => '']);
+        $client->request('POST', '/plans/'.$id.'/brainstorm/next');
     }
 
     private function article(): Article

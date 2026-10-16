@@ -8,12 +8,7 @@
 
     {{ form_start(form) }}
         {{ form_row(form.topic) }}
-        {{ form_row(form.audience) }}
-        {{ form_row(form.readerLevel) }}
-        {{ form_row(form.roughFlow, {attr: {rows: 14}}) }}
-        {{ form_row(form.links, {attr: {rows: 4}}) }}
-        {{ form_row(form.docs, {label: 'Docs (md, pdf)', attr: {accept: '.md,.pdf'}}) }}
-        {{ form_row(form.images, {attr: {accept: 'image/*'}}) }}
+        {{ form_row(form.idea, {attr: {rows: 14, 'data-controller': 'markdown-editor'}}) }}
         {{ form_row(form.create, {attr: {class: 'button button-primary'}}) }}
     {{ form_end(form) }}
 {% endblock %}

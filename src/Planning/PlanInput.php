@@ -58,4 +58,11 @@ class PlanInput
     {
         return $this->roughFlow;
     }
+
+    public function changeNotes(string $audience, ?string $readerLevel, string $roughFlow): void
+    {
+        $this->audience = $audience;
+        $this->readerLevel = $readerLevel;
+        $this->roughFlow = $roughFlow;
+    }
 }
