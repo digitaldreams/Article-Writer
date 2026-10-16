@@ -31,6 +31,9 @@ class PosterIdea
         /** What the writer shared to make the poster better; null for the agent's own rounds. */
         #[ORM\Column(type: Types::TEXT, nullable: true)]
         private ?string $writerIdea = null,
+        /** A rough SVG of the idea; null when the agent sent none that is safe to show. */
+        #[ORM\Column(type: Types::TEXT, nullable: true)]
+        private ?string $sketch = null,
     ) {
     }
 
@@ -72,5 +75,10 @@ class PosterIdea
     public function getWriterIdea(): ?string
     {
         return $this->writerIdea;
+    }
+
+    public function getSketch(): ?string
+    {
+        return $this->sketch;
     }
 }

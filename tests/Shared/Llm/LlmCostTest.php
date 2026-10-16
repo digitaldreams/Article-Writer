@@ -28,7 +28,7 @@ final class LlmCostTest extends PlanningTestCase
         $article = $this->planIn(ArticleState::Written);
         self::getContainer()->get(ArticleFolder::class)->write($article->getFolder(), 'article.md', ['title' => 'PHP'], "# PHP\n");
         $this->fakePrimary(function () {
-            $result = new ObjectResult(new PosterList(array_map(static fn (int $i) => new ProposedPoster("H $i", 'p', 'l', 'c'), range(1, 3))));
+            $result = new ObjectResult(new PosterList(array_map(static fn (int $i) => new ProposedPoster("H $i", 'p', 'l', 'c', '<svg/>'), range(1, 3))));
             // A real platform reports every call; one agent call can make two of them.
             $this->reportCall(new TextResult('tool step'), new TokenUsage(promptTokens: 100, completionTokens: 10));
             $result->getMetadata()->add('token_usage', new TokenUsage(promptTokens: 1_000, completionTokens: 200));

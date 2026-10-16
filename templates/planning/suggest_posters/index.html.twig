@@ -26,6 +26,8 @@
             {% endif %}
             <article class="card poster-idea">
                 <h3>{{ idea.headline }}</h3>
+                {# As an <img>, the SVG can't run scripts or load anything. #}
+                {% if idea.sketch %}<img class="poster-sketch" src="data:image/svg+xml;utf8,{{ idea.sketch|url_encode }}" alt="Sketch: {{ idea.headline }}">{% endif %}
                 <dl>
                     <dt>Picture</dt><dd>{{ idea.picture }}</dd>
                     <dt>Layout</dt><dd>{{ idea.layout }}</dd>

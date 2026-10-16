@@ -131,7 +131,7 @@ final class SuggestPostersTest extends PlanningTestCase
     public function testAWrongNumberOfIdeasFailsTheJobWithRetry(): void
     {
         $article = $this->writtenArticle();
-        $this->fakePrimary(static fn () => new ObjectResult(new PosterList([new ProposedPoster('Only one', 'a cat', 'centered', 'black')])));
+        $this->fakePrimary(static fn () => new ObjectResult(new PosterList([new ProposedPoster('Only one', 'a cat', 'centered', 'black', '<svg/>')])));
 
         $this->client->request('POST', $this->posterUrl($article));
         $this->consume();
@@ -194,6 +194,51 @@ final class SuggestPostersTest extends PlanningTestCase
         self::assertResponseStatusCodeSame(409);
     }
 
+    public function testEachIdeaShowsItsSketchAsAnImage(): void
+    {
+        $article = $this->writtenArticle();
+        $this->fakePrimary(static fn () => self::posters('A'));
+
+        $this->client->request('POST', $this->posterUrl($article));
+        $this->consume();
+        $this->client->request('GET', $this->posterUrl($article));
+
+        self::assertSelectorCount(3, '.poster-idea img.poster-sketch');
+        $src = (string) $this->client->getCrawler()->filter('img.poster-sketch')->first()->attr('src');
+        self::assertStringStartsWith('data:image/svg+xml;utf8,', $src);
+        self::assertStringContainsString('fill="navy"', rawurldecode($src));
+    }
+
+    public function testASketchThatIsNotASmallSvgIsDroppedAndTheIdeaIsStillSaved(): void
+    {
+        $article = $this->writtenArticle();
+        $this->fakePrimary(static fn () => new ObjectResult(new PosterList([
+            new ProposedPoster('Not svg', 'a cat', 'centered', 'black', '<div>nope</div>'),
+            new ProposedPoster('Too big', 'a dog', 'centered', 'black', '<svg>'.str_repeat(' ', 11_000).'</svg>'),
+            new ProposedPoster('Fine', 'a bird', 'centered', 'black', '<svg viewBox="0 0 1200 630"></svg>'),
+        ])));
+
+        $this->client->request('POST', $this->posterUrl($article));
+        $this->consume();
+
+        $sketches = [];
+        foreach ($this->em()->getRepository(PosterIdea::class)->findBy(['article' => $article], ['id' => 'ASC']) as $idea) {
+            $sketches[$idea->getHeadline()] = $idea->getSketch();
+        }
+        self::assertSame(['Not svg' => null, 'Too big' => null, 'Fine' => '<svg viewBox="0 0 1200 630"></svg>'], $sketches);
+    }
+
+    public function testAnIdeaWithoutASketchStillShows(): void
+    {
+        $article = $this->writtenArticle();
+        $this->idea($article);
+
+        $this->client->request('GET', $this->posterUrl($article));
+
+        self::assertSelectorTextSame('.poster-idea h3', 'Readonly at last');
+        self::assertSelectorNotExists('img.poster-sketch');
+    }
+
     private function idea(Article $article): PosterIdea
     {
         $idea = new PosterIdea($article, 1, 'Readonly at last', 'A sealed glass capsule holding a value card', 'headline left, capsule right', 'navy, cyan');
@@ -213,7 +258,7 @@ final class SuggestPostersTest extends PlanningTestCase
 
     private static function posters(string $prefix): ObjectResult
     {
-        return new ObjectResult(new PosterList(array_map(static fn (int $i) => new ProposedPoster($prefix.' '.$i, $prefix.' '.$i.' picture', 'headline on top', 'navy, orange'), range(1, 3))));
+        return new ObjectResult(new PosterList(array_map(static fn (int $i) => new ProposedPoster($prefix.' '.$i, $prefix.' '.$i.' picture', 'headline on top', 'navy, orange', '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="navy"/></svg>'), range(1, 3))));
     }
 
     private function posterUrl(Article $article): string

@@ -267,7 +267,8 @@ turbo-frame { display: block; }
 .outline-item label, form.card > label { display: block; font-weight: 600; margin-block-end: var(--space-2); }
 .field-error { color: var(--color-error); }
 .review-item { margin-block-end: var(--space-4); }
-.before-after { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.before-after { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-4); }
+.before-after pre { overflow-x: auto; padding: var(--space-3); background: var(--color-surface-muted); }
 .decision { display: grid; gap: var(--space-4); margin-block-start: var(--space-6); }
 #reject-reason { width: 100%; }
 .article-preview { line-height: 1.6; }
@@ -311,3 +312,4 @@ turbo-frame { display: block; }
 .rewrite-form { display: grid; gap: var(--space-2); margin-block-start: var(--space-4); }
 .rewrite-form textarea { width: 100%; }
 .rewrite-instruction { margin-block-start: var(--space-4); font-size: var(--text-sm); }
+.poster-sketch { display: block; width: 100%; max-width: 30rem; height: auto; margin-block-end: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-card); }

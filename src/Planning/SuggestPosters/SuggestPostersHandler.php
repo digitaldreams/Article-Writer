@@ -19,6 +19,7 @@ use Twig\Environment;
 final readonly class SuggestPostersHandler
 {
     public const IDEAS_PER_ROUND = 3;
+    private const MAX_SKETCH_BYTES = 10_240;
 
     public function __construct(
         #[Autowire(service: 'ai.agent.poster')]
@@ -51,8 +52,16 @@ final readonly class SuggestPostersHandler
             throw new \RuntimeException(\sprintf('The model suggested %d poster ideas; %d are expected.', \count($posters), self::IDEAS_PER_ROUND));
         }
         foreach ($posters as $proposed) {
-            $this->em->persist(new PosterIdea($article, $message->round, trim($proposed->headline), trim($proposed->picture), trim($proposed->layout), trim($proposed->colors), $message->writerIdea));
+            $this->em->persist(new PosterIdea($article, $message->round, trim($proposed->headline), trim($proposed->picture), trim($proposed->layout), trim($proposed->colors), $message->writerIdea, self::sketch($proposed->sketch)));
         }
         $this->em->flush();
+    }
+
+    /** The sketch is a bonus: one that isn't a small SVG is dropped, never failing the round. */
+    private static function sketch(string $sketch): ?string
+    {
+        $sketch = trim($sketch);
+
+        return str_starts_with($sketch, '<svg') && \strlen($sketch) <= self::MAX_SKETCH_BYTES ? $sketch : null;
     }
 }

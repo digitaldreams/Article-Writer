@@ -21,6 +21,10 @@ Each idea has:
 - picture: what the picture shows, concrete enough that a designer can draw it without reading the article
 - layout: where the headline and the picture sit, and the style (flat illustration, isometric, photo, line art, ...)
 - colors: the main colors, 2 to 4 of them
+- sketch: a rough SVG of the poster, like a quick pencil scratch, not a final design.
+  Start with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">. Use only flat shapes
+  (rect, circle, ellipse, line, polygon, path) in the idea's colors and the headline as <text> where the layout puts it.
+  No images, no fonts, no scripts, no links, no gradients or filters. At most 6 KB.
 
 Keep code out of the picture unless a few tokens of it are the point, and then name them exactly.
 Plain text only, no explanations.
