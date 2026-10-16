@@ -1,0 +1,97 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title }} · Improve · {{ parent() }}{% endblock %}
+
+{% block body %}
+    {% set review_waiting = review_job and review_job.status.value in ['queued', 'working'] %}
+    {% set waiting = review_waiting or rewrites|filter(r => r.job and r.job.status.value in ['queued', 'working'])|length > 0 %}
+
+    <p><a href="{{ path('planning_list_plans') }}">Back to plans</a></p>
+    {% include 'planning/_steps.html.twig' %}
+    <h1>{{ article.title }}</h1>
+
+    {% if not written %}
+        <p class="muted">Improve opens once the article is written.</p>
+    {% else %}
+    <div {% if waiting %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
+        {% if error %}<p class="notice notice-warning improve-error">{{ error }}</p>{% endif %}
+
+        <section class="reader-review">
+            <div class="page-head">
+                <h2>Reader review</h2>
+                {% if not review_waiting %}
+                    <form method="post" action="{{ path('planning_review_article', {id: article.id}) }}">
+                        <button class="button button-secondary" type="submit">{{ notes is empty ? 'Get reader review' : 'Review again' }}</button>
+                    </form>
+                {% endif %}
+            </div>
+            {% if review_job and review_job.status.value != 'done' %}
+                {% include 'shared/llm/job_card/_frame.html.twig' with {job: review_job} only %}
+            {% endif %}
+            {% if notes is empty and not review_waiting %}
+                <p class="muted empty-review">No reader review yet. The reader persona reads the article and notes where it loses them.</p>
+            {% endif %}
+            {% if general_notes is not empty %}
+                <ul class="reader-notes general-notes">
+                    {% for note in general_notes %}
+                        <li><strong>{{ note.problem }}</strong> <span class="muted">{{ note.suggestion }}</span></li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+
+        <section class="sections">
+            <h2>Sections</h2>
+            {% for heading, text in sections %}
+                {% set rewrite = rewrites[heading] ?? null %}
+                <article class="card improve-section" data-heading="{{ heading }}">
+                    <details>
+                        <summary><h3>{{ heading }}</h3></summary>
+                        <div class="section-text">{{ text|markdown_to_html }}</div>
+                    </details>
+
+                    {% if notes[heading] is defined %}
+                        <ul class="reader-notes">
+                            {% for note in notes[heading] %}
+                                <li>
+                                    <strong>{{ note.problem }}</strong>
+                                    <span class="muted">{{ note.suggestion }}</span>
+                                    <form method="post" action="{{ path('planning_request_rewrite', {id: article.id}) }}">
+                                        <input type="hidden" name="note" value="{{ note.id }}">
+                                        <button class="button button-secondary button-small" type="submit">Rewrite with this note</button>
+                                    </form>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+
+                    {% if rewrite %}
+                        <p class="muted rewrite-instruction">Asked: {{ rewrite.instruction }}</p>
+                        {% if rewrite.after is not null %}
+                            <div class="before-after">
+                                <div><p class="muted">Before</p>{{ rewrite.before|markdown_to_html }}</div>
+                                <div><p class="muted">After</p>{{ rewrite.after|markdown_to_html }}</div>
+                            </div>
+                            <form class="form-actions" method="post" action="{{ path('planning_decide_rewrite', {id: article.id, rewriteId: rewrite.id}) }}">
+                                <button class="button button-secondary button-small" type="submit" name="decision" value="reject">Reject</button>
+                                <button class="button button-primary button-small" type="submit" name="decision" value="accept">Accept</button>
+                            </form>
+                        {% elseif rewrite.job %}
+                            {% include 'shared/llm/job_card/_frame.html.twig' with {job: rewrite.job} only %}
+                        {% endif %}
+                    {% endif %}
+
+                    <form class="rewrite-form" method="post" action="{{ path('planning_request_rewrite', {id: article.id}) }}">
+                        <input type="hidden" name="heading" value="{{ heading }}">
+                        <label for="instruction-{{ loop.index }}">Rewrite this section</label>
+                        <textarea id="instruction-{{ loop.index }}" name="instruction" rows="2" placeholder="e.g. add a short code example"></textarea>
+                        <div class="form-actions">
+                            <button class="button button-secondary button-small" type="submit">Rewrite</button>
+                        </div>
+                    </form>
+                </article>
+            {% endfor %}
+        </section>
+    </div>
+    {% endif %}
+{% endblock %}

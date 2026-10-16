@@ -298,3 +298,16 @@ turbo-frame { display: block; }
 .steps a:hover { color: var(--color-primary); }
 .steps a[aria-current] { font-weight: 600; color: var(--color-primary); border-block-end-color: var(--color-primary); }
 .steps span { color: var(--color-text-muted); opacity: 0.6; }
+
+/* Improve: reader notes under each section, a rewrite form, and a pending rewrite as before | after */
+.improve-section { margin-block-end: var(--space-4); }
+.improve-section summary { cursor: pointer; }
+.improve-section summary h3 { display: inline; margin: 0; }
+.improve-section .section-text, .before-after { line-height: 1.6; }
+.improve-section pre { overflow-x: auto; padding: var(--space-3); background: var(--color-surface-muted); }
+.reader-notes { display: grid; gap: var(--space-3); margin-block: var(--space-4); padding-inline-start: var(--space-6); }
+.reader-notes strong, .reader-notes .muted { display: block; }
+.reader-notes form { margin-block-start: var(--space-2); }
+.rewrite-form { display: grid; gap: var(--space-2); margin-block-start: var(--space-4); }
+.rewrite-form textarea { width: 100%; }
+.rewrite-instruction { margin-block-start: var(--space-4); font-size: var(--text-sm); }

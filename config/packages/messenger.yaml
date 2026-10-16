@@ -51,6 +51,8 @@ framework:
             'App\Planning\SuggestTitles\SuggestTitles': llm_primary
             'App\Planning\SuggestPosters\SuggestPosters': llm_primary
             'App\Planning\SuggestPosters\GeneratePoster': llm_primary
+            'App\Planning\ReviewArticle\ReviewArticle': llm_primary
+            'App\Planning\RewriteSection\RewriteSection': llm_primary
 
 when@test:
     framework:
