@@ -1,0 +1,10 @@
+About the writer: {{ short_bio }}
+
+{% include 'planning/_plan_input.md.twig' %}
+{% if digests is not empty %}
+
+Reference digests:
+{% for reference in digests %}
+- {{ reference.location }}: {{ reference.digest }}
+{% endfor %}
+{% endif %}

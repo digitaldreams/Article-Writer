@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Planning;
+
+use App\Shared\Article\Article;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
+
+#[ORM\Entity]
+class FlowOption
+{
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
+
+    #[ORM\Column]
+    private bool $chosen = false;
+
+    public function __construct(
+        #[ORM\ManyToOne]
+        #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+        private Article $article,
+        #[ORM\Column(type: Types::TEXT)]
+        private string $description,
+    ) {
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getArticle(): Article
+    {
+        return $this->article;
+    }
+
+    public function getDescription(): string
+    {
+        return $this->description;
+    }
+
+    public function isChosen(): bool
+    {
+        return $this->chosen;
+    }
+
+    public function choose(): void
+    {
+        $this->chosen = true;
+    }
+
+    public function unchoose(): void
+    {
+        $this->chosen = false;
+    }
+}

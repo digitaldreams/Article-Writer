@@ -1,0 +1,78 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title }} · Questions · {{ parent() }}{% endblock %}
+
+{% block body %}
+    {% set chip_tones = {pending: 'primary', done: 'success', unreadable: 'error'} %}
+    {% set waiting = digesting or (ask_job and ask_job.status.value in ['queued', 'working']) %}
+    {% set editable = article.state.value == 'questions' %}
+
+    <p><a href="{{ path('planning_list_plans') }}">Back to plans</a></p>
+    {% include 'planning/_steps.html.twig' %}
+    <h1>{{ article.title }}</h1>
+
+    <div {% if waiting %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
+        <section>
+            <h2>References</h2>
+            {% if references is empty %}
+                <p class="muted">No references.</p>
+            {% else %}
+                <ul class="references">
+                    {% for reference in references %}
+                        <li>
+                            <span class="badge badge-{{ chip_tones[reference.status.value] }}">{{ reference.status.value|capitalize }}</span>
+                            {{ reference.location }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% for job in failed_jobs %}
+                {% include 'shared/llm/job_card/_frame.html.twig' with {job: job} only %}
+            {% endfor %}
+        </section>
+
+        <section>
+            <h2>Questions</h2>
+            {% if article.state.value == 'plan' %}
+                <p class="muted">The questions come once the references are read.</p>
+            {% endif %}
+            {% if ask_job and ask_job.status.value != 'done' %}
+                {% include 'shared/llm/job_card/_frame.html.twig' with {job: ask_job} only %}
+            {% endif %}
+            {% for question in questions %}
+                <article class="card question{{ question.skipped ? ' skipped' : '' }}">
+                    <p class="question-head">
+                        <span class="badge badge-neutral">{{ question.role.value|capitalize }}</span>
+                        {% if question.skipped %}<span class="badge badge-neutral">Skipped</span>{% endif %}
+                    </p>
+                    <form method="post" action="{{ path('planning_save_answer', {id: article.id, questionId: question.id}) }}" data-controller="autosave">
+                        {% if question.options is empty %}
+                            <label for="answer-{{ question.id }}">{{ question.text }}</label>
+                            <textarea id="answer-{{ question.id }}" name="answer" rows="4" data-action="input->autosave#queue" {{ editable ? '' : 'disabled' }}>{{ question.answer }}</textarea>
+                        {% else %}
+                            <fieldset class="choices">
+                                <legend>{{ question.text }}</legend>
+                                {% for option in question.options %}
+                                    <label>
+                                        <input type="radio" name="answer" value="{{ option }}" data-action="change->autosave#save" {{ question.answer == option ? 'checked' : '' }} {{ editable ? '' : 'disabled' }}>
+                                        {{ option }}
+                                    </label>
+                                {% endfor %}
+                            </fieldset>
+                        {% endif %}
+                        <p class="form-actions">
+                            <span class="muted" data-autosave-target="status" aria-live="polite"></span>
+                            {% if editable and not question.skipped %}<button class="button button-secondary button-small" type="submit" name="skip" value="1">Skip</button>{% endif %}
+                        </p>
+                    </form>
+                </article>
+            {% endfor %}
+
+            {% if editable and ask_job and ask_job.status.value == 'done' %}
+                <form method="post" action="{{ path('planning_finish_questions', {id: article.id}) }}">
+                    <button class="button button-primary" type="submit">Next: flows</button>
+                </form>
+            {% endif %}
+        </section>
+    </div>
+{% endblock %}

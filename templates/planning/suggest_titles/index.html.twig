@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title }} · Titles · {{ parent() }}{% endblock %}
+
+{% block body %}
+    {% set waiting = job and job.status.value in ['queued', 'working'] %}
+    {% set written = article.state.value == 'written' %}
+
+    <p><a href="{{ path('planning_list_plans') }}">Back to plans</a></p>
+    {% include 'planning/_steps.html.twig' %}
+    <h1>{{ article.title }}</h1>
+    {% if subtitle %}<p class="subtitle">{{ subtitle }}</p>{% endif %}
+
+    <section class="title-suggestions" {% if waiting %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
+        <h2>Title and subtitle</h2>
+        {% if job and job.status.value != 'done' %}
+            {% include 'shared/llm/job_card/_frame.html.twig' with {job: job} only %}
+        {% endif %}
+
+        {% if suggestions is not empty %}
+            <form method="post" action="{{ path('planning_choose_title', {id: article.id}) }}">
+                <fieldset class="choices">
+                    <legend>Pick a title and subtitle</legend>
+                    {% for suggestion in suggestions %}
+                        <label>
+                            <input type="radio" name="suggestion" value="{{ suggestion.id }}" required {{ suggestion.title == article.title and suggestion.subtitle == subtitle ? 'checked' : '' }} {{ written ? '' : 'disabled' }}>
+                            <span>
+                                <strong class="suggested-title">{{ suggestion.title }}</strong>
+                                <span class="suggested-subtitle muted">{{ suggestion.subtitle }}</span>
+                            </span>
+                        </label>
+                    {% endfor %}
+                </fieldset>
+                {% if written %}
+                    <div class="form-actions">
+                        <button class="button button-primary" type="submit">Use this pair</button>
+                    </div>
+                {% endif %}
+            </form>
+        {% endif %}
+
+        {% if written and not waiting %}
+            <form method="post" action="{{ path('planning_suggest_titles', {id: article.id}) }}">
+                <button class="button button-secondary" type="submit">{{ suggestions is empty ? 'Show title suggestions' : 'Suggest more' }}</button>
+            </form>
+        {% elseif not written %}
+            <p class="muted">Titles come once the article is written.</p>
+        {% endif %}
+    </section>
+{% endblock %}

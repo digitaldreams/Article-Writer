@@ -1,0 +1,22 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Structure profile · {{ parent() }}{% endblock %}
+
+{% block body %}
+    <h1>Structure profile</h1>
+    {{ render(controller('App\\Setup\\ImportArticles\\ImportArticlesController::failedFiles')) }}
+    {% for row in jobs %}
+        <div class="structure-job">
+            <strong>{{ row.label }}</strong>
+            {{ include('shared/llm/job_card/_frame.html.twig', {job: row.job}) }}
+        </div>
+    {% endfor %}
+    {{ form_start(form) }}
+        {{ form_row(form.openingType) }}
+        {{ form_row(form.orderingHabit) }}
+        {{ form_row(form.sectionCount) }}
+        {{ form_row(form.runningExample) }}
+        {{ form_row(form.closing) }}
+        {{ form_row(form.save, {attr: {class: 'button button-primary'}}) }}
+    {{ form_end(form) }}
+{% endblock %}

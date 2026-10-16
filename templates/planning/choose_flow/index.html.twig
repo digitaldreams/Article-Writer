@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title }} · Flows · {{ parent() }}{% endblock %}
+
+{% block body %}
+    {% set waiting = job and job.status.value in ['queued', 'working'] %}
+    {% set choosable = article.state.value == 'flows' %}
+
+    <p><a href="{{ path('planning_list_plans') }}">Back to plans</a></p>
+    {% include 'planning/_steps.html.twig' %}
+    <h1>{{ article.title }}</h1>
+
+    <section {% if waiting %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
+        <h2>Choose a flow</h2>
+        {% if job and job.status.value != 'done' %}
+            {% include 'shared/llm/job_card/_frame.html.twig' with {job: job} only %}
+        {% endif %}
+        {% for flow in flows %}
+            <article class="card flow{{ flow.chosen ? ' chosen' : '' }}">
+                <p>{{ flow.description }}</p>
+                <div class="form-actions">
+                    {% if flow.chosen %}<span class="badge badge-success">Chosen</span>{% endif %}
+                    {% if choosable %}
+                        <form method="post" action="{{ path('planning_choose_flow', {id: article.id, flowId: flow.id}) }}">
+                            <button class="button button-primary" type="submit">Choose this flow</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </article>
+        {% endfor %}
+    </section>
+{% endblock %}

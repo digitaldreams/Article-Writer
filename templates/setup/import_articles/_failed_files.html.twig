@@ -1,0 +1,6 @@
+{% for file in files %}
+    <div class="import-file">
+        <strong>{{ file.filename }}</strong>
+        {{ include('shared/llm/job_card/_frame.html.twig', {job: file.job}) }}
+    </div>
+{% endfor %}

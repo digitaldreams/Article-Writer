@@ -1,0 +1,25 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title }} · Article · {{ parent() }}{% endblock %}
+
+{% block body %}
+    {% set waiting = job and job.status.value in ['queued', 'working'] %}
+
+    <p><a href="{{ path('planning_list_plans') }}">Back to plans</a></p>
+    {% include 'planning/_steps.html.twig' %}
+    <h1>{{ article.title }}</h1>
+    {% if subtitle %}<p class="subtitle">{{ subtitle }}</p>{% endif %}
+
+    <section {% if waiting %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
+        {% if job and job.status.value != 'done' %}
+            {% include 'shared/llm/job_card/_frame.html.twig' with {job: job} only %}
+        {% endif %}
+
+        {% if body is not null %}
+            <p class="notice">Written to <code>{{ path }}</code></p>
+            <article class="card article-preview">
+                {{ body|markdown_to_html }}
+            </article>
+        {% endif %}
+    </section>
+{% endblock %}

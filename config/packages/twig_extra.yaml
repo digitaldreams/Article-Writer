@@ -1,0 +1,5 @@
+twig_extra:
+    # The article preview renders model output: never pass its raw HTML or javascript: links through.
+    commonmark:
+        html_input: escape
+        allow_unsafe_links: false

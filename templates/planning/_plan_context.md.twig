@@ -1,0 +1,23 @@
+{% include 'planning/_plan_input.md.twig' %}
+{% if answers is not empty %}
+
+The writer's answers:
+{% for question in answers %}
+- Q ({{ question.role.value }}): {{ question.text }}
+  A: {{ question.answer }}
+{% endfor %}
+{% endif %}
+{% if digests is not empty %}
+
+Reference digests:
+{% for reference in digests %}
+- {{ reference.location }}: {{ reference.digest }}
+{% endfor %}
+{% endif %}
+{% if structure_profile is not empty %}
+
+How the writer usually structures articles:
+{% for key, value in structure_profile %}
+- {{ key }}: {{ value }}
+{% endfor %}
+{% endif %}

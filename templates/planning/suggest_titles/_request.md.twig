@@ -1,0 +1,18 @@
+# Reader
+Audience: {{ input.audience ?: 'not given' }}
+Reader level: {{ input.readerLevel ?: 'not given' }}
+
+# Flow
+{{ flow ? flow.description : 'not given' }}
+{% if seen is not empty %}
+
+# Titles the writer has already seen
+{% for suggestion in seen %}
+- {{ suggestion.title }} — {{ suggestion.subtitle }}
+{% endfor %}
+{% endif %}
+
+# Article (complete)
+{{ body }}
+
+(End of the article.)

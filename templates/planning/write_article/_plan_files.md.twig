@@ -1,0 +1,17 @@
+# idea.md
+{{ idea }}
+
+# outline.md
+{{ outline }}
+{% if answers %}
+
+# answers.md
+{{ answers }}
+{% endif %}
+{% if digests is not empty %}
+
+# Reference digests
+{% for reference in digests %}
+- {{ reference.location }}: {{ reference.digest }}
+{% endfor %}
+{% endif %}

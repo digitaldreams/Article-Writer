@@ -1,0 +1,20 @@
+# Reader
+Audience: {{ input.audience ?: 'not given' }}
+Reader level: {{ input.readerLevel ?: 'not given' }}
+{% if seen is not empty %}
+
+# Poster ideas the writer has already seen
+{% for idea in seen %}
+- {{ idea.headline }} — {{ idea.picture }}
+{% endfor %}
+{% endif %}
+{% if writer_idea %}
+
+# The writer's idea for the poster
+{{ writer_idea }}
+{% endif %}
+
+# Article (complete)
+{{ body }}
+
+(End of the article.)

@@ -1,0 +1,25 @@
+{# Step tabs on every plan page. Each tab is its own page; a tab opens once the article reached its state. #}
+{% set at = {plan: 0, questions: 1, flows: 2, outline: 3, finalize: 4, approved: 5, written: 6}[article.state.value] ?? -1 %}
+<nav class="steps" aria-label="Steps">
+    <ol>
+        {% for step in [
+            {label: 'Questions', route: 'planning_answer_questions', from: 0},
+            {label: 'Flows', route: 'planning_show_flows', from: 2},
+            {label: 'Outline', route: 'planning_show_outline', from: 3},
+            {label: 'Review', route: 'planning_show_review', from: 4},
+            {label: 'Article', route: 'planning_show_article', from: 5},
+            {label: 'Titles', route: 'planning_show_titles', from: 6},
+            {label: 'Poster', route: 'planning_show_posters', from: 6},
+        ] %}
+            <li>
+                {% if at >= step.from %}
+                    <a href="{{ path(step.route, {id: article.id}) }}" {% if app.current_route == step.route %}aria-current="page"{% endif %}>{{ step.label }}</a>
+                {% else %}
+                    <span aria-disabled="true">{{ step.label }}</span>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ol>
+    {% set cost = article_cost(article) %}
+    {% if cost is not null %}<p class="steps-cost muted">Total cost: ${{ cost|number_format(cost < 1 ? 4 : 2) }}</p>{% endif %}
+</nav>

@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Plans · {{ parent() }}{% endblock %}
+
+{% block body %}
+    {% set job_tones = {queued: 'neutral', working: 'primary', done: 'success', failed: 'error'} %}
+
+    <div class="page-head">
+        <h1>Plans</h1>
+        {% if rows is not empty %}
+            <a class="button button-primary" href="{{ path('planning_create_plan') }}">New plan</a>
+        {% endif %}
+    </div>
+
+    {% if stalled %}
+        <p class="notice notice-warning" role="status"><strong>Stalled:</strong> jobs are not moving. One has run over 30 minutes, or jobs wait and no worker is running.</p>
+    {% endif %}
+
+    {% if rows is empty %}
+        <p>No plans yet.</p>
+        <p><a class="button button-primary" href="{{ path('planning_create_plan') }}">New plan</a></p>
+    {% else %}
+        <table class="plans">
+            <thead><tr><th>Title</th><th>State</th><th>Job</th><th>Cost</th><th>Updated</th></tr></thead>
+            <tbody>
+            {% for row in rows %}
+                <tr class="{{ row.finished ? 'finished' : '' }}">
+                    <td><a href="{{ path('planning_open_plan', {id: row.article.id}) }}">{{ row.article.title }}</a>{% if row.finished %} <span class="badge badge-success">Finished</span>{% endif %}</td>
+                    <td><span class="badge badge-neutral">{{ row.article.state.value }}</span></td>
+                    <td>{% if row.job %}<span class="badge badge-{{ job_tones[row.job.status.value] }}">{{ row.job.status.value|capitalize }}</span>{% endif %}</td>
+                    {% set cost = article_cost(row.article) %}
+                    <td class="muted">{{ cost is null ? '—' : '$' ~ cost|number_format(cost < 1 ? 4 : 2) }}</td>
+                    <td class="muted">{{ row.article.updatedAt|date('Y-m-d H:i') }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

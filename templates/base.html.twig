@@ -1,8 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>{% block title %}Welcome!{% endblock %}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="turbo-refresh-method" content="morph">
+        <meta name="turbo-refresh-scroll" content="preserve">
+        <title>{% block title %}Article Writer{% endblock %}</title>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
         {% block stylesheets %}
         {% endblock %}
@@ -19,6 +22,23 @@
         {% endif %}
     </head>
     <body>
-        {% block body %}{% endblock %}
+        {% set route = app.current_route|default('') %}
+        <header class="topbar">
+            <div class="topbar-inner">
+                <a class="topbar-name" href="{{ path('planning_list_plans') }}">Article Writer</a>
+                <nav aria-label="Main">
+                    {% for link in [
+                        {label: 'Plans', route: 'planning_list_plans', module: 'planning_'},
+                        {label: 'Setup', route: 'setup_save_profile', module: 'setup_'},
+                    ] %}
+                        <a href="{{ path(link.route) }}"
+                            {% if route == link.route %}aria-current="page"{% elseif route starts with link.module %}aria-current="true"{% endif %}>{{ link.label }}</a>
+                    {% endfor %}
+                </nav>
+            </div>
+        </header>
+        <main class="page">
+            {% block body %}{% endblock %}
+        </main>
     </body>
 </html>

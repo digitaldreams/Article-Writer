@@ -1,0 +1,66 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title }} · Poster · {{ parent() }}{% endblock %}
+
+{% block body %}
+    {% set waiting = job and job.status.value in ['queued', 'working'] %}
+    {% set drawing = draw_job and draw_job.status.value in ['queued', 'working'] %}
+    {% set written = article.state.value == 'written' %}
+
+    <p><a href="{{ path('planning_list_plans') }}">Back to plans</a></p>
+    {% include 'planning/_steps.html.twig' %}
+    <h1>{{ article.title }}</h1>
+
+    <section {% if waiting or drawing %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
+        <h2>Poster ideas</h2>
+        {% if job and job.status.value != 'done' %}
+            {% include 'shared/llm/job_card/_frame.html.twig' with {job: job} only %}
+        {% endif %}
+        {% if draw_job and draw_job.status.value != 'done' %}
+            {% include 'shared/llm/job_card/_frame.html.twig' with {job: draw_job} only %}
+        {% endif %}
+
+        {% for idea in ideas %}
+            {% if idea.writerIdea and (loop.first or ideas[loop.index0 - 1].round != idea.round) %}
+                <p class="writer-idea"><strong>Your idea:</strong> {{ idea.writerIdea }}</p>
+            {% endif %}
+            <article class="card poster-idea">
+                <h3>{{ idea.headline }}</h3>
+                <dl>
+                    <dt>Picture</dt><dd>{{ idea.picture }}</dd>
+                    <dt>Layout</dt><dd>{{ idea.layout }}</dd>
+                    <dt>Colors</dt><dd>{{ idea.colors }}</dd>
+                </dl>
+                {% if drawn[idea.id] %}
+                    <a href="{{ path('planning_show_poster_image', {id: article.id, ideaId: idea.id}) }}" target="_blank">
+                        <img class="poster-image" src="{{ path('planning_show_poster_image', {id: article.id, ideaId: idea.id}) }}?v={{ drawn[idea.id] }}" alt="Poster: {{ idea.headline }}">
+                    </a>
+                {% endif %}
+                {% if can_draw and written and not drawing %}
+                    <form method="post" action="{{ path('planning_generate_poster', {id: article.id, ideaId: idea.id}) }}">
+                        <button class="button button-secondary button-small" type="submit">{{ drawn[idea.id] ? 'Generate again' : 'Generate poster' }}</button>
+                    </form>
+                {% endif %}
+            </article>
+        {% endfor %}
+
+        {% if written and not waiting %}
+            <form method="post" action="{{ path('planning_suggest_posters', {id: article.id}) }}">
+                <button class="button button-secondary" type="submit">{{ ideas is empty ? 'Show poster ideas' : 'Suggest more' }}</button>
+            </form>
+        {% elseif not written %}
+            <p class="muted">Poster ideas come once the article is written.</p>
+        {% endif %}
+
+        {% if written and not waiting %}
+            <form class="card share-idea" method="post" action="{{ path('planning_suggest_posters', {id: article.id}) }}">
+                <label for="poster-idea">Do you have an idea to make the poster better? Share it</label>
+                <textarea id="poster-idea" name="idea" rows="3" required>{{ idea_error ? app.request.request.get('idea') : '' }}</textarea>
+                {% if idea_error %}<p class="field-error">{{ idea_error }}</p>{% endif %}
+                <div class="form-actions">
+                    <button class="button button-primary" type="submit">Share with the poster agent</button>
+                </div>
+            </form>
+        {% endif %}
+    </section>
+{% endblock %}

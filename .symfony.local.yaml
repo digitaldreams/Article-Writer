@@ -1,0 +1,10 @@
+http:
+    document_root: public
+    passthru: index.php
+    ip: 127.0.0.1
+
+workers:
+    llm:
+        cmd: ['symfony', 'console', 'messenger:consume', 'llm_primary', 'llm_secondary', '-vv']
+    io:
+        cmd: ['symfony', 'console', 'messenger:consume', 'io', '-vv']

@@ -1,0 +1,20 @@
+{% include 'planning/_plan_context.md.twig' %}
+{% if flow %}
+
+Chosen flow: {{ flow.description }}
+{% endif %}
+{% if previous_items is not empty %}
+
+Current outline:
+{% for item in previous_items %}
+{{ loop.index }}. {{ item.title }}: {{ item.summary }}
+{% endfor %}
+{% endif %}
+{% if instruction %}
+
+The writer asks for this change: {{ instruction }}
+{% endif %}
+{% if reason %}
+
+The writer rejected the last outline because: {{ reason }}
+{% endif %}

@@ -1,0 +1,9 @@
+{% if merging_parts %}
+You get several short digests of the parts of one reference. Merge them into one digest.
+{% else %}
+You get the text of a reference for a technical article.
+{% endif %}
+The article topic is: {{ topic }}
+Write a digest of about 200 words. Keep only what matters for this topic: facts, code ideas, names and versions.
+Plain text, no title, no preamble.
+{% include 'shared/prompt/_language_level.md.twig' %}

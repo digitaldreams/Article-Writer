@@ -1,0 +1,26 @@
+{% set active = job.status.value in ['queued', 'working'] %}
+{# The card endpoint renders the frame without src: Turbo rejects a frame response whose src points at itself. #}
+<turbo-frame id="job-{{ job.id }}" {% if with_src ?? true %}src="{{ path('llm_job_card', {id: job.id}) }}"{% endif %} refresh="morph" aria-live="polite">
+    <div class="card job-card job-{{ job.status.value }}"
+        {% if active %}data-controller="job-poll" data-job-poll-interval-value="5000"{% endif %}>
+        <p class="job-head">
+            <strong class="job-status">{{ job.status.value|capitalize }}</strong>
+            <span class="badge badge-neutral job-model">{{ job.role }} · {{ job.provider }} · {{ job.model }}</span>
+        </p>
+        <p class="job-times muted">
+            Queued {{ job.createdAt|date('H:i:s') }}
+            {% if job.startedAt %}· started {{ job.startedAt|date('H:i:s') }}{% endif %}
+            {% if job.finishedAt %}· finished {{ job.finishedAt|date('H:i:s') }}{% endif %}
+            {% if job.inputTokens is not null %}<span class="job-cost">· {{ job.inputTokens|number_format }} in · {{ job.outputTokens|number_format }} out · {{ job.cost is null ? 'no price' : '$' ~ job.cost|number_format(4) }}</span>{% endif %}
+        </p>
+        {% if job.role != 'io' and job.provider != 'ollama' %}
+            <p class="notice notice-warning job-cloud"><strong>Cloud model:</strong> plan data leaves this machine.</p>
+        {% endif %}
+        {% if job.status.value == 'failed' %}
+            <p class="job-error">{{ job.error }}</p>
+            <form method="post" action="{{ path('llm_retry_job', {id: job.id}) }}">
+                <button class="button button-primary" type="submit">Retry</button>
+            </form>
+        {% endif %}
+    </div>
+</turbo-frame>

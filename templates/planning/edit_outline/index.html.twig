@@ -1,0 +1,58 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title }} · Outline · {{ parent() }}{% endblock %}
+
+{% block body %}
+    {% set waiting = job and job.status.value in ['queued', 'working'] %}
+    {% set editable = article.state.value == 'outline' and not waiting %}
+
+    <p><a href="{{ path('planning_list_plans') }}">Back to plans</a></p>
+    {% include 'planning/_steps.html.twig' %}
+    <div class="page-head">
+        <h1>{{ article.title }}</h1>
+        {% if round > 0 %}<span class="badge badge-neutral">Round {{ round }}</span>{% endif %}
+    </div>
+
+    <section {% if waiting %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
+        <h2>Outline</h2>
+        {% if job and job.status.value != 'done' %}
+            {% include 'shared/llm/job_card/_frame.html.twig' with {job: job} only %}
+        {% endif %}
+
+        {% for item in items %}
+            <article class="card outline-item">
+                <form method="post" action="{{ path('planning_edit_outline_item', {id: article.id, itemId: item.id}) }}" data-controller="autosave">
+                    <label for="item-title-{{ item.id }}">Section {{ loop.index }}</label>
+                    <input id="item-title-{{ item.id }}" name="title" value="{{ item.title }}" required data-action="input->autosave#queue" {{ editable ? '' : 'disabled' }}>
+                    <textarea name="summary" rows="3" aria-label="Section {{ loop.index }} summary" data-action="input->autosave#queue" {{ editable ? '' : 'disabled' }}>{{ item.summary }}</textarea>
+                    <div class="form-actions">
+                        <span class="muted" data-autosave-target="status" aria-live="polite"></span>
+                        {% if editable %}<button class="button button-danger button-small" type="submit" name="remove" value="1">Remove</button>{% endif %}
+                    </div>
+                </form>
+            </article>
+        {% endfor %}
+
+        {% if editable %}
+            <form class="card outline-add" method="post" action="{{ path('planning_add_outline_item', {id: article.id}) }}">
+                <label for="new-item-title">New section</label>
+                <input id="new-item-title" name="title" required>
+                <textarea name="summary" rows="2" aria-label="New section summary"></textarea>
+                <div class="form-actions"><button class="button button-secondary" type="submit">Add section</button></div>
+            </form>
+
+            <form class="card" method="post" action="{{ path('planning_change_direction', {id: article.id}) }}">
+                <label for="direction">Change the direction</label>
+                <textarea id="direction" name="instruction" rows="3" placeholder="e.g. Start with a real bug, then show each feature as the fix.">{{ app.request.request.get('instruction') }}</textarea>
+                {% if direction_error %}<p class="field-error">{{ direction_error }}</p>{% endif %}
+                <div class="form-actions"><button class="button button-secondary" type="submit">New round</button></div>
+            </form>
+
+            {% if items is not empty %}
+                <form method="post" action="{{ path('planning_finalize_outline', {id: article.id}) }}">
+                    <button class="button button-primary" type="submit">Finalize</button>
+                </form>
+            {% endif %}
+        {% endif %}
+    </section>
+{% endblock %}

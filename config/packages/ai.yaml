@@ -1,0 +1,42 @@
+ai:
+    platform:
+        ollama:
+            endpoint: '%env(OLLAMA_ENDPOINT)%'
+            http_client: llm.ollama
+        openai:
+            api_key: '%env(OPENAI_API_KEY)%'
+        anthropic:
+            api_key: '%env(ANTHROPIC_API_KEY)%'
+        gemini:
+            api_key: '%env(GEMINI_API_KEY)%'
+
+    # gpt-6-luna is newer than the bundled OpenAI catalog; same entry as gpt-5.6-luna there.
+    model:
+        openai:
+            gpt-6-luna:
+                class: Symfony\AI\Platform\Bridge\OpenAi\Gpt
+                capabilities: [input-messages, output-text, output-streaming, tool-calling, output-structured, thinking, input-image, input-pdf]
+
+    agent:
+        primary:
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
+        secondary:
+            platform: '%app.ai.secondary_platform%'
+            model: '%env(AI_SECONDARY_MODEL)%'
+        # Image descriptions only; same platform as secondary, model from AI_VISION_MODEL.
+        vision:
+            platform: '%app.ai.secondary_platform%'
+            model: '%env(AI_VISION_MODEL)%'
+        # Title + subtitle suggestions on the titles page; the system prompt is a hand-edited repo file (read when a worker starts).
+        title:
+            platform: '%app.ai.title_platform%'
+            model: '%env(AI_TITLE_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/title_agent.md'
+        # Poster ideas on the poster page; the system prompt is a hand-edited repo file (read when a worker starts).
+        poster:
+            platform: '%app.ai.poster_platform%'
+            model: '%env(AI_POSTER_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/poster_agent.md'

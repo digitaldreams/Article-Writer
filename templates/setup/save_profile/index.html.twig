@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Setup · {{ parent() }}{% endblock %}
+
+{% block body %}
+    <h1>Setup</h1>
+    {{ form_start(form) }}
+        {{ form_row(form.shortBio) }}
+        {{ form_row(form.longBio) }}
+        {{ form_row(form.languageLevel) }}
+        {{ form_row(form.save, {attr: {class: 'button button-primary'}}) }}
+    {{ form_end(form) }}
+    {{ render(controller('App\\Setup\\ImportArticles\\ImportArticlesController::panel')) }}
+{% endblock %}
