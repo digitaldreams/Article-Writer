@@ -15,6 +15,9 @@
         {% if job and job.status.value != 'done' %}
             {% include 'shared/llm/job_card/_frame.html.twig' with {job: job} only %}
         {% endif %}
+        {% if not job and flows is empty and not choosable %}
+            <p class="muted">Skipped: this plan went straight to the outline.</p>
+        {% endif %}
         {% for flow in flows %}
             <article class="card flow{{ flow.chosen ? ' chosen' : '' }}">
                 {% if choosable %}

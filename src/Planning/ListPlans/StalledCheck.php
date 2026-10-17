@@ -27,9 +27,11 @@ final readonly class StalledCheck
 
         $anyWorking = false;
         $anyQueued = false;
+        $anyStuck = false;
         foreach ($jobs as $job) {
             if (LlmJobStatus::Queued === $job->getStatus()) {
                 $anyQueued = true;
+                $anyStuck = $anyStuck || $job->isStuck($now);
                 continue;
             }
             $anyWorking = true;
@@ -41,6 +43,7 @@ final readonly class StalledCheck
 
         $beat = $this->heartbeat->lastBeat();
 
-        return $anyQueued && !$anyWorking && (null === $beat || $beat < $now->modify('-2 minutes'));
+        // Nothing working: a stuck job lost its message, or no worker is running.
+        return $anyQueued && !$anyWorking && ($anyStuck || null === $beat || $beat < $now->modify('-2 minutes'));
     }
 }

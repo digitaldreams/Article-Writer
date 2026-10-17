@@ -2,6 +2,8 @@
 
 namespace App\Tests\Setup\ImportArticles;
 
+use App\Shared\User\User;
+use App\Tests\RenderingPlatform;
 use App\Setup\ImportArticles\MergeStructureProfile;
 use App\Setup\ImportArticles\SettleStructureProfile;
 use App\Setup\ImportArticles\StructureNote;
@@ -10,11 +12,9 @@ use App\Setup\ImportArticles\StructureProfileAnswer;
 use App\Shared\Article\Article;
 use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobStatus;
-use App\Shared\WriterProfile\WriterProfile;
 use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Platform\Result\ObjectResult;
-use Symfony\AI\Platform\Test\InMemoryPlatform;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -38,7 +38,7 @@ final class StructureProfileTest extends WebTestCase
 
         self::assertCount(2, $this->em()->getRepository(StructureNote::class)->findAll());
         self::assertCount(1, $this->mergeMessages());
-        $profile = $this->em()->getRepository(WriterProfile::class)->findOneBy([]);
+        $profile = $this->em()->find(User::class, $this->author->getId());
         self::assertSame('a story', $profile?->getStructureProfile()['openingType'] ?? null);
         self::assertSame([], $this->jobsOf('merge_structure_profile', LlmJobStatus::Failed));
     }
@@ -130,7 +130,7 @@ final class StructureProfileTest extends WebTestCase
 
     private function fakeModel(?string $failNotesFor = null): void
     {
-        self::getContainer()->set('ai.platform.openai', new InMemoryPlatform(
+        RenderingPlatform::install(self::getContainer(), 'openai', 
             static function ($model, $input, array $options) use ($failNotesFor) {
                 if (StructureProfileAnswer::class === $options['response_format']) {
                     return new ObjectResult(new StructureProfileAnswer('a story', 'by feature', '5', 'yes', 'summary'));
@@ -141,7 +141,7 @@ final class StructureProfileTest extends WebTestCase
 
                 return new ObjectResult(new StructureNotesAnswer('a story', 5, 'by feature', true, 'summary'));
             },
-        ));
+        );
     }
 
     /** @return list<LlmJob> */

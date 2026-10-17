@@ -13,7 +13,7 @@
     </div>
 
     {% if stalled %}
-        <p class="notice notice-warning" role="status"><strong>Stalled:</strong> jobs are not moving. One has run over 30 minutes, or jobs wait and no worker is running.</p>
+        <p class="notice notice-warning" role="status"><strong>Stalled:</strong> jobs are not moving. One has run over 30 minutes, a job is stuck (open it and Retry), or jobs wait and no worker is running.</p>
     {% endif %}
 
     {% if rows is empty %}
@@ -27,7 +27,7 @@
                 <tr class="{{ row.finished ? 'finished' : '' }}">
                     <td><a href="{{ path('planning_open_plan', {id: row.article.id}) }}">{{ row.article.title }}</a>{% if row.finished %} <span class="badge badge-success">Finished</span>{% endif %}</td>
                     <td><span class="badge badge-neutral">{{ row.article.state.value }}</span></td>
-                    <td>{% if row.job %}<span class="badge badge-{{ job_tones[row.job.status.value] }}">{{ row.job.status.value|capitalize }}</span>{% endif %}</td>
+                    <td>{% if row.job and row.job.isStuck(date()) %}<span class="badge badge-error">Stuck</span>{% elseif row.job %}<span class="badge badge-{{ job_tones[row.job.status.value] }}">{{ row.job.status.value|capitalize }}</span>{% endif %}</td>
                     {% set cost = article_cost(row.article) %}
                     <td class="muted">{{ cost is null ? '—' : '$' ~ cost|number_format(cost < 1 ? 4 : 2) }}</td>
                     <td class="muted">{{ row.article.updatedAt|date('Y-m-d H:i') }}</td>

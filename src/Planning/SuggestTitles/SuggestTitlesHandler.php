@@ -47,7 +47,7 @@ final readonly class SuggestTitlesHandler
                 // Code adds many tokens and little to a title; on a local CPU model reading the prompt is the slow part.
                 'body' => preg_replace('/^(```|~~~).*?^\1[ \t]*$/ms', '(code omitted)', $this->folder->read($article->getFolder(), 'article.md')['body']),
             ])),
-        ), ['response_format' => TitleList::class]), TitleList::class);
+        ), ['response_format' => TitleList::class, 'template_vars' => ['language_level' => $article->getUser()->getLanguageLevel()]]), TitleList::class);
 
         $titles = array_values(array_filter($answer->titles, static fn (ProposedTitle $t) => '' !== trim($t->title) && '' !== trim($t->subtitle)));
         if (self::TITLES_PER_ROUND !== \count($titles)) {

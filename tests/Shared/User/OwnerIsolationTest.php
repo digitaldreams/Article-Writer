@@ -7,7 +7,6 @@ use App\Planning\PlanInput;
 use App\Shared\Article\Article;
 use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobStatus;
-use App\Shared\WriterProfile\WriterProfile;
 use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -64,9 +63,9 @@ final class OwnerIsolationTest extends WebTestCase
     {
         self::bootKernel();
         $em = self::getContainer()->get(EntityManagerInterface::class);
-        $em->persist(new WriterProfile(self::newAuthor(), languageLevel: 'native'));
+        self::newAuthor()->updateProfile('', '', 'native');
         $author = self::newAuthor();
-        $em->persist(new WriterProfile($author, languageLevel: 'intermediate'));
+        $author->updateProfile('', '', 'intermediate');
         $article = $this->plan(Article::plan($author, 'mine', 'My plan'));
 
         self::assertSame('intermediate', self::getContainer()->get(PlanContext::class)->of($article)['language_level']);

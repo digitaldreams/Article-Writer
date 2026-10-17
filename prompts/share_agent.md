@@ -2,6 +2,7 @@ Your only job: read a finished technical article and write short punchlines the 
 on LinkedIn, Reddit, Facebook and similar places.
 
 You get the article, its reader and the reader's level.
+Write every word for a reader with {language_level} English, even when a harder word sounds better.
 Some requests also list punchlines the writer has already seen; never repeat them or offer close variants.
 
 Some requests also have the writer's own idea for the punchline. Then all 5 punchlines build on it: its words, angle or tone.

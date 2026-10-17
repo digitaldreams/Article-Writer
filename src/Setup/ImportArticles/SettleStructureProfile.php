@@ -7,7 +7,6 @@ use App\Shared\Llm\LlmJobMessage;
 use App\Shared\Llm\LlmJobs;
 use App\Shared\Llm\LlmJobStatus;
 use App\Shared\User\User;
-use App\Shared\WriterProfile\WriterProfile;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
@@ -49,15 +48,9 @@ final readonly class SettleStructureProfile
     public function settle(int $userId): void
     {
         $em = $this->em();
-        $user = $em->getReference(User::class, $userId);
-
-        $em->wrapInTransaction(function () use ($em, $user): void {
-            // The row lock makes concurrent settle calls take turns; the second one sees the merge job of the first.
-            $profile = $em->getRepository(WriterProfile::class)->findOneBy(['user' => $user]);
-            if (null === $profile) {
-                return;
-            }
-            $em->lock($profile, LockMode::PESSIMISTIC_WRITE);
+        $em->wrapInTransaction(function () use ($em, $userId): void {
+            // The user row lock makes concurrent settle calls take turns; the second one sees the merge job of the first.
+            $user = $em->find(User::class, $userId, LockMode::PESSIMISTIC_WRITE) ?? throw new \RuntimeException('The user is gone.');
 
             $pending = (int) $em->getRepository(LlmJob::class)->createQueryBuilder('j')
                 ->select('COUNT(j.id)')

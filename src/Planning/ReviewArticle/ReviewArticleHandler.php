@@ -8,7 +8,6 @@ use App\Planning\ReaderNote;
 use App\Shared\Article\Article;
 use App\Shared\Llm\AgentAnswer;
 use App\Shared\Storage\ArticleFolder;
-use App\Shared\WriterProfile\WriterProfile;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\AgentInterface;
 use Symfony\AI\Platform\Message\Message;
@@ -24,7 +23,7 @@ final readonly class ReviewArticleHandler
     public const MAX_NOTES = 8;
 
     public function __construct(
-        #[Autowire(service: 'ai.agent.primary')]
+        #[Autowire(service: 'ai.agent.review')]
         private AgentInterface $agent,
         private EntityManagerInterface $em,
         private ArticleFolder $folder,
@@ -38,24 +37,22 @@ final readonly class ReviewArticleHandler
     {
         $article = $this->em->find(Article::class, $message->articleId) ?? throw new \RuntimeException('The article is gone.');
         $input = $this->em->getRepository(PlanInput::class)->findOneBy(['article' => $article]) ?? throw new \RuntimeException('The plan input is gone.');
-        $profile = $this->em->getRepository(WriterProfile::class)->findOneBy(['user' => $article->getUser()]);
         $body = $this->folder->read($article->getFolder(), 'article.md')['body'];
         $headings = array_keys(ArticleSections::split($body));
 
         $answer = AgentAnswer::object($this->agent->call(new MessageBag(
-            Message::forSystem($this->twig->render('planning/review_article/review_article.md.twig', [
-                'reader' => strtr($this->persona(), [
-                    '{audience}' => '' !== $input->getAudience() ? $input->getAudience() : 'not given',
-                    '{reader_level}' => $input->getReaderLevel() ?? 'not given',
-                ]),
-                'max' => self::MAX_NOTES,
-                'language_level' => $profile?->getLanguageLevel() ?? '',
-            ])),
             Message::ofUser($this->twig->render('planning/review_article/_request.md.twig', [
                 'headings' => $headings,
                 'body' => $body,
             ])),
-        ), ['response_format' => ReaderReview::class]), ReaderReview::class);
+        ), ['response_format' => ReaderReview::class, 'template_vars' => [
+            'reader' => strtr($this->persona(), [
+                '{audience}' => '' !== $input->getAudience() ? $input->getAudience() : 'not given',
+                '{reader_level}' => $input->getReaderLevel() ?? 'not given',
+            ]),
+            'max' => self::MAX_NOTES,
+            'language_level' => $article->getUser()->getLanguageLevel(),
+        ]]), ReaderReview::class);
         if (\count($answer->notes) > self::MAX_NOTES) {
             throw new \RuntimeException(\sprintf('The reader left %d notes; at most %d are allowed.', \count($answer->notes), self::MAX_NOTES));
         }

@@ -2,20 +2,17 @@
 
 namespace App\Tests\Planning\DigestReferences;
 
+use App\Tests\RenderingPlatform;
 use App\Planning\CreatePlan\PlanTitleAnswer;
 use App\Planning\DigestReferences\DigestReferenceHandler;
 use App\Planning\Reference;
 use App\Planning\ReferenceStatus;
 use App\Shared\Article\Article;
-use App\Shared\Llm\LlmJob;
 use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\AI\Platform\Message\Content\Image;
 use Symfony\AI\Platform\Model;
 use Symfony\AI\Platform\Result\ObjectResult;
-use Symfony\AI\Platform\Result\ResultInterface;
 use Symfony\AI\Platform\Result\TextResult;
-use Symfony\AI\Platform\Test\InMemoryPlatform;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -70,37 +67,6 @@ final class DigestReferencesTest extends WebTestCase
         self::assertStringStartsWith('digest of: digest of: aaa', (string) $this->references()[0]->getDigest());
     }
 
-    public function testAnImageReferenceIsDescribedThenDigested(): void
-    {
-        $client = $this->client();
-        $sent = null;
-        $this->fakeModel(describe: static function ($input) use (&$sent) {
-            $sent = $input->getUserMessage()?->getContent()[0] ?? null;
-
-            return new TextResult('A diagram of a property hook');
-        });
-        $this->createPlan($client, '', images: ['hook.png']);
-
-        $this->consume(['llm_secondary']);
-
-        $reference = $this->references()[0];
-        self::assertInstanceOf(Image::class, $sent);
-        self::assertSame('A diagram of a property hook', $reference->getExtractedText());
-        self::assertSame('digest of: A diagram of a property hook', $reference->getDigest());
-        self::assertSame('test-vision', $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'describe_image'])?->getModel());
-    }
-
-    public function testAFailedImageDescriptionMakesTheReferenceUnreadable(): void
-    {
-        $client = $this->client();
-        $this->fakeModel(describe: static fn () => throw new \RuntimeException('The model is down.'));
-        $this->createPlan($client, '', images: ['hook.png']);
-
-        $this->consume(['llm_secondary']);
-
-        self::assertSame(ReferenceStatus::Unreadable, $this->references()[0]->getStatus());
-    }
-
     public function testBrainstormPageShowsAStatusChipPerReference(): void
     {
         $client = $this->client();
@@ -134,34 +100,24 @@ final class DigestReferencesTest extends WebTestCase
             : new MockResponse('<html><body><nav>Menu</nav><main>Property hooks page '.substr($url, -1).'<script>track()</script></main></body></html>')));
     }
 
-    /**
-     * The secondary and the vision agent share this platform; the vision agent is told apart by its model.
-     *
-     * @param ?\Closure(): void                   $onDigest
-     * @param ?\Closure(mixed): ResultInterface $describe
-     */
-    private function fakeModel(?\Closure $onDigest = null, ?\Closure $describe = null): void
+    /** @param ?\Closure(): void $onDigest */
+    private function fakeModel(?\Closure $onDigest = null): void
     {
-        self::getContainer()->set('ai.platform.openai', new InMemoryPlatform(
-            static function (Model $model, $input, array $options) use ($onDigest, $describe) {
+        RenderingPlatform::install(self::getContainer(), 'openai',
+            static function (Model $model, $input, array $options) use ($onDigest) {
                 if (PlanTitleAnswer::class === ($options['response_format'] ?? null)) {
                     return new ObjectResult(new PlanTitleAnswer('A title'));
                 }
-                if ('test-vision' === $model->getName()) {
-                    return ($describe ?? throw new \LogicException('No image expected.'))($input);
-                }
                 $onDigest?->__invoke();
 
-                return new TextResult('digest of: '.substr((string) $input->getUserMessage()?->asText(), 0, 40));
+                // The request starts with a label line ("The text of a reference:"), then the text.
+                return new TextResult('digest of: '.substr(explode("\n\n", (string) $input->getUserMessage()?->asText(), 2)[1], 0, 40));
             },
-        ));
+        );
     }
 
-    /**
-     * @param array<string, string> $docs
-     * @param list<string>          $images
-     */
-    private function createPlan(KernelBrowser $client, string $links, array $docs = [], array $images = []): void
+    /** @param array<string, string> $docs */
+    private function createPlan(KernelBrowser $client, string $links, array $docs = []): void
     {
         $crawler = $client->request('GET', '/plans/new');
         $client->submit($crawler->selectButton('Create')->form(['create_plan[topic]' => 'PHP 8 features '.uniqid()]));
@@ -172,12 +128,6 @@ final class DigestReferencesTest extends WebTestCase
             $path = sys_get_temp_dir().'/'.$name;
             file_put_contents($path, $content);
             $form['add_references[docs]'][$i++]->upload($path);
-        }
-        foreach ($images as $i => $name) {
-            $path = sys_get_temp_dir().'/'.$name;
-            // 1x1 transparent PNG
-            file_put_contents($path, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='));
-            $form['add_references[images]'][$i]->upload($path);
         }
         $client->submit($form);
     }

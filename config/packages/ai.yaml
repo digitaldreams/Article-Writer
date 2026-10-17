@@ -17,17 +17,75 @@ ai:
                 class: Symfony\AI\Platform\Bridge\OpenAi\Gpt
                 capabilities: [input-messages, output-text, output-streaming, tool-calling, output-structured, thinking, input-image, input-pdf]
 
+    # One agent per LLM step. Each system prompt is a hand-edited prompts/*.md file (read when a worker starts);
+    # {name} placeholders are filled from the call's template_vars option.
     agent:
-        primary:
-            platform: '%app.ai.primary_platform%'
-            model: '%env(AI_PRIMARY_MODEL)%'
-        secondary:
+        # Plan title from the topic and idea.
+        plan_title:
             platform: '%app.ai.secondary_platform%'
             model: '%env(AI_SECONDARY_MODEL)%'
-        # Image descriptions only; same platform as secondary, model from AI_VISION_MODEL.
-        vision:
+            prompt:
+                file: '%kernel.project_dir%/prompts/plan_title_agent.md'
+        # Notes of one reference on the Brainstorm tab.
+        digest:
             platform: '%app.ai.secondary_platform%'
-            model: '%env(AI_VISION_MODEL)%'
+            model: '%env(AI_SECONDARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/digest_agent.md'
+        # How one imported article is built (Setup).
+        structure_notes:
+            platform: '%app.ai.secondary_platform%'
+            model: '%env(AI_SECONDARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/structure_notes_agent.md'
+        # Merges the structure notes into the writer's profile (Setup).
+        structure_profile:
+            platform: '%app.ai.secondary_platform%'
+            model: '%env(AI_SECONDARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/structure_profile_agent.md'
+        # Interviewer + reader questions on the Questions tab.
+        questions:
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/questions_agent.md'
+        # 2 or 3 flows on the Flows tab.
+        flows:
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/flows_agent.md'
+        # Every outline round.
+        outline:
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/outline_agent.md'
+        # Final checkup and polish on the Review tab.
+        checkup:
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/checkup_agent.md'
+        # Writes article.md from the approved plan.
+        article:
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/article_agent.md'
+        # Reader review on the Improve tab.
+        review:
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/review_agent.md'
+        # Rewrites one section on the Improve tab.
+        rewrite:
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/rewrite_agent.md'
         # Title + subtitle suggestions on the titles page; the system prompt is a hand-edited repo file (read when a worker starts).
         title:
             platform: '%app.ai.title_platform%'

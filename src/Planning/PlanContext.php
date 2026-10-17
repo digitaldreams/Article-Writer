@@ -3,7 +3,6 @@
 namespace App\Planning;
 
 use App\Shared\Article\Article;
-use App\Shared\WriterProfile\WriterProfile;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
@@ -21,15 +20,15 @@ final readonly class PlanContext
      */
     public function of(Article $article): array
     {
-        $profile = $this->em->getRepository(WriterProfile::class)->findOneBy(['user' => $article->getUser()]);
+        $user = $article->getUser();
         $questions = $this->em->getRepository(Question::class)->findBy(['article' => $article], ['position' => 'ASC']);
 
         return [
             'input' => $this->em->getRepository(PlanInput::class)->findOneBy(['article' => $article]) ?? throw new \RuntimeException('The plan input is gone.'),
             'answers' => array_values(array_filter($questions, static fn (Question $q) => !$q->isSkipped() && null !== $q->getAnswer())),
             'digests' => $this->em->getRepository(Reference::class)->findBy(['article' => $article, 'status' => ReferenceStatus::Done], ['id' => 'ASC']),
-            'structure_profile' => $profile?->getStructureProfile() ?? [],
-            'language_level' => $profile?->getLanguageLevel() ?? '',
+            'structure_profile' => $user->getStructureProfile() ?? [],
+            'language_level' => $user->getLanguageLevel(),
         ];
     }
 }

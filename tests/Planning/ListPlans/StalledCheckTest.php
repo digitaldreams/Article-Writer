@@ -73,6 +73,23 @@ final class StalledCheckTest extends KernelTestCase
         self::assertFalse($this->check()->isStalled());
     }
 
+    public function testJobQueuedOver10MinutesIsStalledEvenWithAFreshHeartbeat(): void
+    {
+        $this->heartbeat(11 * 60 - 30);
+        $this->job('suggest_punchlines');
+
+        self::assertTrue($this->check('+11 minutes')->isStalled());
+    }
+
+    public function testJobQueuedOver10MinutesBehindAWorkingJobIsNotStalled(): void
+    {
+        $this->heartbeat(11 * 60 - 30);
+        $this->job('write_article', working: true);
+        $this->job('suggest_punchlines');
+
+        self::assertFalse($this->check('+11 minutes')->isStalled());
+    }
+
     public function testNothingRunningIsNotStalled(): void
     {
         $this->heartbeat(null);

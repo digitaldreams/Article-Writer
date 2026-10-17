@@ -259,6 +259,10 @@ turbo-frame { display: block; }
 
 /* Planning steps */
 .references { list-style: none; padding: 0; display: grid; gap: var(--space-2); }
+.reference { margin: 0; padding: var(--space-3) var(--space-4); }
+.reference summary { cursor: pointer; overflow-wrap: anywhere; }
+.reference-digest-label { margin: var(--space-3) 0 var(--space-1); font-size: var(--text-sm); }
+.reference-digest { margin: 0; white-space: pre-line; line-height: 1.6; }
 .question { margin-block-end: var(--space-4); }
 .question.skipped { opacity: 0.7; }
 .question-head { display: flex; gap: var(--spacing-inline); }
@@ -322,3 +326,6 @@ turbo-frame { display: block; }
 .rewrite-form textarea { width: 100%; }
 .rewrite-instruction { margin-block-start: var(--space-4); font-size: var(--text-sm); }
 .poster-sketch { display: block; width: 100%; max-width: 30rem; height: auto; margin-block-end: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-card); }
+.question-nav { display: flex; gap: var(--spacing-inline); margin-block-end: var(--space-6); }
+.question-next { margin-inline-start: auto; }
+.question-progress { font-weight: 600; color: var(--color-text-muted); }

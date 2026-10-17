@@ -45,7 +45,7 @@ final readonly class SuggestPostersHandler
                 'writer_idea' => $message->writerIdea,
                 'body' => $this->folder->read($article->getFolder(), 'article.md')['body'],
             ])),
-        ), ['response_format' => PosterList::class]), PosterList::class);
+        ), ['response_format' => PosterList::class, 'template_vars' => ['language_level' => $article->getUser()->getLanguageLevel()]]), PosterList::class);
 
         $posters = array_values(array_filter($answer->posters, static fn (ProposedPoster $p) => '' !== trim($p->headline) && '' !== trim($p->picture)));
         if (self::IDEAS_PER_ROUND !== \count($posters)) {

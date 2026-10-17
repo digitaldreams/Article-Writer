@@ -41,14 +41,27 @@
     <div {% if reading %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
         <section>
             <h2>References</h2>
+            <p class="muted">The AI reads each reference and saves short notes. Questions, flows, outline and article use these notes, not the full page.</p>
             {% if references is empty %}
                 <p class="muted">No references.</p>
             {% else %}
                 <ul class="references">
                     {% for reference in references %}
                         <li>
-                            <span class="badge badge-{{ chip_tones[reference.status.value] }}">{{ reference.status.value|capitalize }}</span>
-                            {{ reference.location }}
+                            {% if reference.digest %}
+                                {# Permanent: a done digest never changes, and the reference poll must not close an open panel. #}
+                                <details id="reference-{{ reference.id }}" class="card reference" data-turbo-permanent>
+                                    <summary>
+                                        <span class="badge badge-{{ chip_tones[reference.status.value] }}">{{ reference.status.value|capitalize }}</span>
+                                        {{ reference.location }}
+                                    </summary>
+                                    <p class="muted reference-digest-label">Notes the AI saved:</p>
+                                    <p class="reference-digest">{{ reference.digest }}</p>
+                                </details>
+                            {% else %}
+                                <span class="badge badge-{{ chip_tones[reference.status.value] }}">{{ reference.status.value|capitalize }}</span>
+                                {{ reference.location }}
+                            {% endif %}
                         </li>
                     {% endfor %}
                 </ul>
@@ -64,14 +77,14 @@
                 {{ form_start(form) }}
                     {{ form_row(form.links, {attr: {rows: 4}}) }}
                     {{ form_row(form.docs, {label: 'Docs (md, pdf)', attr: {accept: '.md,.pdf'}}) }}
-                    {{ form_row(form.images, {attr: {accept: 'image/*'}}) }}
                     {{ form_row(form.add, {attr: {class: 'button button-secondary'}}) }}
                 {{ form_end(form) }}
             </section>
 
             <form method="post" action="{{ path('planning_finish_brainstorm', {id: article.id}) }}" class="form-actions">
                 {% if reading %}<span class="muted">Reading {{ reading }} {{ reading == 1 ? 'reference' : 'references' }}…</span>{% endif %}
-                <button class="button button-primary" type="submit" {{ reading ? 'disabled' : '' }}>Next: questions</button>
+                <button class="button button-secondary" type="submit" name="to" value="questions" {{ reading ? 'disabled' : '' }}>Ask me questions first</button>
+                <button class="button button-primary" type="submit" name="to" value="outline" {{ reading ? 'disabled' : '' }}>Next: outline</button>
             </form>
         {% endif %}
     </div>

@@ -7,4 +7,4 @@ You review the final outline of a technical article before the writer approves i
    - Use words at the writer's level: no fancy vocabulary, no formal tone.
    - Keep the writer's sentence shape and phrases when they are already correct.
    - Never change the meaning, the order or the structure. An item that is already fine comes back unchanged.
-{% include 'shared/prompt/_language_level.md.twig' %}
+Write for a reader with {language_level} English. Use simple words and short sentences.

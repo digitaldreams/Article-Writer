@@ -126,11 +126,20 @@ class LlmJob
         return $this->cost;
     }
 
+    /** createdAt is the "Queued" time, so a retried job counts its wait from the retry. */
     public function requeue(): void
     {
         $this->status = LlmJobStatus::Queued;
         $this->error = null;
+        $this->createdAt = new \DateTimeImmutable();
         $this->startedAt = $this->finishedAt = null;
+    }
+
+    /** Queued this long: the message was most likely lost, so Retry may send it again. */
+    public function isStuck(\DateTimeInterface $now): bool
+    {
+        return LlmJobStatus::Queued === $this->status
+            && $this->createdAt < \DateTimeImmutable::createFromInterface($now)->modify('-10 minutes');
     }
 
     public function getId(): ?int

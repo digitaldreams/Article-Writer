@@ -21,7 +21,7 @@ use Twig\Environment;
 final readonly class GenerateOutlineHandler
 {
     public function __construct(
-        #[Autowire(service: 'ai.agent.primary')]
+        #[Autowire(service: 'ai.agent.outline')]
         private AgentInterface $agent,
         private EntityManagerInterface $em,
         private Environment $twig,
@@ -45,9 +45,8 @@ final readonly class GenerateOutlineHandler
         ];
 
         $answer = AgentAnswer::object($this->agent->call(new MessageBag(
-            Message::forSystem($this->twig->render('planning/generate_outline/generate_outline.md.twig', $context)),
             Message::ofUser($this->twig->render('planning/generate_outline/_request.md.twig', $context)),
-        ), ['response_format' => OutlineAnswer::class]), OutlineAnswer::class);
+        ), ['response_format' => OutlineAnswer::class, 'template_vars' => ['language_level' => $context['language_level']]]), OutlineAnswer::class);
 
         if ([] === $answer->items) {
             throw new \RuntimeException('The model answered with an empty outline.');

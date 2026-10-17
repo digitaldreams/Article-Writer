@@ -39,6 +39,49 @@ final class RetryJobTest extends WebTestCase
         self::assertSame($job->getId(), $message->llmJobId());
     }
 
+    public function testRetryOnJobQueuedOver10MinutesDispatchesItAgain(): void
+    {
+        $client = static::createClient();
+        $this->logIn($client);
+        $job = $this->job(LlmJobStatus::Queued);
+        $this->queuedMinutesAgo($job, 11);
+
+        $client->request('POST', '/jobs/'.$job->getId().'/retry');
+
+        self::assertResponseRedirects('/jobs/'.$job->getId().'/card', 303);
+        $sent = self::getContainer()->get('messenger.transport.llm_primary');
+        self::assertInstanceOf(InMemoryTransport::class, $sent);
+        self::assertCount(1, $sent->getSent());
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+        $em->clear();
+        self::assertFalse($em->find(LlmJob::class, $job->getId())?->isStuck(new \DateTimeImmutable()));
+    }
+
+    public function testRetryOnJobQueuedUnder10MinutesIsRefused(): void
+    {
+        $client = static::createClient();
+        $this->logIn($client);
+        $job = $this->job(LlmJobStatus::Queued);
+        $this->queuedMinutesAgo($job, 9);
+
+        $client->request('POST', '/jobs/'.$job->getId().'/retry');
+
+        self::assertResponseStatusCodeSame(409);
+    }
+
+    public function testStuckJobCardOffersRetry(): void
+    {
+        $client = static::createClient();
+        $this->logIn($client);
+        $job = $this->job(LlmJobStatus::Queued);
+        $this->queuedMinutesAgo($job, 11);
+
+        $client->request('GET', '/jobs/'.$job->getId().'/card');
+
+        self::assertSelectorTextContains('.job-error', 'most likely lost');
+        self::assertSelectorExists('form[action="/jobs/'.$job->getId().'/retry"]');
+    }
+
     public function testRetryOnNonFailedJobIsRefused(): void
     {
         $client = static::createClient();
@@ -60,6 +103,16 @@ final class RetryJobTest extends WebTestCase
         $client->request('POST', '/jobs/999999/retry');
 
         self::assertResponseStatusCodeSame(404);
+    }
+
+    private function queuedMinutesAgo(LlmJob $job, int $minutes): void
+    {
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+        $em->getConnection()->executeStatement(
+            'UPDATE llm_job SET created_at = :at WHERE id = :id',
+            ['at' => (new \DateTimeImmutable("-$minutes minutes"))->format('Y-m-d H:i:s'), 'id' => $job->getId()],
+        );
+        $em->clear();
     }
 
     private function job(LlmJobStatus $status): LlmJob

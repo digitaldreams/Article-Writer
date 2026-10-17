@@ -5,7 +5,6 @@ namespace App\Planning\CreatePlan;
 use App\Shared\Llm\AgentAnswer;
 use App\Planning\PlanInput;
 use App\Shared\Article\Article;
-use App\Shared\WriterProfile\WriterProfile;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\AgentInterface;
 use Symfony\AI\Platform\Message\Message;
@@ -18,7 +17,7 @@ use Twig\Environment;
 final readonly class GeneratePlanTitleHandler
 {
     public function __construct(
-        #[Autowire(service: 'ai.agent.secondary')]
+        #[Autowire(service: 'ai.agent.plan_title')]
         private AgentInterface $agent,
         private EntityManagerInterface $em,
         private Environment $twig,
@@ -29,12 +28,11 @@ final readonly class GeneratePlanTitleHandler
     {
         $article = $this->em->find(Article::class, $message->articleId) ?? throw new \RuntimeException('The article is gone.');
         $input = $this->em->getRepository(PlanInput::class)->findOneBy(['article' => $article]) ?? throw new \RuntimeException('The plan input is gone.');
-        $level = $this->em->getRepository(WriterProfile::class)->findOneBy(['user' => $article->getUser()])?->getLanguageLevel() ?? '';
+        $level = $article->getUser()->getLanguageLevel();
 
         $answer = AgentAnswer::object($this->agent->call(new MessageBag(
-            Message::forSystem($this->twig->render('planning/create_plan/generate_plan_title.md.twig', ['language_level' => $level])),
             Message::ofUser($this->twig->render('planning/_plan_input.md.twig', ['input' => $input])),
-        ), ['response_format' => PlanTitleAnswer::class]), PlanTitleAnswer::class);
+        ), ['response_format' => PlanTitleAnswer::class, 'template_vars' => ['language_level' => $level]]), PlanTitleAnswer::class);
 
         $article->setTitle($answer->title);
         $this->em->flush();

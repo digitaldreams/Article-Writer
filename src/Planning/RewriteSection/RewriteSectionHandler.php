@@ -4,7 +4,6 @@ namespace App\Planning\RewriteSection;
 
 use App\Shared\Llm\AgentAnswer;
 use App\Shared\Storage\ArticleFolder;
-use App\Shared\WriterProfile\WriterProfile;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\AgentInterface;
 use Symfony\AI\Platform\Message\Message;
@@ -18,7 +17,7 @@ use Twig\Environment;
 final readonly class RewriteSectionHandler
 {
     public function __construct(
-        #[Autowire(service: 'ai.agent.primary')]
+        #[Autowire(service: 'ai.agent.rewrite')]
         private AgentInterface $agent,
         private EntityManagerInterface $em,
         private ArticleFolder $folder,
@@ -33,17 +32,13 @@ final readonly class RewriteSectionHandler
         if (null === $rewrite) {
             return;
         }
-        $profile = $this->em->getRepository(WriterProfile::class)->findOneBy(['user' => $rewrite->getArticle()->getUser()]);
 
         $after = AgentAnswer::text($this->agent->call(new MessageBag(
-            Message::forSystem($this->twig->render('planning/rewrite_section/rewrite_section.md.twig', [
-                'language_level' => $profile?->getLanguageLevel() ?? '',
-            ])),
             Message::ofUser($this->twig->render('planning/rewrite_section/_request.md.twig', [
                 'body' => $this->folder->read($rewrite->getArticle()->getFolder(), 'article.md')['body'],
                 'rewrite' => $rewrite,
             ])),
-        )));
+        ), ['template_vars' => ['language_level' => $rewrite->getArticle()->getUser()->getLanguageLevel()]]));
         $after = trim(preg_replace('/\A## .*(\n|\z)/', '', $after) ?? $after);
         if ('' === $after) {
             throw new \RuntimeException('The model wrote an empty section.');

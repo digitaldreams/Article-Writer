@@ -2,7 +2,7 @@
 
 namespace App\Tests\Setup\SaveProfile;
 
-use App\Shared\WriterProfile\WriterProfile;
+use App\Shared\User\User;
 use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -61,6 +61,6 @@ final class SaveProfileTest extends WebTestCase
         ]);
 
         self::assertResponseStatusCodeSame(422);
-        self::assertSame(0, static::getContainer()->get(EntityManagerInterface::class)->getRepository(WriterProfile::class)->count([]));
+        self::assertSame('', static::getContainer()->get(EntityManagerInterface::class)->find(User::class, $this->author->getId())?->getLanguageLevel());
     }
 }

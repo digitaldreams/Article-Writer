@@ -18,7 +18,7 @@ use Twig\Environment;
 final readonly class GenerateFlowsHandler
 {
     public function __construct(
-        #[Autowire(service: 'ai.agent.primary')]
+        #[Autowire(service: 'ai.agent.flows')]
         private AgentInterface $agent,
         private EntityManagerInterface $em,
         private Environment $twig,
@@ -35,9 +35,8 @@ final readonly class GenerateFlowsHandler
         $context = $this->planContext->of($article);
 
         $answer = AgentAnswer::object($this->agent->call(new MessageBag(
-            Message::forSystem($this->twig->render('planning/generate_flows/generate_flows.md.twig', $context)),
             Message::ofUser($this->twig->render('planning/_plan_context.md.twig', $context)),
-        ), ['response_format' => FlowList::class]), FlowList::class);
+        ), ['response_format' => FlowList::class, 'template_vars' => ['language_level' => $context['language_level']]]), FlowList::class);
 
         // A weaker model may offer more than the 3 asked for; all of them are shown.
         if (\count($answer->flows) < 2) {

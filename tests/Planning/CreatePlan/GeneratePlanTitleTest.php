@@ -2,13 +2,13 @@
 
 namespace App\Tests\Planning\CreatePlan;
 
+use App\Tests\RenderingPlatform;
 use App\Planning\CreatePlan\PlanTitleAnswer;
 use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobStatus;
 use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Platform\Result\ObjectResult;
-use Symfony\AI\Platform\Test\InMemoryPlatform;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -67,7 +67,7 @@ final class GeneratePlanTitleTest extends WebTestCase
 
     private function fakeModel(callable $answer): void
     {
-        self::getContainer()->set('ai.platform.openai', new InMemoryPlatform($answer));
+        RenderingPlatform::install(self::getContainer(), 'openai', $answer);
     }
 
     private function createPlan(KernelBrowser $client, string $topic): void

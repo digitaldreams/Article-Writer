@@ -14,7 +14,7 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
-/** Autosave of one answer (fetch from Stimulus), or Skip (plain form submit). */
+/** Autosave of one answer (fetch from Stimulus), or Skip (plain form submit; q is the question to show next). */
 final class SaveAnswerController extends AbstractController
 {
     #[Route('/plans/{id<\d+>}/questions/{questionId<\d+>}', name: 'planning_save_answer', methods: ['POST'])]
@@ -31,11 +31,13 @@ final class SaveAnswerController extends AbstractController
             throw new ConflictHttpException('Answers can only change while the plan is at the questions step.');
         }
 
-        $request->request->has('skip') ? $question->skip() : $question->saveAnswer($request->request->getString('answer'));
+        // ponytail: an option that itself contains "; " won't show as checked again; rare in short options.
+        $answer = $request->request->all()['answer'] ?? '';
+        $request->request->has('skip') ? $question->skip() : $question->saveAnswer(\is_array($answer) ? implode('; ', array_filter($answer, 'is_string')) : (\is_string($answer) ? $answer : ''));
         $em->flush();
 
         return $request->request->has('skip')
-            ? $this->redirectToRoute('planning_answer_questions', ['id' => $article->getId()], Response::HTTP_SEE_OTHER)
+            ? $this->redirectToRoute('planning_answer_questions', ['id' => $article->getId(), 'q' => $request->request->getInt('q') ?: null], Response::HTTP_SEE_OTHER)
             : new Response(status: Response::HTTP_NO_CONTENT);
     }
 }

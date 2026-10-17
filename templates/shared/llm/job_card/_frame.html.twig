@@ -16,8 +16,9 @@
         {% if job.role != 'io' and job.provider != 'ollama' %}
             <p class="notice notice-warning job-cloud"><strong>Cloud model:</strong> plan data leaves this machine.</p>
         {% endif %}
-        {% if job.status.value == 'failed' %}
-            <p class="job-error">{{ job.error }}</p>
+        {% set stuck = job.isStuck(date()) %}
+        {% if job.status.value == 'failed' or stuck %}
+            <p class="job-error">{{ stuck ? 'Waiting over 10 minutes: the job was most likely lost. Retry sends it again.' : job.error }}</p>
             <form method="post" action="{{ path('llm_retry_job', {id: job.id}) }}">
                 <button class="button button-primary" type="submit">Retry</button>
             </form>

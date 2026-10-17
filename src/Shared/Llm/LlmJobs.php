@@ -22,8 +22,6 @@ final readonly class LlmJobs
         private string $secondaryPlatform,
         #[Autowire(env: 'AI_SECONDARY_MODEL')]
         private string $secondaryModel,
-        #[Autowire(env: 'AI_VISION_MODEL')]
-        private string $visionModel,
         #[Autowire('%app.ai.title_platform%')]
         private string $titlePlatform,
         #[Autowire(env: 'AI_TITLE_MODEL')]
@@ -38,7 +36,7 @@ final readonly class LlmJobs
     }
 
     /**
-     * @param 'primary'|'secondary'|'vision'|'title'|'poster'|'poster_image'|'io' $role
+     * @param 'primary'|'secondary'|'title'|'poster'|'poster_image'|'io' $role
      * @param \Closure(int): LlmJobMessage $message builds the message from the job id
      * @param User|null $user only for a job without an article; otherwise the article's user owns it
      */
@@ -47,7 +45,6 @@ final readonly class LlmJobs
         [$platform, $model] = match ($role) {
             'primary' => [$this->primaryPlatform, $this->primaryModel],
             'secondary' => [$this->secondaryPlatform, $this->secondaryModel],
-            'vision' => [$this->secondaryPlatform, $this->visionModel],
             'title' => [$this->titlePlatform, $this->titleModel],
             'poster' => [$this->posterPlatform, $this->posterModel],
             'poster_image' => [$this->posterPlatform, $this->posterImageModel],

@@ -2,13 +2,13 @@
 
 namespace App\Tests\Planning;
 
+use App\Tests\RenderingPlatform;
 use App\Planning\PlanInput;
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
 use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Platform\Result\ResultInterface;
-use Symfony\AI\Platform\Test\InMemoryPlatform;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -49,7 +49,7 @@ abstract class PlanningTestCase extends WebTestCase
     /** @param \Closure(mixed $input, array<string, mixed> $options): ResultInterface $answer */
     protected function fakePrimary(\Closure $answer): void
     {
-        self::getContainer()->set('ai.platform.ollama', new InMemoryPlatform(static fn ($model, $input, array $options) => $answer($input, $options)));
+        RenderingPlatform::install(self::getContainer(), 'ollama', static fn ($model, $input, array $options) => $answer($input, $options));
     }
 
     protected function consume(): void

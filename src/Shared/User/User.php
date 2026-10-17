@@ -2,6 +2,7 @@
 
 namespace App\Shared\User;
 
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -19,6 +20,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private string $password = '';
 
+    #[ORM\Column(type: Types::TEXT, options: ['default' => ''])]
+    private string $shortBio = '';
+
+    #[ORM\Column(type: Types::TEXT, options: ['default' => ''])]
+    private string $longBio = '';
+
+    /** The English level every prompt writes for; empty before Setup. */
+    #[ORM\Column(type: Types::TEXT, options: ['default' => ''])]
+    private string $languageLevel = '';
+
+    /** @var array<string, mixed>|null */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $structureProfile = null;
+
     public function __construct(
         #[ORM\Column(length: 180, unique: true)]
         private string $email,
@@ -28,6 +43,40 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getShortBio(): string
+    {
+        return $this->shortBio;
+    }
+
+    public function getLongBio(): string
+    {
+        return $this->longBio;
+    }
+
+    public function getLanguageLevel(): string
+    {
+        return $this->languageLevel;
+    }
+
+    public function updateProfile(string $shortBio, string $longBio, string $languageLevel): void
+    {
+        $this->shortBio = $shortBio;
+        $this->longBio = $longBio;
+        $this->languageLevel = $languageLevel;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function getStructureProfile(): ?array
+    {
+        return $this->structureProfile;
+    }
+
+    /** @param array<string, mixed> $structureProfile */
+    public function setStructureProfile(array $structureProfile): void
+    {
+        $this->structureProfile = $structureProfile;
     }
 
     public function getEmail(): string

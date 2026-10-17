@@ -62,6 +62,6 @@ final readonly class PlanFiles
     /** @param list<Question> $answered */
     private function answers(array $answered): string
     {
-        return implode("\n", array_map(static fn (Question $q) => '## '.$q->getText()."\n\n*".ucfirst($q->getRole()->value)."*\n\n".$q->getAnswer()."\n", $answered));
+        return implode("\n", array_map(static fn (Question $q) => '## '.$q->getText()."\n\n".$q->getAnswer()."\n", $answered));
     }
 }

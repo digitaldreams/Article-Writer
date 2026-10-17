@@ -18,19 +18,16 @@ final class AddReferencesType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $files = ['multiple' => true, 'required' => false];
-
         $builder
             ->add('links', TextareaType::class, [
                 'required' => false,
                 'help' => 'One URL per line',
                 'constraints' => [new Callback($this->validateUrls(...))],
             ])
-            ->add('docs', FileType::class, $files + [
+            ->add('docs', FileType::class, [
+                'multiple' => true,
+                'required' => false,
                 'constraints' => [new All(new File(mimeTypes: ['text/markdown', 'text/x-markdown', 'text/plain', 'application/pdf']))],
-            ])
-            ->add('images', FileType::class, $files + [
-                'constraints' => [new All(new File(mimeTypes: ['image/*']))],
             ])
             ->add('add', SubmitType::class, ['label' => 'Add references']);
     }

@@ -6,5 +6,4 @@ enum ReferenceType: string
 {
     case Link = 'link';
     case Doc = 'doc';
-    case Image = 'image';
 }

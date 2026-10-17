@@ -2,7 +2,7 @@
 
 namespace App\Tests\Setup\EditStructureProfile;
 
-use App\Shared\WriterProfile\WriterProfile;
+use App\Shared\User\User;
 use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -27,7 +27,7 @@ final class EditStructureProfileTest extends WebTestCase
         ]));
 
         self::assertResponseRedirects('/setup/profile');
-        $profile = self::getContainer()->get(EntityManagerInterface::class)->getRepository(WriterProfile::class)->findOneBy([]);
+        $profile = self::getContainer()->get(EntityManagerInterface::class)->find(User::class, $this->author->getId());
         self::assertSame('a question', $profile?->getStructureProfile()['openingType'] ?? null);
         self::assertSame('next steps', $profile->getStructureProfile()['closing']);
     }

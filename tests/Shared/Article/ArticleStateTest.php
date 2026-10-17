@@ -12,8 +12,8 @@ use PHPUnit\Framework\TestCase;
 final class ArticleStateTest extends TestCase
 {
     private const ALLOWED = [
-        'plan' => ['questions'],
-        'questions' => ['flows'],
+        'plan' => ['questions', 'outline'],
+        'questions' => ['flows', 'outline'],
         'flows' => ['outline'],
         'outline' => ['outline', 'finalize'],
         'finalize' => ['outline', 'flows', 'approved'],

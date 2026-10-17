@@ -85,6 +85,24 @@ final class SuggestPunchlinesTest extends PlanningTestCase
         self::assertSelectorNotExists('.punchline');
     }
 
+    public function testTheAgentWritesForTheAuthorsLanguageLevel(): void
+    {
+        $article = $this->writtenArticle();
+        $article->getUser()->updateProfile('', '', 'intermediate');
+        $this->em()->flush();
+        $prompt = '';
+        $this->fakePrimary(static function ($input) use (&$prompt) {
+            $prompt = (string) $input->getSystemMessage()?->getContent();
+
+            return self::punchlines('A');
+        });
+
+        $this->client->request('POST', $this->shareUrl($article));
+        $this->consume();
+
+        self::assertStringContainsString('for a reader with intermediate English', $prompt);
+    }
+
     private function writtenArticle(): Article
     {
         $article = $this->planIn(ArticleState::Written);

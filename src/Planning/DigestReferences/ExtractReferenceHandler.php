@@ -12,7 +12,7 @@ use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-/** Fetches a link or reads an uploaded doc (images go to DescribeImage), saves the text, then queues its digest. */
+/** Fetches a link or reads an uploaded doc, saves the text, then queues its digest. */
 #[AsMessageHandler(fromTransport: 'io')]
 final readonly class ExtractReferenceHandler
 {
@@ -31,7 +31,6 @@ final readonly class ExtractReferenceHandler
         $text = trim(match ($reference->getType()) {
             ReferenceType::Link => $this->pageText($this->httpClient->request('GET', $reference->getLocation())->getContent()),
             ReferenceType::Doc => $this->docText($reference),
-            ReferenceType::Image => throw new \LogicException('Images are described by DescribeImage.'),
         });
         if ('' === $text) {
             throw new \RuntimeException('The reference has no readable text.');

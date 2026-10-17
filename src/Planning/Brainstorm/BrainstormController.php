@@ -39,17 +39,15 @@ final class BrainstormController extends AbstractController
         }
 
         if ($form->isSubmitted() && $form->isValid()) {
-            /** @var array{links: ?string, docs: list<UploadedFile>, images: list<UploadedFile>} $data */
+            /** @var array{links: ?string, docs: list<UploadedFile>} $data */
             $data = $form->getData();
             $em->wrapInTransaction(function () use ($article, $data, $em, $articleFolder, $events): void {
                 $references = [];
                 foreach (UrlLines::split($data['links']) as $url) {
                     $references[] = new Reference($article, ReferenceType::Link, $url);
                 }
-                foreach ([[ReferenceType::Doc, $data['docs']], [ReferenceType::Image, $data['images']]] as [$type, $files]) {
-                    foreach ($files as $file) {
-                        $references[] = new Reference($article, $type, $articleFolder->storeUpload($article->getFolder(), $file));
-                    }
+                foreach ($data['docs'] as $file) {
+                    $references[] = new Reference($article, ReferenceType::Doc, $articleFolder->storeUpload($article->getFolder(), $file));
                 }
                 foreach ($references as $reference) {
                     $em->persist($reference);
@@ -62,6 +60,7 @@ final class BrainstormController extends AbstractController
         }
 
         $references = $em->getRepository(Reference::class)->findBy(['article' => $article], ['id' => 'ASC']);
+        $jobs = $em->getRepository(LlmJob::class);
 
         return $this->render('planning/brainstorm/index.html.twig', [
             'article' => $article,
@@ -69,8 +68,8 @@ final class BrainstormController extends AbstractController
             'form' => $form,
             'references' => $references,
             'reading' => \count(array_filter($references, static fn (Reference $r) => ReferenceStatus::Pending === $r->getStatus())),
-            'failed_jobs' => $em->getRepository(LlmJob::class)->findBy(
-                ['article' => $article, 'step' => ['extract_reference', 'describe_image', 'digest_reference'], 'status' => LlmJobStatus::Failed],
+            'failed_jobs' => $jobs->findBy(
+                ['article' => $article, 'step' => ['extract_reference', 'digest_reference'], 'status' => LlmJobStatus::Failed],
                 ['id' => 'ASC'],
             ),
         ], new Response(status: $form->isSubmitted() ? 422 : 200));

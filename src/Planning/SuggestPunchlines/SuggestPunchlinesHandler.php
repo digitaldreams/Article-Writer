@@ -44,7 +44,7 @@ final readonly class SuggestPunchlinesHandler
                 'writer_idea' => $message->writerIdea,
                 'body' => $this->folder->read($article->getFolder(), 'article.md')['body'],
             ])),
-        ), ['response_format' => PunchlineList::class]), PunchlineList::class);
+        ), ['response_format' => PunchlineList::class, 'template_vars' => ['language_level' => $article->getUser()->getLanguageLevel()]]), PunchlineList::class);
 
         $texts = array_values(array_filter(array_map('trim', $answer->punchlines), static fn (string $t) => '' !== $t));
         if (self::PUNCHLINES_PER_ROUND !== \count($texts)) {

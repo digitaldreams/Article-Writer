@@ -248,6 +248,24 @@ final class SuggestPostersTest extends PlanningTestCase
         return $idea;
     }
 
+    public function testTheAgentWritesForTheAuthorsLanguageLevel(): void
+    {
+        $article = $this->writtenArticle();
+        $article->getUser()->updateProfile('', '', 'intermediate');
+        $this->em()->flush();
+        $prompt = '';
+        $this->fakePrimary(static function ($input) use (&$prompt) {
+            $prompt = (string) $input->getSystemMessage()?->getContent();
+
+            return self::posters('A');
+        });
+
+        $this->client->request('POST', $this->posterUrl($article));
+        $this->consume();
+
+        self::assertStringContainsString('for a reader with intermediate English', $prompt);
+    }
+
     private function writtenArticle(): Article
     {
         $article = $this->planIn(ArticleState::Written);

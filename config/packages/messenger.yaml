@@ -41,7 +41,6 @@ framework:
             'App\Setup\ImportArticles\MergeStructureProfile': llm_secondary
             'App\Planning\CreatePlan\GeneratePlanTitle': llm_secondary
             'App\Planning\DigestReferences\ExtractReference': io
-            'App\Planning\DigestReferences\DescribeImage': llm_secondary
             'App\Planning\DigestReferences\DigestReference': llm_secondary
             'App\Planning\AskQuestions\AskQuestions': llm_primary
             'App\Planning\GenerateFlows\GenerateFlows': llm_primary

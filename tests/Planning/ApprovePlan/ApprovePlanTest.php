@@ -6,7 +6,6 @@ use App\Planning\OutlineItem;
 use App\Planning\OutlineReview;
 use App\Planning\PlanApproved;
 use App\Planning\Question;
-use App\Planning\QuestionRole;
 use App\Planning\Reference;
 use App\Planning\ReferenceType;
 use App\Shared\Article\Article;
@@ -46,7 +45,7 @@ final class ApprovePlanTest extends PlanningTestCase
 
         $answers = $folder->read($article->getFolder(), 'answers.md');
         self::assertSame(['plan_id' => $article->getId(), 'answered' => 1, 'total' => 2], $answers['frontMatter']);
-        self::assertSame("## Which problem does it solve?\n\n*Interviewer*\n\nBoilerplate.\n", $answers['body']);
+        self::assertSame("## Which problem does it solve?\n\nBoilerplate.\n", $answers['body']);
     }
 
     public function testNoAnswersMeansNoAnswersFile(): void
@@ -98,7 +97,7 @@ final class ApprovePlanTest extends PlanningTestCase
         (new Filesystem())->mkdir(self::getContainer()->get(ArticleFolder::class)->pathOf($article->getFolder(), ''));
         $first = new OutlineItem($article, 1, 0, 'The old pain', 'Untyped properties.');
         $first->suggest('The old pains', 'Untyped properties hurt.');
-        $question = new Question($article, QuestionRole::Interviewer, 'Which problem does it solve?', 0);
+        $question = new Question($article, 'Which problem does it solve?', 0);
         if ($answered) {
             $question->saveAnswer('Boilerplate.');
         }
@@ -106,7 +105,7 @@ final class ApprovePlanTest extends PlanningTestCase
             $first,
             new OutlineItem($article, 1, 1, 'Typed properties', 'What they fix.'),
             $question,
-            new Question($article, QuestionRole::Reader, 'Why should I care?', 1),
+            new Question($article, 'Why should I care?', 1),
             new Reference($article, ReferenceType::Link, 'https://php.net/8.4'),
             new Reference($article, ReferenceType::Doc, 'refs/notes.md'),
         ] as $entity) {

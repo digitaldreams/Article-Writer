@@ -6,7 +6,6 @@ use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobs;
 use App\Shared\Llm\LlmJobStatus;
 use App\Shared\User\User;
-use App\Shared\WriterProfile\WriterProfile;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -58,11 +57,7 @@ final class ImportArticlesController extends AbstractController
         $modified = \is_array($modified) ? $modified : [];
 
         $now = new \DateTimeImmutable();
-        $em->wrapInTransaction(function () use ($files, $modified, $em, $jobs, $now, $user): void {
-            // The row that SettleStructureProfile locks must exist before any job can settle.
-            if (null === $em->getRepository(WriterProfile::class)->findOneBy([])) {
-                $em->persist(new WriterProfile($user));
-            }
+        $em->wrapInTransaction(function () use ($files, $modified, $jobs, $now, $user): void {
             foreach ($files as $file) {
                 $name = $file->getClientOriginalName();
                 $ms = $modified[$name] ?? null;

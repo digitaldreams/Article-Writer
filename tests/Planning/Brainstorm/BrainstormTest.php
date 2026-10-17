@@ -16,23 +16,20 @@ final class BrainstormTest extends PlanningTestCase
         $article = $this->planIn(ArticleState::Plan);
         $dir = sys_get_temp_dir();
         file_put_contents($dir.'/notes.md', '# notes');
-        file_put_contents($dir.'/shot.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=='));
 
         $crawler = $this->client->request('GET', '/plans/'.$article->getId().'/brainstorm');
         self::assertSelectorTextSame('nav.steps a[aria-current=page]', 'Brainstorming');
         $form = $crawler->selectButton('Add references')->form(['add_references[links]' => "https://symfony.com/doc\n\n"]);
         $form['add_references[docs]'][0]->upload($dir.'/notes.md');
-        $form['add_references[images]'][0]->upload($dir.'/shot.png');
         $this->client->submit($form);
 
         self::assertResponseRedirects('/plans/'.$article->getId().'/brainstorm');
         $references = $this->em()->getRepository(Reference::class)->findBy(['article' => $article], ['id' => 'ASC']);
-        self::assertSame([ReferenceType::Link, ReferenceType::Doc, ReferenceType::Image], array_map(static fn (Reference $r) => $r->getType(), $references));
-        self::assertSame(['https://symfony.com/doc', 'refs/notes.md', 'refs/shot.png'], array_map(static fn (Reference $r) => $r->getLocation(), $references));
+        self::assertSame([ReferenceType::Link, ReferenceType::Doc], array_map(static fn (Reference $r) => $r->getType(), $references));
+        self::assertSame(['https://symfony.com/doc', 'refs/notes.md'], array_map(static fn (Reference $r) => $r->getLocation(), $references));
         $root = self::getContainer()->getParameter('kernel.project_dir').'/var/test-articles/'.$article->getFolder();
         self::assertFileExists($root.'/refs/notes.md');
-        self::assertFileExists($root.'/refs/shot.png');
-        self::assertSame(['extract_reference', 'extract_reference', 'describe_image'], $this->jobSteps());
+        self::assertSame(['extract_reference', 'extract_reference'], $this->jobSteps());
     }
 
     public function testBadUrlGives422AndAddsNothing(): void
@@ -65,7 +62,7 @@ final class BrainstormTest extends PlanningTestCase
         $this->em()->flush();
 
         $this->client->request('GET', '/plans/'.$article->getId().'/brainstorm');
-        self::assertSelectorExists('button[disabled]:contains("Next: questions")');
+        self::assertSelectorExists('button[disabled]:contains("Next: outline")');
         self::assertSelectorTextContains('main', 'Reading 1 reference');
 
         $this->client->request('POST', '/plans/'.$article->getId().'/brainstorm/next');
@@ -86,6 +83,43 @@ final class BrainstormTest extends PlanningTestCase
         self::assertResponseRedirects('/plans/'.$article->getId().'/questions');
         self::assertSame(ArticleState::Questions, $this->reload($article)->getState());
         self::assertSame(['ask_questions'], $this->jobSteps());
+    }
+
+    public function testNextOutlineSkipsQuestionsAndFlowsAndQueuesTheOutlineJob(): void
+    {
+        $article = $this->planIn(ArticleState::Plan);
+
+        $this->client->request('POST', '/plans/'.$article->getId().'/brainstorm/next', ['to' => 'outline']);
+
+        self::assertResponseRedirects('/plans/'.$article->getId().'/outline');
+        self::assertSame(ArticleState::Outline, $this->reload($article)->getState());
+        self::assertSame(['generate_outline'], $this->jobSteps());
+    }
+
+    public function testSkippedQuestionsAndFlowsSaySo(): void
+    {
+        $article = $this->planIn(ArticleState::Plan);
+        $this->client->request('POST', '/plans/'.$article->getId().'/brainstorm/next', ['to' => 'outline']);
+
+        $this->client->request('GET', '/plans/'.$article->getId().'/questions');
+        self::assertSelectorTextContains('main', 'Skipped: this plan went straight to the outline.');
+        $this->client->request('GET', '/plans/'.$article->getId().'/flows');
+        self::assertSelectorTextContains('main', 'Skipped: this plan went straight to the outline.');
+    }
+
+    public function testDoneReferenceShowsTheSavedNotesInACollapsedPanel(): void
+    {
+        $article = $this->planIn(ArticleState::Plan);
+        $reference = new Reference($article, ReferenceType::Link, 'https://symfony.com/doc');
+        $reference->markDone('Symfony 8 uses #[Route] on controllers.');
+        $this->em()->persist($reference);
+        $this->em()->flush();
+
+        $this->client->request('GET', '/plans/'.$article->getId().'/brainstorm');
+
+        self::assertSelectorExists('details.reference:not([open])');
+        self::assertSelectorTextContains('details.reference summary', 'https://symfony.com/doc');
+        self::assertSelectorTextContains('details.reference .reference-digest', 'Symfony 8 uses #[Route] on controllers.');
     }
 
     public function testAfterNextTheBrainstormIsReadOnly(): void

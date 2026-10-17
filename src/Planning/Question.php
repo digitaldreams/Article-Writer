@@ -29,8 +29,6 @@ class Question
         #[ORM\ManyToOne]
         #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
         private Article $article,
-        #[ORM\Column(enumType: QuestionRole::class, length: 20)]
-        private QuestionRole $role,
         #[ORM\Column(type: Types::TEXT)]
         private string $text,
         #[ORM\Column]
@@ -38,6 +36,9 @@ class Question
         /** @var list<string> empty for an open question */
         #[ORM\Column(type: Types::JSON)]
         private array $options = [],
+        /** With options: true lets the writer pick several (checkboxes), false exactly one (radio). */
+        #[ORM\Column(options: ['default' => false])]
+        private bool $multiple = false,
     ) {
         $this->user = $article->getUser();
     }
@@ -50,11 +51,6 @@ class Question
     public function getArticle(): Article
     {
         return $this->article;
-    }
-
-    public function getRole(): QuestionRole
-    {
-        return $this->role;
     }
 
     public function getText(): string
@@ -73,6 +69,12 @@ class Question
         return $this->options;
     }
 
+    public function isMultiple(): bool
+    {
+        return $this->multiple;
+    }
+
+    /** Several picks are saved on one line, joined by "; ", so prompts and answers.md read them as text. */
     public function getAnswer(): ?string
     {
         return $this->answer;

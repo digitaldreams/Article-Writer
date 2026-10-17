@@ -20,7 +20,7 @@ final readonly class SettleReferences
     public function onFailed(WorkerMessageFailedEvent $event): void
     {
         $message = $event->getEnvelope()->getMessage();
-        if (!$event->willRetry() && ($message instanceof ExtractReference || $message instanceof DescribeImage || $message instanceof DigestReference)) {
+        if (!$event->willRetry() && ($message instanceof ExtractReference || $message instanceof DigestReference)) {
             $this->finish($message->referenceId, null);
         }
     }

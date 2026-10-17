@@ -8,7 +8,6 @@ use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
 use App\Shared\Llm\AgentAnswer;
 use App\Shared\Storage\ArticleFolder;
-use App\Shared\WriterProfile\WriterProfile;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\AgentInterface;
 use Symfony\AI\Platform\Message\Message;
@@ -25,7 +24,7 @@ use Twig\Environment;
 final readonly class WriteArticleHandler
 {
     public function __construct(
-        #[Autowire(service: 'ai.agent.primary')]
+        #[Autowire(service: 'ai.agent.article')]
         private AgentInterface $agent,
         private EntityManagerInterface $em,
         private ArticleFolder $folder,
@@ -37,20 +36,17 @@ final readonly class WriteArticleHandler
     {
         $article = $this->em->find(Article::class, $message->articleId) ?? throw new \RuntimeException('The article is gone.');
         $folder = $article->getFolder();
-        $profile = $this->em->getRepository(WriterProfile::class)->findOneBy(['user' => $article->getUser()]);
+        $user = $article->getUser();
 
         $body = AgentAnswer::text($this->agent->call(new MessageBag(
-            Message::forSystem($this->twig->render('planning/write_article/write_article.md.twig', [
-                'language_level' => $profile?->getLanguageLevel() ?? '',
-                'structure_profile' => $profile?->getStructureProfile() ?? [],
-            ])),
             Message::ofUser($this->twig->render('planning/write_article/_plan_files.md.twig', [
                 'idea' => $this->folder->read($folder, 'idea.md')['body'],
                 'outline' => $this->folder->read($folder, 'outline.md')['body'],
                 'answers' => file_exists($this->folder->pathOf($folder, 'answers.md')) ? $this->folder->read($folder, 'answers.md')['body'] : null,
                 'digests' => $this->em->getRepository(Reference::class)->findBy(['article' => $article, 'status' => ReferenceStatus::Done], ['id' => 'ASC']),
+                'structure_profile' => $user->getStructureProfile() ?? [],
             ])),
-        )));
+        ), ['template_vars' => ['language_level' => $user->getLanguageLevel()]]));
         if ('' === $body) {
             throw new \RuntimeException('The model wrote an empty article.');
         }

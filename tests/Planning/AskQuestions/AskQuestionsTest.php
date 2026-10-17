@@ -2,11 +2,11 @@
 
 namespace App\Tests\Planning\AskQuestions;
 
+use App\Tests\RenderingPlatform;
 use App\Planning\AskQuestions\AskedQuestion;
 use App\Planning\AskQuestions\QuestionList;
 use App\Planning\CreatePlan\PlanTitleAnswer;
 use App\Planning\Question;
-use App\Planning\QuestionRole;
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
 use App\Shared\Llm\LlmJob;
@@ -16,7 +16,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Platform\Result\ObjectResult;
 use Symfony\AI\Platform\Result\ResultInterface;
 use Symfony\AI\Platform\Result\TextResult;
-use Symfony\AI\Platform\Test\InMemoryPlatform;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -27,16 +26,18 @@ final class AskQuestionsTest extends WebTestCase
 {
     use LogsInAuthor;
 
-    public function testNextAfterBrainstormingMovesToQuestionsAndSavesTheTaggedQuestions(): void
+    public function testNextAfterBrainstormingMovesToQuestionsAndSavesTheReadersQuestions(): void
     {
         $client = $this->client();
-        $prompt = '';
-        $this->fakeQuestions(static function ($input) use (&$prompt) {
-            $prompt = (string) $input->getSystemMessage()?->getContent();
+        $system = $request = '';
+        $this->fakeQuestions(static function ($input) use (&$system, &$request) {
+            $system = (string) $input->getSystemMessage()?->getContent();
+            $request = (string) $input->getUserMessage()?->asText();
 
             return new ObjectResult(new QuestionList([
-                new AskedQuestion(QuestionRole::Interviewer, 'Which problem does it solve?'),
-                new AskedQuestion(QuestionRole::Reader, 'Which hook works for you?', ['Less boilerplate', 'Safer types']),
+                new AskedQuestion('Which problem does it solve?'),
+                new AskedQuestion('Which hook works for you?', ['Less boilerplate', 'Safer types']),
+                new AskedQuestion('What stays out?', ['Benchmarks', 'Old PHP versions'], multiple: true),
             ]));
         });
         $this->createPlan($client);
@@ -45,16 +46,25 @@ final class AskQuestionsTest extends WebTestCase
 
         self::assertSame(ArticleState::Questions, $this->article()->getState());
         self::assertSame(
-            [['interviewer', 'Which problem does it solve?', []], ['reader', 'Which hook works for you?', ['Less boilerplate', 'Safer types']]],
-            array_map(static fn (Question $q) => [$q->getRole()->value, $q->getText(), $q->getOptions()], $this->questions()),
+            [
+                ['Which problem does it solve?', [], false],
+                ['Which hook works for you?', ['Less boilerplate', 'Safer types'], false],
+                ['What stays out?', ['Benchmarks', 'Old PHP versions'], true],
+            ],
+            array_map(static fn (Question $q) => [$q->getText(), $q->getOptions(), $q->isMultiple()], $this->questions()),
         );
-        self::assertStringContainsString('Audience: PHP developers', $prompt);
+        self::assertStringStartsWith('Your only job: before the outline is made', $system);
+        self::assertStringContainsString('Ask 5 questions or fewer', $system);
+        self::assertStringNotContainsString('{', $system);
+        self::assertStringContainsString('Audience: PHP developers', $system);
+        self::assertStringContainsString('Level: not given', $system);
+        self::assertStringContainsString('Audience: PHP developers', $request);
     }
 
     public function testMoreThanFiveQuestionsFailTheJobWithRetry(): void
     {
         $client = $this->client();
-        $this->fakeQuestions(static fn () => new ObjectResult(new QuestionList(array_fill(0, 6, new AskedQuestion(QuestionRole::Reader, 'Why?')))));
+        $this->fakeQuestions(static fn () => new ObjectResult(new QuestionList(array_fill(0, 6, new AskedQuestion('Why?')))));
         $this->createPlan($client);
 
         $this->consume();
@@ -83,7 +93,7 @@ final class AskQuestionsTest extends WebTestCase
         $this->fakeQuestions(static function () use (&$round) {
             ++$round;
 
-            return new ObjectResult(new QuestionList([new AskedQuestion(QuestionRole::Interviewer, 'Round '.$round)]));
+            return new ObjectResult(new QuestionList([new AskedQuestion('Round '.$round)]));
         });
         $this->createPlan($client);
         $this->consume();
@@ -107,8 +117,8 @@ final class AskQuestionsTest extends WebTestCase
     /** @param \Closure(mixed): ResultInterface $answer */
     private function fakeQuestions(\Closure $answer): void
     {
-        self::getContainer()->set('ai.platform.ollama', new InMemoryPlatform(static fn ($model, $input) => $answer($input)));
-        self::getContainer()->set('ai.platform.openai', new InMemoryPlatform(static fn () => new ObjectResult(new PlanTitleAnswer('A title'))));
+        RenderingPlatform::install(self::getContainer(), 'ollama', static fn ($model, $input) => $answer($input));
+        RenderingPlatform::install(self::getContainer(), 'openai', static fn () => new ObjectResult(new PlanTitleAnswer('A title')));
     }
 
     private function createPlan(KernelBrowser $client): void

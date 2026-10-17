@@ -19,8 +19,9 @@ enum ArticleState: string
     public function allowedNext(): array
     {
         return match ($this) {
-            self::Plan => [self::Questions],
-            self::Questions => [self::Flows],
+            // Questions and flows are optional: a solid idea goes straight to the outline.
+            self::Plan => [self::Questions, self::Outline],
+            self::Questions => [self::Flows, self::Outline],
             self::Flows => [self::Outline],
             self::Outline => [self::Outline, self::Finalize],
             self::Finalize => [self::Outline, self::Flows, self::Approved],

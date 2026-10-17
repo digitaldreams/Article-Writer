@@ -20,7 +20,7 @@ use Twig\Environment;
 final readonly class FinalCheckupHandler
 {
     public function __construct(
-        #[Autowire(service: 'ai.agent.primary')]
+        #[Autowire(service: 'ai.agent.checkup')]
         private AgentInterface $agent,
         private EntityManagerInterface $em,
         private Environment $twig,
@@ -36,9 +36,8 @@ final readonly class FinalCheckupHandler
         $context = $this->planContext->of($article) + ['items' => $items];
 
         $answer = AgentAnswer::object($this->agent->call(new MessageBag(
-            Message::forSystem($this->twig->render('planning/final_checkup/final_checkup.md.twig', $context)),
             Message::ofUser($this->twig->render('planning/final_checkup/_outline.md.twig', $context)),
-        ), ['response_format' => CheckupAnswer::class]), CheckupAnswer::class);
+        ), ['response_format' => CheckupAnswer::class, 'template_vars' => ['language_level' => $context['language_level']]]), CheckupAnswer::class);
 
         if (\count($answer->items) !== \count($items)) {
             throw new \RuntimeException(\sprintf('The checkup polished %d items; the outline has %d.', \count($answer->items), \count($items)));

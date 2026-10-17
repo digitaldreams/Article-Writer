@@ -15,3 +15,10 @@
 - {{ reference.location }}: {{ reference.digest }}
 {% endfor %}
 {% endif %}
+{% if structure_profile is not empty %}
+
+# The writer's usual structure
+{% for key, value in structure_profile %}
+- {{ key }}: {{ value }}
+{% endfor %}
+{% endif %}

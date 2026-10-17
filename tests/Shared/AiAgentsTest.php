@@ -7,7 +7,7 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class AiAgentsTest extends KernelTestCase
 {
-    public function testPrimaryAndSecondaryAgentsAnswerThroughTheirPlatformAndModelFromEnv(): void
+    public function testStepAgentsAnswerThroughTheirRolesPlatformAndModelFromEnv(): void
     {
         $container = self::getContainer();
         foreach (['ollama', 'openai'] as $platform) {
@@ -16,7 +16,16 @@ final class AiAgentsTest extends KernelTestCase
             ));
         }
 
-        self::assertSame('ollama:test-primary', $container->get('ai.agent.primary')->call('hi')->getContent());
-        self::assertSame('openai:test-secondary', $container->get('ai.agent.secondary')->call('hi')->getContent());
+        self::assertSame('ollama:test-primary', $container->get('ai.agent.outline')->call('hi')->getContent());
+        self::assertSame('openai:test-secondary', $container->get('ai.agent.digest')->call('hi')->getContent());
+    }
+
+    public function testEveryStepPromptIsAnMdFileOnItsAgent(): void
+    {
+        $dir = self::getContainer()->getParameter('kernel.project_dir').'/prompts';
+        foreach (['plan_title', 'digest', 'structure_notes', 'structure_profile', 'questions', 'flows', 'outline', 'checkup', 'article', 'review', 'rewrite', 'title', 'poster', 'share'] as $agent) {
+            self::assertFileExists($dir.'/'.$agent.'_agent.md');
+            self::assertTrue(self::getContainer()->has('ai.agent.'.$agent), $agent);
+        }
     }
 }

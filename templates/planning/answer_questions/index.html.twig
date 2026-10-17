@@ -11,30 +11,35 @@
     <h1>{{ article.title }}</h1>
 
     <div {% if waiting %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
+        {# While answering: one question at a time. Afterwards: all of them, read-only. #}
+        {% set one_by_one = editable and questions is not empty %}
         <section>
-            <h2>Questions</h2>
+            <div class="page-head">
+                <h2>Questions</h2>
+                {% if one_by_one %}<span class="question-progress">Question {{ current }} / {{ questions|length }}</span>{% endif %}
+            </div>
             {% if article.state.value == 'plan' %}
                 <p class="muted">The questions come once you finish <a href="{{ path('planning_brainstorm', {id: article.id}) }}">brainstorming</a>.</p>
+            {% elseif not ask_job %}
+                <p class="muted">Skipped: this plan went straight to the outline.</p>
             {% endif %}
             {% if ask_job and ask_job.status.value != 'done' %}
                 {% include 'shared/llm/job_card/_frame.html.twig' with {job: ask_job} only %}
             {% endif %}
-            {% for question in questions %}
+            {% for question in one_by_one ? [questions[current - 1]] : questions %}
                 <article class="card question{{ question.skipped ? ' skipped' : '' }}">
-                    <p class="question-head">
-                        <span class="badge badge-neutral">{{ question.role.value|capitalize }}</span>
-                        {% if question.skipped %}<span class="badge badge-neutral">Skipped</span>{% endif %}
-                    </p>
+                    {% if question.skipped %}<p class="question-head"><span class="badge badge-neutral">Skipped</span></p>{% endif %}
                     <form method="post" action="{{ path('planning_save_answer', {id: article.id, questionId: question.id}) }}" data-controller="autosave">
                         {% if question.options is empty %}
                             <label for="answer-{{ question.id }}">{{ question.text }}</label>
-                            <textarea id="answer-{{ question.id }}" name="answer" rows="4" data-action="input->autosave#queue" {{ editable ? '' : 'disabled' }}>{{ question.answer }}</textarea>
+                            <textarea id="answer-{{ question.id }}" name="answer" rows="4" data-action="input->autosave#queue" {{ editable ? 'autofocus' : 'disabled' }}>{{ question.answer }}</textarea>
                         {% else %}
+                            {% set chosen = question.multiple ? (question.answer ?? '')|split('; ') : [question.answer] %}
                             <fieldset class="choices">
-                                <legend>{{ question.text }}</legend>
+                                <legend>{{ question.text }}{% if question.multiple %} <span class="muted">Pick all that fit.</span>{% endif %}</legend>
                                 {% for option in question.options %}
                                     <label>
-                                        <input type="radio" name="answer" value="{{ option }}" data-action="change->autosave#save" {{ question.answer == option ? 'checked' : '' }} {{ editable ? '' : 'disabled' }}>
+                                        <input type="{{ question.multiple ? 'checkbox' : 'radio' }}" name="answer{{ question.multiple ? '[]' }}" value="{{ option }}" data-action="change->autosave#save" {{ option in chosen ? 'checked' : '' }} {{ editable ? '' : 'disabled' }}>
                                         {{ option }}
                                     </label>
                                 {% endfor %}
@@ -42,15 +47,24 @@
                         {% endif %}
                         <p class="form-actions">
                             <span class="muted" data-autosave-target="status" aria-live="polite"></span>
+                            {% if one_by_one %}<input type="hidden" name="q" value="{{ current + 1 }}">{% endif %}
                             {% if editable and not question.skipped %}<button class="button button-secondary button-small" type="submit" name="skip" value="1">Skip</button>{% endif %}
                         </p>
                     </form>
                 </article>
             {% endfor %}
 
+            {% if one_by_one %}
+                <nav class="question-nav" aria-label="Questions">
+                    {% if current > 1 %}<a class="button button-secondary" href="{{ path('planning_answer_questions', {id: article.id, q: current - 1}) }}">← Previous</a>{% endif %}
+                    {% if current < questions|length %}<a class="button button-secondary question-next" href="{{ path('planning_answer_questions', {id: article.id, q: current + 1}) }}">Next question →</a>{% endif %}
+                </nav>
+            {% endif %}
+
             {% if editable and ask_job and ask_job.status.value == 'done' %}
-                <form method="post" action="{{ path('planning_finish_questions', {id: article.id}) }}">
-                    <button class="button button-primary" type="submit">Next: flows</button>
+                <form method="post" action="{{ path('planning_finish_questions', {id: article.id}) }}" class="form-actions">
+                    <button class="button button-secondary" type="submit" name="to" value="flows">Show flows first</button>
+                    <button class="button button-primary" type="submit" name="to" value="outline">Next: outline</button>
                 </form>
             {% endif %}
         </section>
