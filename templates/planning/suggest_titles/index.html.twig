@@ -22,6 +22,9 @@
                 <fieldset class="choices">
                     <legend>Pick a title and subtitle</legend>
                     {% for suggestion in suggestions %}
+                        {% if suggestion.writerIdea and (loop.first or suggestions[loop.index0 - 1].round != suggestion.round) %}
+                            <p class="writer-idea"><strong>Your idea:</strong> {{ suggestion.writerIdea }}</p>
+                        {% endif %}
                         <label>
                             <input type="radio" name="suggestion" value="{{ suggestion.id }}" required {{ suggestion.title == article.title and suggestion.subtitle == subtitle ? 'checked' : '' }} {{ written ? '' : 'disabled' }}>
                             <span>
@@ -40,8 +43,12 @@
         {% endif %}
 
         {% if written and not waiting %}
-            <form method="post" action="{{ path('planning_suggest_titles', {id: article.id}) }}">
-                <button class="button button-secondary" type="submit">{{ suggestions is empty ? 'Show title suggestions' : 'Suggest more' }}</button>
+            <form class="card share-idea" method="post" action="{{ path('planning_suggest_titles', {id: article.id}) }}">
+                <label for="title-idea">Your idea for the title and subtitle (optional)</label>
+                <textarea id="title-idea" name="idea" rows="3" placeholder="Words, angle or tone you want"></textarea>
+                <div class="form-actions">
+                    <button class="button button-secondary" type="submit">{{ suggestions is empty ? 'Show title suggestions' : 'Suggest more' }}</button>
+                </div>
             </form>
         {% elseif not written %}
             <p class="muted">Titles come once the article is written.</p>

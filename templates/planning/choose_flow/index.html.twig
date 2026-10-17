@@ -11,22 +11,36 @@
     <h1>{{ article.title }}</h1>
 
     <section {% if waiting %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
-        <h2>Choose a flow</h2>
+        <h2>Choose, edit or write a flow</h2>
         {% if job and job.status.value != 'done' %}
             {% include 'shared/llm/job_card/_frame.html.twig' with {job: job} only %}
         {% endif %}
         {% for flow in flows %}
             <article class="card flow{{ flow.chosen ? ' chosen' : '' }}">
-                <p>{{ flow.description }}</p>
-                <div class="form-actions">
-                    {% if flow.chosen %}<span class="badge badge-success">Chosen</span>{% endif %}
-                    {% if choosable %}
-                        <form method="post" action="{{ path('planning_choose_flow', {id: article.id, flowId: flow.id}) }}">
+                {% if choosable %}
+                    <form method="post" action="{{ path('planning_choose_flow', {id: article.id, flowId: flow.id}) }}">
+                        <textarea aria-label="Flow {{ loop.index }}" name="description" rows="5" required>{{ flow.description }}</textarea>
+                        <div class="form-actions">
+                            {% if flow.chosen %}<span class="badge badge-success">Chosen</span>{% endif %}
                             <button class="button button-primary" type="submit">Choose this flow</button>
-                        </form>
-                    {% endif %}
-                </div>
+                        </div>
+                    </form>
+                {% else %}
+                    <p>{{ flow.description }}</p>
+                    {% if flow.chosen %}<div class="form-actions"><span class="badge badge-success">Chosen</span></div>{% endif %}
+                {% endif %}
             </article>
         {% endfor %}
+        {% if choosable %}
+            <article class="card own-flow">
+                <form method="post" action="{{ path('planning_write_flow', {id: article.id}) }}">
+                    <label for="own-flow">Your own flow</label>
+                    <textarea id="own-flow" name="description" rows="5" required placeholder="How the article goes, from which perspective"></textarea>
+                    <div class="form-actions">
+                        <button class="button button-secondary" type="submit">Use my flow</button>
+                    </div>
+                </form>
+            </article>
+        {% endif %}
     </section>
 {% endblock %}

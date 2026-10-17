@@ -3,6 +3,7 @@
 namespace App\Planning\SuggestTitles;
 
 use App\Shared\Article\Article;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -23,6 +24,8 @@ class TitleSuggestion
         private string $title,
         #[ORM\Column]
         private string $subtitle,
+        #[ORM\Column(type: Types::TEXT, nullable: true)]
+        private ?string $writerIdea = null,
     ) {
     }
 
@@ -49,5 +52,10 @@ class TitleSuggestion
     public function getSubtitle(): string
     {
         return $this->subtitle;
+    }
+
+    public function getWriterIdea(): ?string
+    {
+        return $this->writerIdea;
     }
 }

@@ -43,6 +43,7 @@ final readonly class SuggestTitlesHandler
                 'input' => $this->em->getRepository(PlanInput::class)->findOneBy(['article' => $article]) ?? throw new \RuntimeException('The plan input is gone.'),
                 'flow' => $this->em->getRepository(FlowOption::class)->findOneBy(['article' => $article, 'chosen' => true]),
                 'seen' => $suggestions->findBy(['article' => $article], ['id' => 'ASC']),
+                'writer_idea' => $message->writerIdea,
                 'body' => $this->folder->read($article->getFolder(), 'article.md')['body'],
             ])),
         ), ['response_format' => TitleList::class]), TitleList::class);
@@ -52,7 +53,7 @@ final readonly class SuggestTitlesHandler
             throw new \RuntimeException(\sprintf('The model suggested %d title + subtitle pairs; %d are expected.', \count($titles), self::TITLES_PER_ROUND));
         }
         foreach ($titles as $proposed) {
-            $this->em->persist(new TitleSuggestion($article, $message->round, trim($proposed->title), trim($proposed->subtitle)));
+            $this->em->persist(new TitleSuggestion($article, $message->round, trim($proposed->title), trim($proposed->subtitle), $message->writerIdea));
         }
         $this->em->flush();
     }

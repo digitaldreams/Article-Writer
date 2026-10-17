@@ -49,6 +49,7 @@ framework:
             'App\Planning\FinalCheckup\FinalCheckup': llm_primary
             'App\Planning\WriteArticle\WriteArticle': llm_primary
             'App\Planning\SuggestTitles\SuggestTitles': llm_primary
+            'App\Planning\SuggestPunchlines\SuggestPunchlines': llm_primary
             'App\Planning\SuggestPosters\SuggestPosters': llm_primary
             'App\Planning\SuggestPosters\GeneratePoster': llm_primary
             'App\Planning\ReviewArticle\ReviewArticle': llm_primary

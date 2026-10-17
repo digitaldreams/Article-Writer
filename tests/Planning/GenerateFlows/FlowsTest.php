@@ -52,7 +52,7 @@ final class FlowsTest extends PlanningTestCase
         self::assertSame(LlmJobStatus::Failed, $job?->getStatus());
     }
 
-    public function testChoosingAFlowSavesItMovesToOutlineAndShowsRoundOne(): void
+    public function testAnEditedFlowIsSavedChosenAndStartsRoundOne(): void
     {
         $this->fakeFlowsAndOutline();
         $article = $this->planIn(ArticleState::Flows);
@@ -62,11 +62,14 @@ final class FlowsTest extends PlanningTestCase
         }
         $this->em()->flush();
 
-        $this->client->request('POST', '/plans/'.$article->getId().'/flows/'.$flows[1]->getId());
+        $this->client->request('POST', '/plans/'.$article->getId().'/flows/'.$flows[1]->getId(), ['description' => ' History first, told as a story ']);
         $this->consume();
 
         self::assertSame(ArticleState::Outline, $this->reload($article)->getState());
-        self::assertSame([false, true], array_map(static fn (FlowOption $f) => $f->isChosen(), $this->em()->getRepository(FlowOption::class)->findBy([], ['id' => 'ASC'])));
+        self::assertSame(
+            [['Problem first', false], ['History first, told as a story', true]],
+            array_map(static fn (FlowOption $f) => [$f->getDescription(), $f->isChosen()], $this->em()->getRepository(FlowOption::class)->findBy([], ['id' => 'ASC'])),
+        );
         $this->client->request('GET', '/plans/'.$article->getId().'/outline');
         self::assertSelectorTextContains('.page-head', 'Round 1');
         self::assertSelectorCount(2, '.outline-item');
@@ -79,9 +82,45 @@ final class FlowsTest extends PlanningTestCase
         $this->em()->persist($flow);
         $this->em()->flush();
 
-        $this->client->request('POST', '/plans/'.$article->getId().'/flows/'.$flow->getId());
-
+        $this->client->request('POST', '/plans/'.$article->getId().'/flows/'.$flow->getId(), ['description' => 'Problem first']);
         self::assertResponseStatusCodeSame(409);
+
+        $this->client->request('POST', '/plans/'.$article->getId().'/flows', ['description' => 'My own']);
+        self::assertResponseStatusCodeSame(409);
+    }
+
+    public function testTheAuthorsOwnFlowIsChosenAndStartsRoundOne(): void
+    {
+        $this->fakeFlowsAndOutline();
+        $article = $this->planIn(ArticleState::Flows);
+        $this->em()->persist(new FlowOption($article, 'Problem first'));
+        $this->em()->flush();
+
+        $this->client->request('GET', '/plans/'.$article->getId().'/flows');
+        $this->client->submit($this->client->getCrawler()->selectButton('Use my flow')->form(['description' => 'A checklist, one hook per step']));
+        $this->consume();
+
+        self::assertSame(ArticleState::Outline, $this->reload($article)->getState());
+        self::assertSame(
+            [['Problem first', false], ['A checklist, one hook per step', true]],
+            array_map(static fn (FlowOption $f) => [$f->getDescription(), $f->isChosen()], $this->em()->getRepository(FlowOption::class)->findBy([], ['id' => 'ASC'])),
+        );
+    }
+
+    public function testAnEmptyFlowIs422AndChoosesNothing(): void
+    {
+        $article = $this->planIn(ArticleState::Flows);
+        $flow = new FlowOption($article, 'Problem first');
+        $this->em()->persist($flow);
+        $this->em()->flush();
+
+        $this->client->request('POST', '/plans/'.$article->getId().'/flows/'.$flow->getId(), ['description' => '  ']);
+        self::assertResponseStatusCodeSame(422);
+        $this->client->request('POST', '/plans/'.$article->getId().'/flows', ['description' => '']);
+        self::assertResponseStatusCodeSame(422);
+
+        self::assertSame(ArticleState::Flows, $this->reload($article)->getState());
+        self::assertCount(1, $this->em()->getRepository(FlowOption::class)->findAll());
     }
 
     private function fakeFlowsAndOutline(): void

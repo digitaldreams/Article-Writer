@@ -262,7 +262,9 @@ turbo-frame { display: block; }
 .question label { display: block; margin-block-end: var(--space-2); }
 .question textarea { width: 100%; }
 .form-actions { display: flex; justify-content: flex-end; align-items: center; gap: var(--spacing-inline); }
-.flow, .outline-item, .outline-add { margin-block-end: var(--space-4); }
+.flow, .own-flow, .outline-item, .outline-add { margin-block-end: var(--space-4); }
+.flow textarea, .own-flow textarea { width: 100%; max-width: none; margin-block-end: var(--space-2); }
+.own-flow label { display: block; font-weight: 600; margin-block-end: var(--space-2); }
 .flow.chosen { border-left: 4px solid var(--color-success); }
 .outline-item input, .outline-item textarea, .outline-add input, .outline-add textarea, #direction { width: 100%; }
 .outline-item label, form.card > label { display: block; font-weight: 600; margin-block-end: var(--space-2); }
@@ -289,6 +291,8 @@ turbo-frame { display: block; }
 .writer-idea { margin-block: var(--space-6) var(--space-2); }
 .share-idea { display: grid; gap: var(--space-2); margin-block-start: var(--space-6); }
 .share-idea textarea { width: 100%; }
+.punchline { display: flex; gap: var(--space-4); align-items: center; justify-content: space-between; margin-block-end: var(--space-2); }
+.punchline p { margin: 0; }
 .poster-image { display: block; max-width: 100%; height: auto; margin-block: var(--space-2) var(--space-4); border-radius: var(--radius-card); }
 
 /* Step tabs: one page per step, with the article's total LLM cost */

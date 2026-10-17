@@ -66,6 +66,28 @@ final class SuggestTitlesTest extends PlanningTestCase
         self::assertSelectorCount(10, 'input[type=radio][name=suggestion]');
     }
 
+    public function testTheWritersIdeaReachesTheAgentAndShowsAboveItsRound(): void
+    {
+        $article = $this->writtenArticle();
+        $prompts = [];
+        $this->fakePrimary(static function ($input) use (&$prompts) {
+            $prompts[] = (string) $input->getUserMessage()?->asText();
+
+            return self::titles(1 === \count($prompts) ? 'A' : 'B');
+        });
+
+        $this->client->request('POST', $this->titlesUrl($article), ['idea' => '  Start with "Stop writing getters"  ']);
+        $this->consume();
+        $this->client->request('POST', $this->titlesUrl($article), ['idea' => '']);
+        $this->consume();
+
+        self::assertStringContainsString("# The writer's idea for the title\nStart with \"Stop writing getters\"", $prompts[0]);
+        self::assertStringNotContainsString("writer's idea", $prompts[1]);
+        $this->client->request('GET', $this->titlesUrl($article));
+        self::assertSelectorCount(1, '.writer-idea');
+        self::assertSelectorTextContains('.writer-idea', 'Start with "Stop writing getters"');
+    }
+
     public function testChoosingAPairUpdatesTheTitleTheFrontMatterAndTheHeadings(): void
     {
         $article = $this->writtenArticle();

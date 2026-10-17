@@ -40,3 +40,9 @@ ai:
             model: '%env(AI_POSTER_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/poster_agent.md'
+        # Share punchlines on the share page; runs on the title agent's platform and model. The system prompt is a hand-edited repo file (read when a worker starts).
+        share:
+            platform: '%app.ai.title_platform%'
+            model: '%env(AI_TITLE_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/share_agent.md'

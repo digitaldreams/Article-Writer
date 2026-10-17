@@ -11,6 +11,11 @@ Reader level: {{ input.readerLevel ?: 'not given' }}
 - {{ suggestion.title }} — {{ suggestion.subtitle }}
 {% endfor %}
 {% endif %}
+{% if writer_idea %}
+
+# The writer's idea for the title
+{{ writer_idea }}
+{% endif %}
 
 # Article (complete)
 {{ body }}

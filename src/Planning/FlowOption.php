@@ -41,6 +41,11 @@ class FlowOption
         return $this->description;
     }
 
+    public function rewrite(string $description): void
+    {
+        $this->description = $description;
+    }
+
     public function isChosen(): bool
     {
         return $this->chosen;

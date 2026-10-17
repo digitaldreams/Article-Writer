@@ -1,0 +1,20 @@
+# Reader
+Audience: {{ input.audience ?: 'not given' }}
+Reader level: {{ input.readerLevel ?: 'not given' }}
+{% if seen is not empty %}
+
+# Punchlines the writer has already seen
+{% for punchline in seen %}
+- {{ punchline.text }}
+{% endfor %}
+{% endif %}
+{% if writer_idea %}
+
+# The writer's idea for the punchline
+{{ writer_idea }}
+{% endif %}
+
+# Article (complete)
+{{ body }}
+
+(End of the article.)

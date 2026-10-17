@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title }} · Share · {{ parent() }}{% endblock %}
+
+{% block body %}
+    {% set waiting = job and job.status.value in ['queued', 'working'] %}
+    {% set written = article.state.value == 'written' %}
+
+    <p><a href="{{ path('planning_list_plans') }}">Back to plans</a></p>
+    {% include 'planning/_steps.html.twig' %}
+    <h1>{{ article.title }}</h1>
+
+    <section class="punchlines" {% if waiting %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
+        <h2>Punchlines for sharing</h2>
+        <p class="muted">One or two sentences to post with the article link on LinkedIn, Reddit, Facebook and other places.</p>
+        {% if job and job.status.value != 'done' %}
+            {% include 'shared/llm/job_card/_frame.html.twig' with {job: job} only %}
+        {% endif %}
+
+        {% for punchline in punchlines %}
+            {% if punchline.writerIdea and (loop.first or punchlines[loop.index0 - 1].round != punchline.round) %}
+                <p class="writer-idea"><strong>Your idea:</strong> {{ punchline.writerIdea }}</p>
+            {% endif %}
+            <div class="card punchline" data-controller="copy">
+                <p data-copy-target="source">{{ punchline.text }}</p>
+                <button class="button button-secondary" type="button" data-copy-target="button" data-action="copy#copy">Copy</button>
+            </div>
+        {% endfor %}
+
+        {% if written and not waiting %}
+            <form class="card share-idea" method="post" action="{{ path('planning_suggest_punchlines', {id: article.id}) }}">
+                <label for="punchline-idea">Your idea for the punchline (optional)</label>
+                <textarea id="punchline-idea" name="idea" rows="3" placeholder="Angle, words or tone you want"></textarea>
+                <div class="form-actions">
+                    <button class="button button-primary" type="submit">{{ punchlines is empty ? 'Suggest punchlines' : 'Suggest more' }}</button>
+                </div>
+            </form>
+        {% elseif not written %}
+            <p class="muted">Punchlines come once the article is written.</p>
+        {% endif %}
+    </section>
+{% endblock %}
