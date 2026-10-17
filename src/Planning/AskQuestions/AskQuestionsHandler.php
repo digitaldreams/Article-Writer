@@ -37,7 +37,7 @@ final readonly class AskQuestionsHandler
     {
         $article = $this->em->find(Article::class, $message->articleId) ?? throw new \RuntimeException('The article is gone.');
         $input = $this->em->getRepository(PlanInput::class)->findOneBy(['article' => $article]) ?? throw new \RuntimeException('The plan input is gone.');
-        $profile = $this->em->getRepository(WriterProfile::class)->findOneBy([]);
+        $profile = $this->em->getRepository(WriterProfile::class)->findOneBy(['user' => $article->getUser()]);
 
         $answer = AgentAnswer::object($this->agent->call(new MessageBag(
             Message::forSystem($this->twig->render('planning/ask_questions/ask_questions.md.twig', [

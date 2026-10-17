@@ -11,6 +11,7 @@ use App\Shared\Article\Article;
 use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobStatus;
 use App\Shared\WriterProfile\WriterProfile;
+use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Platform\Result\ObjectResult;
 use Symfony\AI\Platform\Test\InMemoryPlatform;
@@ -24,9 +25,12 @@ use Symfony\Component\Messenger\Worker;
 
 final class StructureProfileTest extends WebTestCase
 {
+    use LogsInAuthor;
+
     public function testEveryImportedFileGetsNotesAndOneMergeWritesTheProfileAfterTheLastNote(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $this->fakeModel();
         $this->upload($client, ['a.md' => "# A\nx\n", 'b.md' => "# B\ny\n"]);
 
@@ -42,6 +46,7 @@ final class StructureProfileTest extends WebTestCase
     public function testMergeRunsOnceWhenTheLastTwoNotesFinishTogether(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $this->fakeModel();
         $this->upload($client, ['a.md' => "# A\nx\n", 'b.md' => "# B\ny\n"]);
         $this->consume(['io']);
@@ -53,8 +58,8 @@ final class StructureProfileTest extends WebTestCase
         $this->em()->flush();
 
         $settle = self::getContainer()->get(SettleStructureProfile::class);
-        $settle->settle();
-        $settle->settle();
+        $settle->settle((int) $this->author->getId());
+        $settle->settle((int) $this->author->getId());
 
         self::assertCount(1, $this->mergeMessages());
         self::assertCount(1, $this->jobsOf('merge_structure_profile'));
@@ -63,6 +68,7 @@ final class StructureProfileTest extends WebTestCase
     public function testMergeWaitsWhileANoteIsStillPending(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $this->upload($client, ['a.md' => "# A\nx\n", 'b.md' => "# B\ny\n"]);
         $this->consume(['io']);
         $job = $this->jobsOf('extract_structure_notes')[0];
@@ -70,7 +76,7 @@ final class StructureProfileTest extends WebTestCase
         $job->markDone();
         $this->em()->flush();
 
-        self::getContainer()->get(SettleStructureProfile::class)->settle();
+        self::getContainer()->get(SettleStructureProfile::class)->settle((int) $this->author->getId());
 
         self::assertCount(0, $this->mergeMessages());
     }
@@ -78,6 +84,7 @@ final class StructureProfileTest extends WebTestCase
     public function testAFailedNoteDoesNotBlockTheMerge(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $this->upload($client, ['a.md' => "# A\nx\n", 'b.md' => "# B\ny\n"]);
         $this->consume(['io']);
         [$ok, $failed] = $this->jobsOf('extract_structure_notes');
@@ -86,7 +93,7 @@ final class StructureProfileTest extends WebTestCase
         $failed->markFailed('model down');
         $this->em()->flush();
 
-        self::getContainer()->get(SettleStructureProfile::class)->settle();
+        self::getContainer()->get(SettleStructureProfile::class)->settle((int) $this->author->getId());
 
         self::assertCount(1, $this->mergeMessages());
     }
@@ -94,6 +101,7 @@ final class StructureProfileTest extends WebTestCase
     public function testAFailedImportFileDoesNotBlockTheMerge(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $this->upload($client, ['a.md' => "# A\nx\n", 'empty.md' => "  \n"]);
         $this->consume(['io']);
         $job = $this->jobsOf('extract_structure_notes')[0];
@@ -101,7 +109,7 @@ final class StructureProfileTest extends WebTestCase
         $job->markDone();
         $this->em()->flush();
 
-        self::getContainer()->get(SettleStructureProfile::class)->settle();
+        self::getContainer()->get(SettleStructureProfile::class)->settle((int) $this->author->getId());
 
         self::assertCount(1, $this->jobsOf('import_file', LlmJobStatus::Failed));
         self::assertCount(1, $this->mergeMessages());
@@ -110,6 +118,7 @@ final class StructureProfileTest extends WebTestCase
     public function testAFailedNoteJobRunsTheCheckThroughTheWorkerListener(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $this->fakeModel(failNotesFor: 'B');
         $this->upload($client, ['a.md' => "# A\nx\n", 'b.md' => "# B\ny\n"]);
 

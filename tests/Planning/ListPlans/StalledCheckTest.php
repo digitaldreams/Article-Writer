@@ -6,6 +6,7 @@ use App\Planning\ListPlans\StalledCheck;
 use App\Shared\Article\Article;
 use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\WorkerHeartbeat;
+use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Clock\MockClock;
 use Psr\Cache\CacheItemPoolInterface;
@@ -13,6 +14,8 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class StalledCheckTest extends KernelTestCase
 {
+    use LogsInAuthor;
+
     public function testJobWorkingForMoreThan30MinutesIsStalled(): void
     {
         $this->heartbeat(0);
@@ -98,7 +101,7 @@ final class StalledCheckTest extends KernelTestCase
     private function job(string $step, bool $working = false): void
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
-        $article = Article::plan('z', 'Z');
+        $article = Article::plan(self::newAuthor(), 'z', 'Z');
         $job = new LlmJob($article, $step, 'primary', 'ollama', 'm');
         if ($working) {
             $job->markWorking();

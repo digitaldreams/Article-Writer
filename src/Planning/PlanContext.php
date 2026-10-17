@@ -21,7 +21,7 @@ final readonly class PlanContext
      */
     public function of(Article $article): array
     {
-        $profile = $this->em->getRepository(WriterProfile::class)->findOneBy([]);
+        $profile = $this->em->getRepository(WriterProfile::class)->findOneBy(['user' => $article->getUser()]);
         $questions = $this->em->getRepository(Question::class)->findBy(['article' => $article], ['position' => 'ASC']);
 
         return [

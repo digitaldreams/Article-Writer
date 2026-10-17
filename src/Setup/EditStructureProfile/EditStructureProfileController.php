@@ -3,19 +3,21 @@
 namespace App\Setup\EditStructureProfile;
 
 use App\Shared\Llm\LlmJob;
+use App\Shared\User\User;
 use App\Shared\WriterProfile\WriterProfile;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 final class EditStructureProfileController extends AbstractController
 {
     #[Route('/setup/profile', name: 'setup_edit_structure_profile', methods: ['GET', 'POST'])]
-    public function __invoke(Request $request, EntityManagerInterface $em): Response
+    public function __invoke(Request $request, EntityManagerInterface $em, #[CurrentUser] User $user): Response
     {
-        $profile = $em->getRepository(WriterProfile::class)->findOneBy([]) ?? new WriterProfile();
+        $profile = $em->getRepository(WriterProfile::class)->findOneBy([]) ?? new WriterProfile($user);
         $form = $this->createForm(EditStructureProfileType::class, $profile->getStructureProfile() ?? [])->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {

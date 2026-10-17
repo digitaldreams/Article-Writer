@@ -3,6 +3,7 @@
 namespace App\Planning;
 
 use App\Shared\Article\Article;
+use App\Shared\User\User;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -15,6 +16,10 @@ class OutlineCheckup
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    private User $user;
+
     /** @param list<string> $issues */
     public function __construct(
         #[ORM\ManyToOne]
@@ -25,6 +30,7 @@ class OutlineCheckup
         #[ORM\Column(type: Types::JSON)]
         private array $issues,
     ) {
+        $this->user = $article->getUser();
     }
 
     public function getId(): ?int

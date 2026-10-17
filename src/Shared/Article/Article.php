@@ -2,6 +2,7 @@
 
 namespace App\Shared\Article;
 
+use App\Shared\User\User;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -23,6 +24,9 @@ class Article
     private \DateTimeImmutable $updatedAt;
 
     private function __construct(
+        #[ORM\ManyToOne]
+        #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+        private User $user,
         #[ORM\Column]
         private string $slug,
         #[ORM\Column]
@@ -33,14 +37,14 @@ class Article
         $this->createdAt = $this->updatedAt = new \DateTimeImmutable();
     }
 
-    public static function plan(string $slug, string $title): self
+    public static function plan(User $user, string $slug, string $title): self
     {
-        return new self($slug, $title, ArticleState::Plan);
+        return new self($user, $slug, $title, ArticleState::Plan);
     }
 
-    public static function imported(string $slug, string $title): self
+    public static function imported(User $user, string $slug, string $title): self
     {
-        return new self($slug, $title, ArticleState::Imported);
+        return new self($user, $slug, $title, ArticleState::Imported);
     }
 
     public function moveTo(ArticleState $to): void
@@ -62,6 +66,11 @@ class Article
     public function getFolder(): string
     {
         return (string) ($this->id ?? throw new \LogicException('The article has no id yet.'));
+    }
+
+    public function getUser(): User
+    {
+        return $this->user;
     }
 
     public function getSlug(): string

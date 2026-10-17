@@ -20,6 +20,10 @@ doctrine:
                 dir: '%kernel.project_dir%/src'
                 prefix: 'App'
                 alias: App
+        filters:
+            owner:
+                class: App\Shared\User\OwnerFilter
+                enabled: false
 
 when@test:
     doctrine:

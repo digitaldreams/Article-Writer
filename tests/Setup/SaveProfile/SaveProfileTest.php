@@ -3,14 +3,18 @@
 namespace App\Tests\Setup\SaveProfile;
 
 use App\Shared\WriterProfile\WriterProfile;
+use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class SaveProfileTest extends WebTestCase
 {
+    use LogsInAuthor;
+
     public function testSavedValuesShowAgainOnNextVisit(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $client->request('GET', '/setup');
         self::assertResponseIsSuccessful();
 
@@ -31,6 +35,7 @@ final class SaveProfileTest extends WebTestCase
     public function testSavingAgainUpdatesTheSingleProfile(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         foreach (['First', 'Second'] as $bio) {
             $client->request('GET', '/setup');
             $client->submitForm('Save', [
@@ -47,6 +52,7 @@ final class SaveProfileTest extends WebTestCase
     public function testEmptyBiosAreRejectedWith422(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $client->request('GET', '/setup');
         $client->submitForm('Save', [
             'save_profile[shortBio]' => '',

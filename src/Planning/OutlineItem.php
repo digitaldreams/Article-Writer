@@ -3,6 +3,7 @@
 namespace App\Planning;
 
 use App\Shared\Article\Article;
+use App\Shared\User\User;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -14,6 +15,10 @@ class OutlineItem
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    private User $user;
 
     #[ORM\Column]
     private bool $editedByHand = false;
@@ -37,6 +42,7 @@ class OutlineItem
         #[ORM\Column(type: Types::TEXT)]
         private string $summary,
     ) {
+        $this->user = $article->getUser();
     }
 
     public function getId(): ?int

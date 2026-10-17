@@ -26,6 +26,7 @@
         <header class="topbar">
             <div class="topbar-inner">
                 <a class="topbar-name" href="{{ path('planning_list_plans') }}">Article Writer</a>
+                {% if app.user %}
                 <nav aria-label="Main">
                     {% for link in [
                         {label: 'Plans', route: 'planning_list_plans', module: 'planning_'},
@@ -35,6 +36,12 @@
                             {% if route == link.route %}aria-current="page"{% elseif route starts with link.module %}aria-current="true"{% endif %}>{{ link.label }}</a>
                     {% endfor %}
                 </nav>
+                <form class="topbar-user" method="post" action="{{ path('user_logout') }}">
+                    <span>{{ app.user.userIdentifier }}</span>
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                    <button type="submit" class="topbar-logout">Log out</button>
+                </form>
+                {% endif %}
             </div>
         </header>
         <main class="page">

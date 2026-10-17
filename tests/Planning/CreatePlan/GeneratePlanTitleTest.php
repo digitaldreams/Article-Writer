@@ -5,6 +5,7 @@ namespace App\Tests\Planning\CreatePlan;
 use App\Planning\CreatePlan\PlanTitleAnswer;
 use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobStatus;
+use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Platform\Result\ObjectResult;
 use Symfony\AI\Platform\Test\InMemoryPlatform;
@@ -16,9 +17,12 @@ use Symfony\Component\Messenger\Worker;
 
 final class GeneratePlanTitleTest extends WebTestCase
 {
+    use LogsInAuthor;
+
     public function testGeneratedTitleReplacesTheTopicOnThePlansList(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $this->fakeModel(static fn () => new ObjectResult(new PlanTitleAnswer('Agents Without Fear')));
         $this->createPlan($client, 'my rough topic');
 
@@ -32,6 +36,7 @@ final class GeneratePlanTitleTest extends WebTestCase
     public function testFailedTitleJobLeavesTheTopic(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $this->fakeModel(static fn () => throw new \RuntimeException('model down'));
         $this->createPlan($client, 'my rough topic');
 
@@ -46,6 +51,7 @@ final class GeneratePlanTitleTest extends WebTestCase
     public function testPromptReachesTheModelWithoutHtmlEscaping(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $seen = '';
         $this->fakeModel(static function ($model, $input) use (&$seen) {
             $seen = (string) $input->getUserMessage()?->asText();

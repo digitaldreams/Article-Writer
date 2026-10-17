@@ -37,7 +37,7 @@ final readonly class WriteArticleHandler
     {
         $article = $this->em->find(Article::class, $message->articleId) ?? throw new \RuntimeException('The article is gone.');
         $folder = $article->getFolder();
-        $profile = $this->em->getRepository(WriterProfile::class)->findOneBy([]);
+        $profile = $this->em->getRepository(WriterProfile::class)->findOneBy(['user' => $article->getUser()]);
 
         $body = AgentAnswer::text($this->agent->call(new MessageBag(
             Message::forSystem($this->twig->render('planning/write_article/write_article.md.twig', [

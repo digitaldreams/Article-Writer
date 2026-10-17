@@ -29,7 +29,7 @@ final readonly class GeneratePlanTitleHandler
     {
         $article = $this->em->find(Article::class, $message->articleId) ?? throw new \RuntimeException('The article is gone.');
         $input = $this->em->getRepository(PlanInput::class)->findOneBy(['article' => $article]) ?? throw new \RuntimeException('The plan input is gone.');
-        $level = $this->em->getRepository(WriterProfile::class)->findOneBy([])?->getLanguageLevel() ?? '';
+        $level = $this->em->getRepository(WriterProfile::class)->findOneBy(['user' => $article->getUser()])?->getLanguageLevel() ?? '';
 
         $answer = AgentAnswer::object($this->agent->call(new MessageBag(
             Message::forSystem($this->twig->render('planning/create_plan/generate_plan_title.md.twig', ['language_level' => $level])),

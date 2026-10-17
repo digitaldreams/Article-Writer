@@ -5,15 +5,19 @@ namespace App\Tests\Shared\Llm\JobCard;
 use App\Shared\Article\Article;
 use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobStatus;
+use App\Tests\LogsInAuthor;
 use App\Tests\Shared\Llm\TestLlmMessage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class JobCardTest extends WebTestCase
 {
+    use LogsInAuthor;
+
     public function testQueuedAndWorkingCardsPollEveryFiveSeconds(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         foreach ([LlmJobStatus::Queued, LlmJobStatus::Working] as $status) {
             $crawler = $client->request('GET', '/jobs/'.$this->job($status)->getId().'/card');
 
@@ -26,6 +30,7 @@ final class JobCardTest extends WebTestCase
     public function testCardResponseFrameHasNoSourcePointingAtItself(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $crawler = $client->request('GET', '/jobs/'.$this->job(LlmJobStatus::Working)->getId().'/card');
 
         self::assertCount(0, $crawler->filter('turbo-frame[src]'));
@@ -34,6 +39,7 @@ final class JobCardTest extends WebTestCase
     public function testDoneAndFailedCardsDoNotPoll(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         foreach ([LlmJobStatus::Done, LlmJobStatus::Failed] as $status) {
             $crawler = $client->request('GET', '/jobs/'.$this->job($status)->getId().'/card');
 
@@ -44,6 +50,7 @@ final class JobCardTest extends WebTestCase
     public function testFailedCardShowsErrorAndRetryRequeuesTheJob(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $job = $this->job(LlmJobStatus::Failed);
 
         $crawler = $client->request('GET', '/jobs/'.$job->getId().'/card');
@@ -59,6 +66,7 @@ final class JobCardTest extends WebTestCase
     public function testCardShowsRoleProviderModelAndCloudNote(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $local = $this->job(LlmJobStatus::Done);
         $cloud = $this->job(LlmJobStatus::Done, 'anthropic');
 
@@ -73,7 +81,9 @@ final class JobCardTest extends WebTestCase
 
     public function testUnknownJobIsNotFound(): void
     {
-        static::createClient()->request('GET', '/jobs/999999/card');
+        $client = static::createClient();
+        $this->logIn($client);
+        $client->request('GET', '/jobs/999999/card');
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -81,7 +91,7 @@ final class JobCardTest extends WebTestCase
     private function job(LlmJobStatus $status, string $provider = 'ollama'): LlmJob
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
-        $article = Article::plan('x', 'X');
+        $article = Article::plan($this->author, 'x', 'X');
         $job = new LlmJob($article, 'questions', 'primary', $provider, 'test-primary');
         $em->persist($article);
         $em->persist($job);

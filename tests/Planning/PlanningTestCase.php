@@ -5,6 +5,7 @@ namespace App\Tests\Planning;
 use App\Planning\PlanInput;
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
+use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Platform\Result\ResultInterface;
 use Symfony\AI\Platform\Test\InMemoryPlatform;
@@ -17,18 +18,21 @@ use Symfony\Component\Messenger\Worker;
 /** Builds a plan directly in a given state and runs the LLM workers against a fake primary model. */
 abstract class PlanningTestCase extends WebTestCase
 {
+    use LogsInAuthor;
+
     protected KernelBrowser $client;
 
     protected function setUp(): void
     {
         $this->client = static::createClient();
         $this->client->disableReboot();
+        $this->logIn($this->client);
     }
 
     /** Walks the state machine to $state, so the article is valid for that step. */
     protected function planIn(ArticleState $state): Article
     {
-        $article = Article::plan('plan', 'PHP 8 features');
+        $article = Article::plan($this->author, 'plan', 'PHP 8 features');
         foreach ([ArticleState::Questions, ArticleState::Flows, ArticleState::Outline, ArticleState::Finalize, ArticleState::Approved, ArticleState::Written] as $next) {
             if ($article->getState() === $state) {
                 break;

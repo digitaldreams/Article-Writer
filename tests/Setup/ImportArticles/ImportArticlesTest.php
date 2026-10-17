@@ -6,6 +6,7 @@ use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
 use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobStatus;
+use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -17,9 +18,12 @@ use Symfony\Component\Messenger\Worker;
 
 final class ImportArticlesTest extends WebTestCase
 {
+    use LogsInAuthor;
+
     public function testThreeUploadedFilesBecomeThreeFoldersAndImportedArticles(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $tag = uniqid('t');
         $this->upload($client, [
             'a.md' => "---\ntitle: First $tag\ndate: 2024-03-05\n---\nBody one\n",
@@ -45,6 +49,7 @@ final class ImportArticlesTest extends WebTestCase
     public function testTheFrontMatterDateIsKeptAsWritten(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $tag = uniqid('m');
         $ms = (new \DateTimeImmutable('2023-06-15 12:00:00 UTC'))->getTimestamp() * 1000;
         $this->upload($client, ["m$tag.md" => "# M $tag\nx\n", "k$tag.md" => "---\ntitle: K $tag\ndate: 2022-01-02\n---\nx\n"], [
@@ -62,6 +67,7 @@ final class ImportArticlesTest extends WebTestCase
     public function testTwoFilesWithTheSameTitleGetTheirOwnFolders(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $tag = uniqid('d');
         $this->upload($client, ["one.md" => "# Same $tag\nx\n", "two.md" => "# Same $tag\ny\n"]);
         $this->consume();
@@ -73,6 +79,7 @@ final class ImportArticlesTest extends WebTestCase
     public function testFailedFileIsShownByNameWithRetry(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $this->upload($client, ['empty-one.md' => "  \n"]);
         $this->consume();
 

@@ -31,7 +31,7 @@ final readonly class ExtractStructureNotesHandler
         $article = $this->em->find(Article::class, $message->articleId) ?? throw new \RuntimeException('The article is gone.');
         $body = $this->articleFolder->read($article->getFolder(), 'article.md')['body'];
         $answer = AgentAnswer::object($this->agent->call(new MessageBag(
-            Message::forSystem($this->twig->render('setup/import_articles/extract_structure_notes.md.twig', ['language_level' => $this->languageLevel()])),
+            Message::forSystem($this->twig->render('setup/import_articles/extract_structure_notes.md.twig', ['language_level' => $this->languageLevel($article)])),
             Message::ofUser($body),
         ), ['response_format' => StructureNotesAnswer::class]), StructureNotesAnswer::class);
 
@@ -39,8 +39,8 @@ final readonly class ExtractStructureNotesHandler
         $this->em->flush();
     }
 
-    private function languageLevel(): string
+    private function languageLevel(Article $article): string
     {
-        return $this->em->getRepository(WriterProfile::class)->findOneBy([])?->getLanguageLevel() ?? '';
+        return $this->em->getRepository(WriterProfile::class)->findOneBy(['user' => $article->getUser()])?->getLanguageLevel() ?? '';
     }
 }

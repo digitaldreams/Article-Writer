@@ -3,14 +3,18 @@
 namespace App\Tests\Setup\EditStructureProfile;
 
 use App\Shared\WriterProfile\WriterProfile;
+use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class EditStructureProfileTest extends WebTestCase
 {
+    use LogsInAuthor;
+
     public function testTheHandEditedProfileSaves(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $crawler = $client->request('GET', '/setup/profile');
         self::assertResponseIsSuccessful();
 
@@ -31,6 +35,7 @@ final class EditStructureProfileTest extends WebTestCase
     public function testBlankFieldIsRejectedWith422(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $crawler = $client->request('GET', '/setup/profile');
 
         $client->submit($crawler->selectButton('Save')->form());

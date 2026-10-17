@@ -6,6 +6,7 @@ use App\Shared\Article\Article;
 use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobStatus;
 use App\Shared\Llm\WorkerHeartbeat;
+use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -19,6 +20,8 @@ use Symfony\Component\Messenger\Worker;
 
 final class LlmJobTrackingTest extends KernelTestCase
 {
+    use LogsInAuthor;
+
     public function testJobMovesFromQueuedToWorkingToDone(): void
     {
         $job = $this->queuedJob();
@@ -73,7 +76,7 @@ final class LlmJobTrackingTest extends KernelTestCase
     {
         self::bootKernel();
         $em = $this->em();
-        $article = Article::plan('x', 'X');
+        $article = Article::plan(self::newAuthor(), 'x', 'X');
         $job = new LlmJob($article, 'questions', 'primary', 'ollama', 'test-primary');
         $em->persist($article);
         $em->persist($job);

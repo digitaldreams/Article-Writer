@@ -3,6 +3,7 @@
 namespace App\Shared\Llm;
 
 use App\Shared\Article\Article;
+use App\Shared\User\User;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -13,6 +14,10 @@ class LlmJob
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    private User $user;
 
     #[ORM\Column(enumType: LlmJobStatus::class, length: 20)]
     private LlmJobStatus $status = LlmJobStatus::Queued;
@@ -55,7 +60,9 @@ class LlmJob
         private string $provider,
         #[ORM\Column]
         private string $model,
+        ?User $user = null,
     ) {
+        $this->user = $article?->getUser() ?? $user ?? throw new \LogicException('A job without an article needs its user.');
         $this->createdAt = new \DateTimeImmutable();
     }
 
@@ -129,6 +136,11 @@ class LlmJob
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getUser(): User
+    {
+        return $this->user;
     }
 
     public function getArticle(): ?Article

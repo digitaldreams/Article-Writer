@@ -3,6 +3,7 @@
 namespace App\Shared\Llm;
 
 use App\Shared\Article\Article;
+use App\Shared\User\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -39,8 +40,9 @@ final readonly class LlmJobs
     /**
      * @param 'primary'|'secondary'|'vision'|'title'|'poster'|'poster_image'|'io' $role
      * @param \Closure(int): LlmJobMessage $message builds the message from the job id
+     * @param User|null $user only for a job without an article; otherwise the article's user owns it
      */
-    public function start(?Article $article, string $step, string $role, \Closure $message): LlmJob
+    public function start(?Article $article, string $step, string $role, \Closure $message, ?User $user = null): LlmJob
     {
         [$platform, $model] = match ($role) {
             'primary' => [$this->primaryPlatform, $this->primaryModel],
@@ -51,7 +53,7 @@ final readonly class LlmJobs
             'poster_image' => [$this->posterPlatform, $this->posterImageModel],
             'io' => ['local', '-'],
         };
-        $job = new LlmJob($article, $step, $role, str_replace('ai.platform.', '', $platform), $model);
+        $job = new LlmJob($article, $step, $role, str_replace('ai.platform.', '', $platform), $model, $user);
         $this->em->persist($job);
         $this->em->flush();
 

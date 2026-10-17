@@ -5,6 +5,7 @@ namespace App\Tests\Shared\Llm\RetryJob;
 use App\Shared\Article\Article;
 use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobStatus;
+use App\Tests\LogsInAuthor;
 use App\Tests\Shared\Llm\TestLlmMessage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -12,9 +13,12 @@ use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 
 final class RetryJobTest extends WebTestCase
 {
+    use LogsInAuthor;
+
     public function testRetryOnFailedJobDispatchesTheSameMessageAgain(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $job = $this->job(LlmJobStatus::Failed);
 
         self::getContainer()->get(EntityManagerInterface::class)->clear();
@@ -38,6 +42,7 @@ final class RetryJobTest extends WebTestCase
     public function testRetryOnNonFailedJobIsRefused(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $job = $this->job(LlmJobStatus::Working);
 
         $client->request('POST', '/jobs/'.$job->getId().'/retry');
@@ -50,7 +55,9 @@ final class RetryJobTest extends WebTestCase
 
     public function testRetryOfUnknownJobIsNotFound(): void
     {
-        static::createClient()->request('POST', '/jobs/999999/retry');
+        $client = static::createClient();
+        $this->logIn($client);
+        $client->request('POST', '/jobs/999999/retry');
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -58,7 +65,7 @@ final class RetryJobTest extends WebTestCase
     private function job(LlmJobStatus $status): LlmJob
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
-        $article = Article::plan('x', 'X');
+        $article = Article::plan($this->author, 'x', 'X');
         $job = new LlmJob($article, 'questions', 'primary', 'ollama', 'test-primary');
         $em->persist($article);
         $em->persist($job);

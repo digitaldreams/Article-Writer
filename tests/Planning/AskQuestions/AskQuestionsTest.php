@@ -11,6 +11,7 @@ use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
 use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobStatus;
+use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Platform\Result\ObjectResult;
 use Symfony\AI\Platform\Result\ResultInterface;
@@ -24,6 +25,8 @@ use Symfony\Component\Messenger\Worker;
 
 final class AskQuestionsTest extends WebTestCase
 {
+    use LogsInAuthor;
+
     public function testNextAfterBrainstormingMovesToQuestionsAndSavesTheTaggedQuestions(): void
     {
         $client = $this->client();
@@ -95,6 +98,7 @@ final class AskQuestionsTest extends WebTestCase
     private function client(): KernelBrowser
     {
         $client = static::createClient();
+        $this->logIn($client);
         $client->disableReboot();
 
         return $client;

@@ -5,6 +5,7 @@ namespace App\Setup\ImportArticles;
 use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobs;
 use App\Shared\Llm\LlmJobStatus;
+use App\Shared\User\User;
 use App\Shared\WriterProfile\WriterProfile;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -12,6 +13,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 final class ImportArticlesController extends AbstractController
 {
@@ -44,7 +46,7 @@ final class ImportArticlesController extends AbstractController
     }
 
     #[Route('/setup/import', name: 'setup_import_articles', methods: ['POST'])]
-    public function __invoke(Request $request, EntityManagerInterface $em, LlmJobs $jobs): Response
+    public function __invoke(Request $request, EntityManagerInterface $em, LlmJobs $jobs, #[CurrentUser] User $user): Response
     {
         $uploads = array_merge($request->files->all('files'), $request->files->all('directory'));
         $files = array_filter($uploads, static fn ($f) => $f instanceof UploadedFile && 'md' === strtolower($f->getClientOriginalExtension()));
@@ -56,10 +58,10 @@ final class ImportArticlesController extends AbstractController
         $modified = \is_array($modified) ? $modified : [];
 
         $now = new \DateTimeImmutable();
-        $em->wrapInTransaction(function () use ($files, $modified, $em, $jobs, $now): void {
+        $em->wrapInTransaction(function () use ($files, $modified, $em, $jobs, $now, $user): void {
             // The row that SettleStructureProfile locks must exist before any job can settle.
             if (null === $em->getRepository(WriterProfile::class)->findOneBy([])) {
-                $em->persist(new WriterProfile());
+                $em->persist(new WriterProfile($user));
             }
             foreach ($files as $file) {
                 $name = $file->getClientOriginalName();
@@ -70,7 +72,7 @@ final class ImportArticlesController extends AbstractController
                     (string) file_get_contents($file->getPathname()),
                     $now,
                     \is_int($ms) ? new \DateTimeImmutable('@'.intdiv($ms, 1000)) : null,
-                ));
+                ), $user);
             }
         });
 

@@ -4,12 +4,15 @@ namespace App\Tests\Planning\ListPlans;
 
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
+use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class OpenPlanTest extends WebTestCase
 {
+    use LogsInAuthor;
+
     /** @return iterable<string, array{list<ArticleState>, string}> */
     public static function steps(): iterable
     {
@@ -26,7 +29,8 @@ final class OpenPlanTest extends WebTestCase
     public function testOpeningAPlanRedirectsToItsCurrentStep(array $path, string $step): void
     {
         $client = static::createClient();
-        $article = Article::plan('x', 'X');
+        $this->logIn($client);
+        $article = Article::plan($this->author, 'x', 'X');
         foreach ($path as $state) {
             $article->moveTo($state);
         }
@@ -40,14 +44,17 @@ final class OpenPlanTest extends WebTestCase
 
     public function testUnknownPlanIs404(): void
     {
-        static::createClient()->request('GET', '/plans/999999');
+        $client = static::createClient();
+        $this->logIn($client);
+        $client->request('GET', '/plans/999999');
         self::assertResponseStatusCodeSame(404);
     }
 
     public function testImportedArticleIs404(): void
     {
         $client = static::createClient();
-        $article = Article::imported('y', 'Y');
+        $this->logIn($client);
+        $article = Article::imported($this->author, 'y', 'Y');
         $em = self::getContainer()->get(EntityManagerInterface::class);
         $em->persist($article);
         $em->flush();

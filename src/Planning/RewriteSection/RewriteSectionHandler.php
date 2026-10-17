@@ -33,7 +33,7 @@ final readonly class RewriteSectionHandler
         if (null === $rewrite) {
             return;
         }
-        $profile = $this->em->getRepository(WriterProfile::class)->findOneBy([]);
+        $profile = $this->em->getRepository(WriterProfile::class)->findOneBy(['user' => $rewrite->getArticle()->getUser()]);
 
         $after = AgentAnswer::text($this->agent->call(new MessageBag(
             Message::forSystem($this->twig->render('planning/rewrite_section/rewrite_section.md.twig', [

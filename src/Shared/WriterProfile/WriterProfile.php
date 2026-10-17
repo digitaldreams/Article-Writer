@@ -2,6 +2,7 @@
 
 namespace App\Shared\WriterProfile;
 
+use App\Shared\User\User;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -18,6 +19,9 @@ class WriterProfile
     private ?array $structureProfile = null;
 
     public function __construct(
+        #[ORM\OneToOne]
+        #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+        private User $user,
         #[ORM\Column(type: Types::TEXT)]
         private string $shortBio = '',
         #[ORM\Column(type: Types::TEXT)]

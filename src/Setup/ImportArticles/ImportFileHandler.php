@@ -3,6 +3,7 @@
 namespace App\Setup\ImportArticles;
 
 use App\Shared\Article\Article;
+use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobs;
 use App\Shared\Storage\ArticleFolder;
 use Doctrine\ORM\EntityManagerInterface;
@@ -26,8 +27,9 @@ final readonly class ImportFileHandler
         [$frontMatter, $body] = $this->split($content);
         $title = $this->title($frontMatter, $body, $message->filename);
 
-        $this->em->wrapInTransaction(function () use ($frontMatter, $body, $title): void {
-            $article = Article::imported(ArticleFolder::slug($title), $title);
+        $user = ($this->em->find(LlmJob::class, $message->llmJobId()) ?? throw new \RuntimeException('The job is gone.'))->getUser();
+        $this->em->wrapInTransaction(function () use ($frontMatter, $body, $title, $user): void {
+            $article = Article::imported($user, ArticleFolder::slug($title), $title);
             $this->em->persist($article);
             $this->em->flush();
             $this->articleFolder->write($article->getFolder(), 'article.md', $this->plainDates($frontMatter) + ['title' => $title], $body);

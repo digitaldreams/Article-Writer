@@ -35,22 +35,23 @@ final readonly class DigestReferenceHandler
         $reference = $this->em->find(Reference::class, $message->referenceId) ?? throw new \RuntimeException('The reference is gone.');
         $topic = $this->em->getRepository(PlanInput::class)->findOneBy(['article' => $reference->getArticle()])?->getTopic() ?? '';
         $text = $reference->getExtractedText() ?? throw new \RuntimeException('The reference has no extracted text.');
+        $level = $this->em->getRepository(WriterProfile::class)->findOneBy(['user' => $reference->getArticle()->getUser()])?->getLanguageLevel() ?? '';
 
         $parts = mb_str_split($text, self::PART_CHARS);
         $digest = 1 === \count($parts)
-            ? $this->digest($topic, $text, false)
-            : $this->digest($topic, implode("\n\n", array_map(fn (string $part) => $this->digest($topic, $part, false), $parts)), true);
+            ? $this->digest($topic, $text, false, $level)
+            : $this->digest($topic, implode("\n\n", array_map(fn (string $part) => $this->digest($topic, $part, false, $level), $parts)), true, $level);
 
         $this->settle->finish($message->referenceId, $digest);
     }
 
-    private function digest(string $topic, string $text, bool $mergingParts): string
+    private function digest(string $topic, string $text, bool $mergingParts, string $level): string
     {
         return AgentAnswer::text($this->agent->call(new MessageBag(
             Message::forSystem($this->twig->render('planning/digest_references/digest_reference.md.twig', [
                 'topic' => $topic,
                 'merging_parts' => $mergingParts,
-                'language_level' => $this->em->getRepository(WriterProfile::class)->findOneBy([])?->getLanguageLevel() ?? '',
+                'language_level' => $level,
             ])),
             Message::ofUser($text),
         )));

@@ -6,17 +6,19 @@ use App\Planning\PlanInput;
 use App\Shared\Article\Article;
 use App\Shared\Llm\LlmJobs;
 use App\Shared\Storage\ArticleFolder;
+use App\Shared\User\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 /** Saves the plan in state `plan`; the author brainstorms (audience, notes, references) on the next page. */
 final class CreatePlanController extends AbstractController
 {
     #[Route('/plans/new', name: 'planning_create_plan', methods: ['GET', 'POST'])]
-    public function __invoke(Request $request, EntityManagerInterface $em, ArticleFolder $articleFolder, LlmJobs $jobs): Response
+    public function __invoke(Request $request, EntityManagerInterface $em, ArticleFolder $articleFolder, LlmJobs $jobs, #[CurrentUser] User $user): Response
     {
         $form = $this->createForm(CreatePlanType::class)->handleRequest($request);
 
@@ -27,8 +29,8 @@ final class CreatePlanController extends AbstractController
         /** @var array{topic: string, idea: ?string} $data */
         $data = $form->getData();
 
-        $article = $em->wrapInTransaction(function () use ($data, $em, $articleFolder, $jobs): Article {
-            $article = Article::plan(ArticleFolder::slug($data['topic']), $data['topic']);
+        $article = $em->wrapInTransaction(function () use ($data, $em, $articleFolder, $jobs, $user): Article {
+            $article = Article::plan($user, ArticleFolder::slug($data['topic']), $data['topic']);
             $em->persist($article);
             $em->persist(new PlanInput($article, $data['topic'], '', null, $data['idea'] ?? ''));
             $em->flush();

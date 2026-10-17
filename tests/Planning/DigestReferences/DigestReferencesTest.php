@@ -8,6 +8,7 @@ use App\Planning\Reference;
 use App\Planning\ReferenceStatus;
 use App\Shared\Article\Article;
 use App\Shared\Llm\LlmJob;
+use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Platform\Message\Content\Image;
 use Symfony\AI\Platform\Model;
@@ -25,6 +26,8 @@ use Symfony\Component\Messenger\Worker;
 
 final class DigestReferencesTest extends WebTestCase
 {
+    use LogsInAuthor;
+
     public function testThreeReferencesAreEachDigested(): void
     {
         $client = $this->client();
@@ -118,6 +121,7 @@ final class DigestReferencesTest extends WebTestCase
     private function client(): KernelBrowser
     {
         $client = static::createClient();
+        $this->logIn($client);
         $client->disableReboot();
 
         return $client;

@@ -6,14 +6,18 @@ use App\Planning\PlanInput;
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
 use App\Shared\Llm\LlmJob;
+use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class CreatePlanTest extends WebTestCase
 {
+    use LogsInAuthor;
+
     public function testTopicAndIdeaAreSavedInStatePlanAndOpenBrainstorming(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
 
         $crawler = $client->request('GET', '/plans/new');
         self::assertResponseIsSuccessful();
@@ -35,6 +39,7 @@ final class CreatePlanTest extends WebTestCase
     public function testMissingTopicGives422AndSavesNothing(): void
     {
         $client = static::createClient();
+        $this->logIn($client);
         $crawler = $client->request('GET', '/plans/new');
         $client->submit($crawler->selectButton('Create')->form(['create_plan[topic]' => '']));
 

@@ -5,6 +5,7 @@ namespace App\Tests\Shared\Article;
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
 use App\Shared\Article\InvalidArticleTransition;
+use App\Shared\User\User;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -49,13 +50,13 @@ final class ArticleStateTest extends TestCase
 
     public function testNewArticlesStartInPlanOrImported(): void
     {
-        $this->assertSame(ArticleState::Plan, Article::plan('s', 't')->getState());
-        $this->assertSame(ArticleState::Imported, Article::imported('s', 't')->getState());
+        $this->assertSame(ArticleState::Plan, Article::plan(new User('a@example.com'), 's', 't')->getState());
+        $this->assertSame(ArticleState::Imported, Article::imported(new User('a@example.com'), 's', 't')->getState());
     }
 
     private static function articleIn(ArticleState $state): Article
     {
-        $article = ArticleState::Imported === $state ? Article::imported('s', 't') : Article::plan('s', 't');
+        $article = ArticleState::Imported === $state ? Article::imported(new User('a@example.com'), 's', 't') : Article::plan(new User('a@example.com'), 's', 't');
         $path = [
             'plan' => [], 'questions' => ['questions'], 'flows' => ['questions', 'flows'],
             'outline' => ['questions', 'flows', 'outline'],
