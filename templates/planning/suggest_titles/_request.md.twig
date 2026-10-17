@@ -4,6 +4,11 @@ Reader level: {{ input.readerLevel ?: 'not given' }}
 
 # Flow
 {{ flow ? flow.description : 'not given' }}
+
+# Article (complete, code blocks left out)
+{{ body }}
+
+(End of the article.)
 {% if seen is not empty %}
 
 # Titles the writer has already seen
@@ -16,8 +21,3 @@ Reader level: {{ input.readerLevel ?: 'not given' }}
 # The writer's idea for the title
 {{ writer_idea }}
 {% endif %}
-
-# Article (complete)
-{{ body }}
-
-(End of the article.)

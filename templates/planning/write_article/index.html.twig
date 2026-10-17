@@ -16,10 +16,21 @@
         {% endif %}
 
         {% if body is not null %}
-            <p class="notice">Written to <code>{{ path }}</code></p>
-            <article class="card article-preview">
-                {{ body|markdown_to_html }}
-            </article>
+            <p class="notice">Written to <code>{{ path }}</code> <a href="{{ path|file_link(1) }}" class="button">Open in VS Code</a></p>
+            {% if editing %}
+                <form class="card" method="post" action="{{ path('planning_save_article', {id: article.id}) }}" data-controller="autosave">
+                    <textarea name="body" aria-label="Article" data-controller="markdown-editor" data-action="input->autosave#queue">{{ body }}</textarea>
+                    <p class="form-actions">
+                        <span class="muted" data-autosave-target="status" aria-live="polite"></span>
+                        <a href="{{ path('planning_show_article', {id: article.id}) }}" class="button">Done</a>
+                    </p>
+                </form>
+            {% else %}
+                <article class="card article-preview">
+                    <a href="{{ path('planning_show_article', {id: article.id, edit: 1}) }}" class="button article-edit" title="Edit article">✎ Edit</a>
+                    {{ body|markdown_to_html }}
+                </article>
+            {% endif %}
         {% endif %}
     </section>
 {% endblock %}

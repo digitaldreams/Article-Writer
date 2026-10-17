@@ -158,6 +158,25 @@ final class SuggestTitlesTest extends PlanningTestCase
         self::assertStringContainsString($body, $prompt);
     }
 
+    public function testTheAgentGetsTheArticleWithoutItsCodeBlocks(): void
+    {
+        $article = $this->writtenArticle();
+        $body = "## Hooks\n\nBefore:\n\n```php\nclass User { public string \$name; }\n```\n\nAfter:\n\n~~~\nget => ucfirst(\$this->name);\n~~~\n\nUse `get` hooks.\n";
+        $this->folder()->write($article->getFolder(), 'article.md', ['plan_id' => $article->getId(), 'title' => 'PHP 8 features'], $body);
+        $prompt = '';
+        $this->fakePrimary(static function ($input) use (&$prompt) {
+            $prompt = (string) $input->getUserMessage()?->asText();
+
+            return self::titles('A');
+        });
+
+        $this->client->request('POST', $this->titlesUrl($article));
+        $this->consume();
+
+        self::assertStringContainsString("## Hooks\n\nBefore:\n\n(code omitted)\n\nAfter:\n\n(code omitted)\n\nUse `get` hooks.\n", $prompt);
+        self::assertStringNotContainsString('class User', $prompt);
+    }
+
     private function writtenArticle(): Article
     {
         $article = $this->planIn(ArticleState::Written);

@@ -52,6 +52,18 @@ final class FlowsTest extends PlanningTestCase
         self::assertSame(LlmJobStatus::Failed, $job?->getStatus());
     }
 
+    public function testMoreFlowsThanAskedForAreAllShown(): void
+    {
+        $this->fakePrimary(static fn () => new ObjectResult(new FlowList(['One', 'Two', 'Three', 'Four', 'Five', 'Six'])));
+        $article = $this->planIn(ArticleState::Questions);
+
+        $this->client->request('POST', '/plans/'.$article->getId().'/questions/next');
+        $this->consume();
+        $this->client->request('GET', '/plans/'.$article->getId().'/flows');
+
+        self::assertSelectorCount(6, '.flow');
+    }
+
     public function testAnEditedFlowIsSavedChosenAndStartsRoundOne(): void
     {
         $this->fakeFlowsAndOutline();

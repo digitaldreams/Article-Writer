@@ -39,8 +39,9 @@ final readonly class GenerateFlowsHandler
             Message::ofUser($this->twig->render('planning/_plan_context.md.twig', $context)),
         ), ['response_format' => FlowList::class]), FlowList::class);
 
-        if (\count($answer->flows) < 2 || \count($answer->flows) > 3) {
-            throw new \RuntimeException(\sprintf('The model offered %d flows; 2 or 3 are expected.', \count($answer->flows)));
+        // A weaker model may offer more than the 3 asked for; all of them are shown.
+        if (\count($answer->flows) < 2) {
+            throw new \RuntimeException(\sprintf('The model offered %d flows; at least 2 are expected.', \count($answer->flows)));
         }
         foreach ($answer->flows as $description) {
             $this->em->persist(new FlowOption($article, $description));

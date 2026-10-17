@@ -44,7 +44,8 @@ final readonly class SuggestTitlesHandler
                 'flow' => $this->em->getRepository(FlowOption::class)->findOneBy(['article' => $article, 'chosen' => true]),
                 'seen' => $suggestions->findBy(['article' => $article], ['id' => 'ASC']),
                 'writer_idea' => $message->writerIdea,
-                'body' => $this->folder->read($article->getFolder(), 'article.md')['body'],
+                // Code adds many tokens and little to a title; on a local CPU model reading the prompt is the slow part.
+                'body' => preg_replace('/^(```|~~~).*?^\1[ \t]*$/ms', '(code omitted)', $this->folder->read($article->getFolder(), 'article.md')['body']),
             ])),
         ), ['response_format' => TitleList::class]), TitleList::class);
 

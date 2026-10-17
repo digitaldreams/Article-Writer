@@ -1,6 +1,8 @@
 # see https://symfony.com/doc/current/reference/configuration/framework.html
 framework:
     secret: '%env(APP_SECRET)%'
+    # Makes the file_link Twig filter build vscode:// links, e.g. "Open in VS Code" on the article page.
+    ide: vscode
 
     # Note that the session will be started ONLY if you read or write from it.
     session: true

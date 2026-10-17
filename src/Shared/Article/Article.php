@@ -89,6 +89,12 @@ class Article
         $this->updatedAt = new \DateTimeImmutable();
     }
 
+    /** A hand edit of article.md lives in the file; the row only records when it happened. */
+    public function touch(): void
+    {
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
     public function getState(): ArticleState
     {
         return $this->state;

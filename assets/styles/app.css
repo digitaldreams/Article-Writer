@@ -277,7 +277,8 @@ turbo-frame { display: block; }
 .before-after pre { overflow-x: auto; padding: var(--space-3); background: var(--color-surface-muted); }
 .decision { display: grid; gap: var(--space-4); margin-block-start: var(--space-6); }
 #reject-reason { width: 100%; }
-.article-preview { line-height: 1.6; }
+.article-preview { line-height: 1.6; position: relative; }
+.article-edit { position: absolute; inset-block-start: var(--space-3); inset-inline-end: var(--space-3); }
 .article-preview pre { overflow-x: auto; padding: var(--space-3); background: var(--color-surface-muted); }
 .choices { border: 0; padding: 0; margin: 0; display: grid; gap: var(--space-2); }
 .choices legend { margin-block-end: var(--space-2); }

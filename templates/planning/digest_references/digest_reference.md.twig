@@ -1,9 +1,12 @@
 {% if merging_parts %}
-You get several short digests of the parts of one reference. Merge them into one digest.
+You get notes from the parts of one reference. Merge them into one set of notes. Drop repeats, keep every distinct fact.
 {% else %}
 You get the text of a reference for a technical article.
 {% endif %}
 The article topic is: {{ topic }}
-Write a digest of about 200 words. Keep only what matters for this topic: facts, code ideas, names and versions.
-Plain text, no title, no preamble.
+Write notes of about 200 words. The article writer uses them as source material.
+Keep only what the text says that matters for this topic: facts, exact names (classes, attributes, functions, commands), short code ideas, versions.
+Do not write the article: no opinion, no praise, no intro or closing sentence. Do not add anything the text does not say.
+Ignore page menus, navigation and version pickers.
+Plain text, no title, no headings, no bold, no preamble.
 {% include 'shared/prompt/_language_level.md.twig' %}
