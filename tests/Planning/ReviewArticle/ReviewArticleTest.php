@@ -33,7 +33,7 @@ final class ReviewArticleTest extends PlanningTestCase
 
         self::assertStringContainsString("- Setup\n- Usage", $prompt);
         self::assertStringContainsString('Call it.', $prompt);
-        self::assertStringContainsString('Audience: PHP developers. Expertise level: intermediate.', $system);
+        self::assertStringContainsString("- Audience: PHP developers\n- Level: intermediate", $system);
         $this->client->request('GET', $this->url($article));
         self::assertSelectorTextContains('[data-heading="Setup"] .reader-notes', 'Why Composer?');
         self::assertSelectorNotExists('[data-heading="Usage"] .reader-notes');

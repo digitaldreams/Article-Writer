@@ -17,9 +17,7 @@ final class OpenPlanController extends AbstractController
         $step = match ($article?->getState()) {
             ArticleState::Plan => 'brainstorm',
             ArticleState::Questions => 'questions',
-            ArticleState::Flows => 'flows',
             ArticleState::Outline => 'outline',
-            ArticleState::Finalize => 'review',
             ArticleState::Approved, ArticleState::Written => 'article',
             ArticleState::Imported, null => throw new NotFoundHttpException(),
         };

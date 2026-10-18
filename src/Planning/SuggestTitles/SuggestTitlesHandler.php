@@ -2,7 +2,6 @@
 
 namespace App\Planning\SuggestTitles;
 
-use App\Planning\FlowOption;
 use App\Planning\PlanInput;
 use App\Shared\Article\Article;
 use App\Shared\Llm\AgentAnswer;
@@ -41,7 +40,6 @@ final readonly class SuggestTitlesHandler
         $answer = AgentAnswer::object($this->agent->call(new MessageBag(
             Message::ofUser($this->twig->render('planning/suggest_titles/_request.md.twig', [
                 'input' => $this->em->getRepository(PlanInput::class)->findOneBy(['article' => $article]) ?? throw new \RuntimeException('The plan input is gone.'),
-                'flow' => $this->em->getRepository(FlowOption::class)->findOneBy(['article' => $article, 'chosen' => true]),
                 'seen' => $suggestions->findBy(['article' => $article], ['id' => 'ASC']),
                 'writer_idea' => $message->writerIdea,
                 // Code adds many tokens and little to a title; on a local CPU model reading the prompt is the slow part.

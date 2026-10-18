@@ -19,6 +19,6 @@ final readonly class GenerateOutlineListener
     {
         $article = $this->em->find(Article::class, $event->articleId) ?? throw new \RuntimeException('The article is gone.');
 
-        $this->jobs->start($article, 'generate_outline', 'primary', static fn (int $id) => new GenerateOutline($id, $event->articleId, $event->round, $event->instruction, $event->reason));
+        $this->jobs->start($article, 'generate_outline', 'primary', static fn (int $id) => new GenerateOutline($id, $event->articleId, $event->round, $event->instruction));
     }
 }

@@ -6,7 +6,6 @@ use App\Planning\OutlineItem;
 use App\Planning\PlanInput;
 use App\Planning\Question;
 use App\Planning\Reference;
-use App\Planning\ReferenceType;
 use App\Shared\Article\Article;
 use App\Shared\Storage\ArticleFolder;
 
@@ -46,7 +45,7 @@ final readonly class PlanFiles
         if ([] !== $references) {
             $body .= "\n## References\n\n";
             foreach ($references as $reference) {
-                $body .= '- '.(ReferenceType::Link === $reference->getType() ? $reference->getLocation() : basename($reference->getLocation()))."\n";
+                $body .= '- '.$reference->getLocation()."\n";
             }
         }
 

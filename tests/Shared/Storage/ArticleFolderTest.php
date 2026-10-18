@@ -5,7 +5,6 @@ namespace App\Tests\Shared\Storage;
 use App\Shared\Storage\ArticleFolder;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final class ArticleFolderTest extends TestCase
 {
@@ -45,18 +44,5 @@ final class ArticleFolderTest extends TestCase
         $this->folder->write($name, 'article.md', $frontMatter, $body);
 
         $this->assertSame(['frontMatter' => $frontMatter, 'body' => $body], $this->folder->read($name, 'article.md'));
-    }
-
-    public function testUploadIsStoredInRefsUnderSanitizedName(): void
-    {
-        $name = '7';
-        $this->folder->create($name);
-        $tmp = $this->dir.'/upload.tmp';
-        (new Filesystem())->dumpFile($tmp, 'data');
-
-        $path = $this->folder->storeUpload($name, new UploadedFile($tmp, '../My Notes (v2).PDF', null, null, true));
-
-        $this->assertSame('refs/My-Notes-v2.pdf', $path);
-        $this->assertFileExists($this->dir.'/'.$name.'/refs/My-Notes-v2.pdf');
     }
 }

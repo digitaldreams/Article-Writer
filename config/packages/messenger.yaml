@@ -43,9 +43,7 @@ framework:
             'App\Planning\DigestReferences\ExtractReference': io
             'App\Planning\DigestReferences\DigestReference': llm_secondary
             'App\Planning\AskQuestions\AskQuestions': llm_primary
-            'App\Planning\GenerateFlows\GenerateFlows': llm_primary
             'App\Planning\GenerateOutline\GenerateOutline': llm_primary
-            'App\Planning\FinalCheckup\FinalCheckup': llm_primary
             'App\Planning\WriteArticle\WriteArticle': llm_primary
             'App\Planning\SuggestTitles\SuggestTitles': llm_primary
             'App\Planning\SuggestPunchlines\SuggestPunchlines': llm_primary

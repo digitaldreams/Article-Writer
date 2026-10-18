@@ -2,7 +2,6 @@
 
 namespace App\Tests\Planning\SuggestTitles;
 
-use App\Planning\FlowOption;
 use App\Planning\SuggestTitles\ProposedTitle;
 use App\Planning\SuggestTitles\TitleList;
 use App\Planning\SuggestTitles\TitleSuggestion;
@@ -40,7 +39,6 @@ final class SuggestTitlesTest extends PlanningTestCase
         self::assertSelectorTextContains('button.button-secondary', 'Suggest more');
         self::assertTrue($hasSystemPrompt);
         self::assertStringContainsString('Audience: PHP developers', $prompt);
-        self::assertStringContainsString('Problem first, then the fix', $prompt);
         self::assertStringContainsString('Typed at last', $prompt);
         self::assertSame('test-title', $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'suggest_titles'])?->getModel());
     }
@@ -198,10 +196,6 @@ final class SuggestTitlesTest extends PlanningTestCase
     private function writtenArticle(): Article
     {
         $article = $this->planIn(ArticleState::Written);
-        $flow = new FlowOption($article, 'Problem first, then the fix');
-        $flow->choose();
-        $this->em()->persist($flow);
-        $this->em()->flush();
         $this->folder()->write($article->getFolder(), 'article.md', ['plan_id' => $article->getId(), 'title' => 'PHP 8 features'], "# PHP 8 features\n\nTyped at last.\n");
 
         return $article;

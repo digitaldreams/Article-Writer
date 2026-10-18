@@ -74,7 +74,7 @@ final class GeneratePlanTitleTest extends WebTestCase
     {
         $client->disableReboot();
         $crawler = $client->request('GET', '/plans/new');
-        $client->submit($crawler->selectButton('Create')->form(['create_plan[topic]' => $topic]));
+        $client->submit($crawler->selectButton('Start brainstorming')->form(['create_plan[topic]' => $topic]));
     }
 
     private function consume(): void

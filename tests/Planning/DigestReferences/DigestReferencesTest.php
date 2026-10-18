@@ -30,14 +30,14 @@ final class DigestReferencesTest extends WebTestCase
         $client = $this->client();
         $this->fakeWeb();
         $this->fakeModel();
-        $this->createPlan($client, "https://example.com/a\nhttps://example.com/b", ['notes.md' => '# Notes about hooks']);
+        $this->createPlan($client, "https://example.com/a\nhttps://example.com/b\nhttps://example.com/c");
 
         $this->consume();
 
         $references = $this->references();
         self::assertSame([ReferenceStatus::Done, ReferenceStatus::Done, ReferenceStatus::Done], array_map(static fn (Reference $r) => $r->getStatus(), $references));
         self::assertSame('digest of: Property hooks page a', $references[0]->getDigest());
-        self::assertSame('digest of: # Notes about hooks', $references[2]->getDigest());
+        self::assertSame('digest of: Property hooks page c', $references[2]->getDigest());
     }
 
     public function testBadUrlBecomesUnreadable(): void
@@ -59,7 +59,8 @@ final class DigestReferencesTest extends WebTestCase
         $this->fakeModel(function () use (&$calls): void {
             ++$calls;
         });
-        $this->createPlan($client, '', ['long.md' => str_repeat('a', DigestReferenceHandler::PART_CHARS).'b']);
+        self::getContainer()->set('http_client', new MockHttpClient(new MockResponse('<main>'.str_repeat('a', DigestReferenceHandler::PART_CHARS).'b</main>')));
+        $this->createPlan($client, 'https://example.com/long');
 
         $this->consume();
 
@@ -116,20 +117,12 @@ final class DigestReferencesTest extends WebTestCase
         );
     }
 
-    /** @param array<string, string> $docs */
-    private function createPlan(KernelBrowser $client, string $links, array $docs = []): void
+    private function createPlan(KernelBrowser $client, string $links): void
     {
         $crawler = $client->request('GET', '/plans/new');
-        $client->submit($crawler->selectButton('Create')->form(['create_plan[topic]' => 'PHP 8 features '.uniqid()]));
+        $client->submit($crawler->selectButton('Start brainstorming')->form(['create_plan[topic]' => 'PHP 8 features '.uniqid()]));
         $crawler = $client->followRedirect();
-        $form = $crawler->selectButton('Add references')->form(['add_references[links]' => $links]);
-        $i = 0;
-        foreach ($docs as $name => $content) {
-            $path = sys_get_temp_dir().'/'.$name;
-            file_put_contents($path, $content);
-            $form['add_references[docs]'][$i++]->upload($path);
-        }
-        $client->submit($form);
+        $client->submit($crawler->selectButton('Add references')->form(['add_references[links]' => $links]));
     }
 
     /** @return list<Reference> */

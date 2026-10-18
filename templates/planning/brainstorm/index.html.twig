@@ -11,21 +11,34 @@
     <h1>{{ article.title }}</h1>
 
     <section>
-        <h2>Idea</h2>
+        <h2>About the article</h2>
         {% if editable %}
             {# Permanent: the reference poll below morphs the page and must not reset the editor. #}
             <form id="brainstorm-notes" data-turbo-permanent method="post" action="{{ path('planning_save_notes', {id: article.id}) }}" data-controller="autosave" data-action="input->autosave#queue">
                 <div>
                     <label for="audience">Audience</label>
-                    <input id="audience" name="audience" value="{{ input.audience }}">
+                    <p class="help-text" id="audience-help">Who will read it? The AI picks examples and words for these readers. Pick one or type your own.</p>
+                    <input id="audience" name="audience" value="{{ input.audience }}" list="audience-options" placeholder="e.g. Laravel developers new to Symfony" aria-describedby="audience-help">
+                    <datalist id="audience-options">
+                        {% for option in ['PHP developers', 'Laravel developers', 'Symfony developers', 'Backend developers', 'Frontend developers', 'Full-stack developers', 'JavaScript developers', 'DevOps engineers', 'Students learning web development'] %}
+                            <option value="{{ option }}"></option>
+                        {% endfor %}
+                    </datalist>
                 </div>
                 <div>
-                    <label for="reader-level">Reader level</label>
-                    <input id="reader-level" name="readerLevel" value="{{ input.readerLevel }}">
+                    <label for="reader-level">Reader level <span class="muted">(optional)</span></label>
+                    <p class="help-text" id="reader-level-help">How much do they know already? It sets how much the article explains.</p>
+                    <input id="reader-level" name="readerLevel" value="{{ input.readerLevel }}" list="reader-level-options" placeholder="e.g. Intermediate" aria-describedby="reader-level-help">
+                    <datalist id="reader-level-options">
+                        {% for option in ['Beginner', 'Intermediate', 'Advanced'] %}
+                            <option value="{{ option }}"></option>
+                        {% endfor %}
+                    </datalist>
                 </div>
                 <div>
                     <label for="rough-flow">Idea</label>
-                    <textarea id="rough-flow" name="roughFlow" rows="14" data-controller="markdown-editor">{{ input.roughFlow }}</textarea>
+                    <p class="help-text" id="rough-flow-help">The AI builds the questions and the outline from this. More detail gives an outline closer to what you have in mind.</p>
+                    <textarea id="rough-flow" name="roughFlow" rows="14" data-controller="markdown-editor" placeholder="How do you see the article? What is it about, how does it flow, what example runs through it? Rough notes are fine." aria-describedby="rough-flow-help">{{ input.roughFlow }}</textarea>
                 </div>
                 <p class="form-actions"><span class="muted" data-autosave-target="status" aria-live="polite"></span></p>
             </form>
@@ -41,7 +54,7 @@
     <div {% if reading %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
         <section>
             <h2>References</h2>
-            <p class="muted">The AI reads each reference and saves short notes. Questions, flows, outline and article use these notes, not the full page.</p>
+            <p class="muted">The AI reads each reference and saves short notes. Questions, outline and article use these notes, not the full page.</p>
             {% if references is empty %}
                 <p class="muted">No references.</p>
             {% else %}
@@ -62,6 +75,11 @@
                                 <span class="badge badge-{{ chip_tones[reference.status.value] }}">{{ reference.status.value|capitalize }}</span>
                                 {{ reference.location }}
                             {% endif %}
+                            {% if editable and reference.status.value != 'pending' %}
+                                <form method="post" action="{{ path('planning_remove_reference', {id: reference.id}) }}" class="reference-remove">
+                                    <button class="button button-secondary button-small" type="submit" aria-label="Remove {{ reference.location }}">Remove</button>
+                                </form>
+                            {% endif %}
                         </li>
                     {% endfor %}
                 </ul>
@@ -76,16 +94,25 @@
                 <h2>Add references</h2>
                 {{ form_start(form) }}
                     {{ form_row(form.links, {attr: {rows: 4}}) }}
-                    {{ form_row(form.docs, {label: 'Docs (md, pdf)', attr: {accept: '.md,.pdf'}}) }}
                     {{ form_row(form.add, {attr: {class: 'button button-secondary'}}) }}
                 {{ form_end(form) }}
             </section>
 
-            <form method="post" action="{{ path('planning_finish_brainstorm', {id: article.id}) }}" class="form-actions">
-                {% if reading %}<span class="muted">Reading {{ reading }} {{ reading == 1 ? 'reference' : 'references' }}…</span>{% endif %}
-                <button class="button button-secondary" type="submit" name="to" value="questions" {{ reading ? 'disabled' : '' }}>Ask me questions first</button>
-                <button class="button button-primary" type="submit" name="to" value="outline" {{ reading ? 'disabled' : '' }}>Next: outline</button>
-            </form>
+            <section>
+                <h2>What next?</h2>
+                {% if reading %}<p class="muted">Reading {{ reading }} {{ reading == 1 ? 'reference' : 'references' }}… You can go on when it's done.</p>{% endif %}
+                <form method="post" action="{{ path('planning_finish_brainstorm', {id: article.id}) }}" class="next-choices">
+                    <button class="next-choice" type="submit" name="to" value="questions" {{ reading ? 'disabled' : '' }}>
+                        <strong>Ask me questions first</strong>
+                        <span class="muted">Idea still thin? The AI asks up to 5 questions.</span>
+                    </button>
+                    <button class="next-choice next-choice-primary" type="submit" name="to" value="outline" {{ reading ? 'disabled' : '' }}>
+                        <strong>Next: outline</strong>
+                        <span class="muted">Idea is clear? The AI drafts the outline.</span>
+                    </button>
+                </form>
+                <p class="muted">After this, your notes and references are locked.</p>
+            </section>
         {% endif %}
     </div>
 {% endblock %}

@@ -17,7 +17,7 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
- * to=outline: "Next: outline", skips questions and flows; the outline is made from the idea and references.
+ * to=outline: "Next: outline", skips questions; the outline is made from the idea and references.
  * Otherwise: "Ask me questions first". Both wait until every reference is done or unreadable.
  */
 final class FinishBrainstormController extends AbstractController

@@ -18,10 +18,8 @@ final class OpenPlanTest extends WebTestCase
     {
         yield 'plan' => [[], 'brainstorm'];
         yield 'questions' => [[ArticleState::Questions], 'questions'];
-        yield 'flows' => [[ArticleState::Questions, ArticleState::Flows], 'flows'];
-        yield 'outline' => [[ArticleState::Questions, ArticleState::Flows, ArticleState::Outline], 'outline'];
-        yield 'finalize' => [[ArticleState::Questions, ArticleState::Flows, ArticleState::Outline, ArticleState::Finalize], 'review'];
-        yield 'approved' => [[ArticleState::Questions, ArticleState::Flows, ArticleState::Outline, ArticleState::Finalize, ArticleState::Approved], 'article'];
+        yield 'outline' => [[ArticleState::Questions, ArticleState::Outline], 'outline'];
+        yield 'approved' => [[ArticleState::Questions, ArticleState::Outline, ArticleState::Approved], 'article'];
     }
 
     /** @param list<ArticleState> $path */

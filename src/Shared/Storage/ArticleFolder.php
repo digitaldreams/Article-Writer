@@ -4,7 +4,6 @@ namespace App\Shared\Storage;
 
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Component\Yaml\Yaml;
 
@@ -53,31 +52,6 @@ final readonly class ArticleFolder
         $frontMatter = Yaml::parse($m[1]);
 
         return ['frontMatter' => \is_array($frontMatter) ? $frontMatter : [], 'body' => $m[2]];
-    }
-
-    /** Reads a file as it is, e.g. an uploaded reference in refs/. */
-    public function readRaw(string $folder, string $file): string
-    {
-        $content = file_get_contents($this->path($folder, $file));
-
-        return false === $content ? throw new \RuntimeException(sprintf('"%s" can\'t be read.', $file)) : $content;
-    }
-
-    /**
-     * Stores the upload in refs/ under its sanitized original name. Returns the path relative to the article folder.
-     */
-    public function storeUpload(string $folder, UploadedFile $file): string
-    {
-        $original = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $extension = strtolower(pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION));
-        $name = (new AsciiSlugger())->slug($original)->toString() ?: 'file';
-        if ('' !== $extension) {
-            $name .= '.'.(new AsciiSlugger())->slug($extension)->toString();
-        }
-
-        $file->move($this->path($folder, 'refs'), $name);
-
-        return 'refs/'.$name;
     }
 
     /** Absolute path of a file in an article folder, e.g. to show the writer where article.md is. */

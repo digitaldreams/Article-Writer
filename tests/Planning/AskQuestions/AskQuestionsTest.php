@@ -55,6 +55,7 @@ final class AskQuestionsTest extends WebTestCase
         );
         self::assertStringStartsWith('Your only job: before the outline is made', $system);
         self::assertStringContainsString('Ask 5 questions or fewer', $system);
+        self::assertStringContainsString('Always ask about the flow, as one choice with 2 or 3 really different flows.', $system);
         self::assertStringNotContainsString('{', $system);
         self::assertStringContainsString('Audience: PHP developers', $system);
         self::assertStringContainsString('Level: not given', $system);
@@ -124,7 +125,7 @@ final class AskQuestionsTest extends WebTestCase
     private function createPlan(KernelBrowser $client): void
     {
         $crawler = $client->request('GET', '/plans/new');
-        $client->submit($crawler->selectButton('Create')->form([
+        $client->submit($crawler->selectButton('Start brainstorming')->form([
             'create_plan[topic]' => 'PHP 8 features '.uniqid(),
         ]));
         $id = $this->article()->getId();

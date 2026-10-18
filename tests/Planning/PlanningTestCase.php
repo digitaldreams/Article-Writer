@@ -33,7 +33,7 @@ abstract class PlanningTestCase extends WebTestCase
     protected function planIn(ArticleState $state): Article
     {
         $article = Article::plan($this->author, 'plan', 'PHP 8 features');
-        foreach ([ArticleState::Questions, ArticleState::Flows, ArticleState::Outline, ArticleState::Finalize, ArticleState::Approved, ArticleState::Written] as $next) {
+        foreach ([ArticleState::Questions, ArticleState::Outline, ArticleState::Approved, ArticleState::Written] as $next) {
             if ($article->getState() === $state) {
                 break;
             }

@@ -23,7 +23,7 @@ final class AiAgentsTest extends KernelTestCase
     public function testEveryStepPromptIsAnMdFileOnItsAgent(): void
     {
         $dir = self::getContainer()->getParameter('kernel.project_dir').'/prompts';
-        foreach (['plan_title', 'digest', 'structure_notes', 'structure_profile', 'questions', 'flows', 'outline', 'checkup', 'article', 'review', 'rewrite', 'title', 'poster', 'share'] as $agent) {
+        foreach (['plan_title', 'digest', 'structure_notes', 'structure_profile', 'questions', 'outline', 'article', 'review', 'rewrite', 'title', 'poster', 'share'] as $agent) {
             self::assertFileExists($dir.'/'.$agent.'_agent.md');
             self::assertTrue(self::getContainer()->has('ai.agent.'.$agent), $agent);
         }

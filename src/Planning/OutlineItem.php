@@ -23,12 +23,6 @@ class OutlineItem
     #[ORM\Column]
     private bool $editedByHand = false;
 
-    #[ORM\Column(nullable: true)]
-    private ?string $suggestedTitle = null;
-
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $suggestedSummary = null;
-
     public function __construct(
         #[ORM\ManyToOne]
         #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -80,16 +74,6 @@ class OutlineItem
         return $this->editedByHand;
     }
 
-    public function getSuggestedTitle(): ?string
-    {
-        return $this->suggestedTitle;
-    }
-
-    public function getSuggestedSummary(): ?string
-    {
-        return $this->suggestedSummary;
-    }
-
     public function editByHand(string $title, string $summary): void
     {
         $this->title = $title;
@@ -102,26 +86,5 @@ class OutlineItem
     {
         $this->title = $title;
         $this->summary = $summary;
-    }
-
-    public function suggest(string $title, string $summary): void
-    {
-        $this->suggestedTitle = $title;
-        $this->suggestedSummary = $summary;
-    }
-
-    public function acceptSuggestion(): void
-    {
-        if (null !== $this->suggestedTitle && null !== $this->suggestedSummary) {
-            $this->title = $this->suggestedTitle;
-            $this->summary = $this->suggestedSummary;
-        }
-        $this->clearSuggestion();
-    }
-
-    public function clearSuggestion(): void
-    {
-        $this->suggestedTitle = null;
-        $this->suggestedSummary = null;
     }
 }

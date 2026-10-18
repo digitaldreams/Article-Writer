@@ -6,16 +6,13 @@ use App\Planning\PlanInput;
 use App\Planning\Reference;
 use App\Planning\ReferencesAdded;
 use App\Planning\ReferenceStatus;
-use App\Planning\ReferenceType;
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
 use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobStatus;
-use App\Shared\Storage\ArticleFolder;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -29,7 +26,6 @@ final class BrainstormController extends AbstractController
         Article $article,
         Request $request,
         EntityManagerInterface $em,
-        ArticleFolder $articleFolder,
         EventDispatcherInterface $events,
     ): Response {
         $form = $this->createForm(AddReferencesType::class, options: ['action' => $this->generateUrl('planning_brainstorm', ['id' => $article->getId()])])->handleRequest($request);
@@ -39,15 +35,12 @@ final class BrainstormController extends AbstractController
         }
 
         if ($form->isSubmitted() && $form->isValid()) {
-            /** @var array{links: ?string, docs: list<UploadedFile>} $data */
+            /** @var array{links: ?string} $data */
             $data = $form->getData();
-            $em->wrapInTransaction(function () use ($article, $data, $em, $articleFolder, $events): void {
+            $em->wrapInTransaction(function () use ($article, $data, $em, $events): void {
                 $references = [];
                 foreach (UrlLines::split($data['links']) as $url) {
-                    $references[] = new Reference($article, ReferenceType::Link, $url);
-                }
-                foreach ($data['docs'] as $file) {
-                    $references[] = new Reference($article, ReferenceType::Doc, $articleFolder->storeUpload($article->getFolder(), $file));
+                    $references[] = new Reference($article, $url);
                 }
                 foreach ($references as $reference) {
                     $em->persist($reference);

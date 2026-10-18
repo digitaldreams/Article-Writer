@@ -3,13 +3,11 @@
 namespace App\Planning\Brainstorm;
 
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Validator\Constraints\All;
 use Symfony\Component\Validator\Constraints\Callback;
-use Symfony\Component\Validator\Constraints\File;
 use Symfony\Component\Validator\Constraints\Url;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
@@ -23,11 +21,6 @@ final class AddReferencesType extends AbstractType
                 'required' => false,
                 'help' => 'One URL per line',
                 'constraints' => [new Callback($this->validateUrls(...))],
-            ])
-            ->add('docs', FileType::class, [
-                'multiple' => true,
-                'required' => false,
-                'constraints' => [new All(new File(mimeTypes: ['text/markdown', 'text/x-markdown', 'text/plain', 'application/pdf']))],
             ])
             ->add('add', SubmitType::class, ['label' => 'Add references']);
     }

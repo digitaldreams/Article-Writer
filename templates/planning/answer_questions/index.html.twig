@@ -27,8 +27,10 @@
                 {% include 'shared/llm/job_card/_frame.html.twig' with {job: ask_job} only %}
             {% endif %}
             {% for question in one_by_one ? [questions[current - 1]] : questions %}
-                <article class="card question{{ question.skipped ? ' skipped' : '' }}">
-                    {% if question.skipped %}<p class="question-head"><span class="badge badge-neutral">Skipped</span></p>{% endif %}
+                {# After Next, a question left without an answer counts as skipped. #}
+                {% set skipped = question.skipped or (not editable and question.answer is null) %}
+                <article class="card question{{ skipped ? ' skipped' : '' }}">
+                    {% if skipped %}<p class="question-head"><span class="badge badge-neutral">Skipped</span></p>{% endif %}
                     <form method="post" action="{{ path('planning_save_answer', {id: article.id, questionId: question.id}) }}" data-controller="autosave">
                         {% if question.options is empty %}
                             <label for="answer-{{ question.id }}">{{ question.text }}</label>
@@ -63,8 +65,7 @@
 
             {% if editable and ask_job and ask_job.status.value == 'done' %}
                 <form method="post" action="{{ path('planning_finish_questions', {id: article.id}) }}" class="form-actions">
-                    <button class="button button-secondary" type="submit" name="to" value="flows">Show flows first</button>
-                    <button class="button button-primary" type="submit" name="to" value="outline">Next: outline</button>
+                    <button class="button button-primary" type="submit">Next: outline</button>
                 </form>
             {% endif %}
         </section>

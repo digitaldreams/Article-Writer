@@ -1,14 +1,84 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}New plan · {{ parent() }}{% endblock %}
+{% block title %}New article plan · {{ parent() }}{% endblock %}
 
 {% block body %}
     <p><a href="{{ path('planning_list_plans') }}">Back to plans</a></p>
-    <h1>New plan</h1>
+    <h1>New article plan</h1>
 
-    {{ form_start(form) }}
-        {{ form_row(form.topic) }}
-        {{ form_row(form.idea, {attr: {rows: 14, 'data-controller': 'markdown-editor'}}) }}
-        {{ form_row(form.create, {attr: {class: 'button button-primary'}}) }}
-    {{ form_end(form) }}
+    {# The Plans page loads this frame into its "New plan" modal. #}
+    <turbo-frame id="new-plan">
+        <p class="muted">This is the first step of your article. Write the topic in a few words, or pick one from the list. On the next page you brainstorm: your idea, who it is for, and links.</p>
+        {# Explicit action: inside the modal an empty action would post to the Plans page URL. #}
+        {{ form_start(form, {action: path('planning_create_plan'), attr: {'data-turbo-frame': '_top'}}) }}
+            {{ form_row(form.topic, {attr: {autofocus: true, maxlength: 200, list: 'topic-options', placeholder: 'e.g. PHP 8 enums in Symfony'}}) }}
+            <datalist id="topic-options">
+                {% for topic in [
+                    'PHP 8 enums in practice',
+                    'PHP 8.4 property hooks',
+                    'Readonly classes and properties in PHP',
+                    'PHP attributes instead of annotations',
+                    'Match expression vs switch in PHP',
+                    'Named arguments in PHP 8',
+                    'Fibers and async PHP',
+                    'Static analysis with PHPStan',
+                    'Composer tips for large projects',
+                    'PSR standards explained',
+                    'Symfony Messenger for background jobs',
+                    'Symfony dependency injection explained',
+                    'Symfony Security: voters and firewalls',
+                    'Symfony Forms with validation',
+                    'Symfony UX Turbo and Stimulus',
+                    'Symfony AssetMapper without Node',
+                    'Symfony Workflow component',
+                    'Symfony AI: agents and tools',
+                    'Doctrine ORM performance tips',
+                    'Doctrine migrations done right',
+                    'Laravel queues and jobs',
+                    'Laravel Eloquent relationships',
+                    'Laravel Livewire basics',
+                    'Laravel vs Symfony for new projects',
+                    'Testing with Pest',
+                    'PHPUnit best practices',
+                    'Test-driven development in PHP',
+                    'Domain-Driven Design in PHP',
+                    'Vertical slice architecture',
+                    'Hexagonal architecture explained',
+                    'SOLID principles with examples',
+                    'Design patterns in modern PHP',
+                    'Clean code: naming and small functions',
+                    'REST API design best practices',
+                    'GraphQL vs REST',
+                    'API authentication with JWT and OAuth2',
+                    'Web security: OWASP Top 10',
+                    'Caching with Redis',
+                    'Full-text search with Meilisearch',
+                    'Database indexing for developers',
+                    'Docker for PHP developers',
+                    'CI/CD with GitHub Actions',
+                    'Zero-downtime deployments',
+                    'Logging and monitoring in production',
+                    'TypeScript for PHP developers',
+                    'Modern CSS: grid, container queries and :has()',
+                    'Web performance and Core Web Vitals',
+                    'Hotwire vs React for server-rendered apps',
+                    'Using LLMs in a PHP app',
+                    'Running local LLMs with Ollama',
+                    'Prompt engineering for developers',
+                    'RAG: retrieval-augmented generation explained',
+                    'Vector databases and embeddings',
+                    'Structured output from LLMs',
+                    'Tool calling and AI agents',
+                    'Model Context Protocol (MCP) explained',
+                    'AI coding assistants in daily work',
+                    'Testing and evaluating LLM output',
+                    'Cutting LLM cost and token use',
+                    'Prompt injection and AI guardrails'
+                ] %}
+                    <option value="{{ topic }}"></option>
+                {% endfor %}
+            </datalist>
+            <p class="form-actions">{{ form_widget(form.create, {attr: {class: 'button button-primary'}}) }}</p>
+        {{ form_end(form) }}
+    </turbo-frame>
 {% endblock %}

@@ -13,10 +13,8 @@ final class ArticleStateTest extends TestCase
 {
     private const ALLOWED = [
         'plan' => ['questions', 'outline'],
-        'questions' => ['flows', 'outline'],
-        'flows' => ['outline'],
-        'outline' => ['outline', 'finalize'],
-        'finalize' => ['outline', 'flows', 'approved'],
+        'questions' => ['outline'],
+        'outline' => ['outline', 'approved'],
         'approved' => ['written'],
         'written' => [],
         'imported' => [],
@@ -58,11 +56,10 @@ final class ArticleStateTest extends TestCase
     {
         $article = ArticleState::Imported === $state ? Article::imported(new User('a@example.com'), 's', 't') : Article::plan(new User('a@example.com'), 's', 't');
         $path = [
-            'plan' => [], 'questions' => ['questions'], 'flows' => ['questions', 'flows'],
-            'outline' => ['questions', 'flows', 'outline'],
-            'finalize' => ['questions', 'flows', 'outline', 'finalize'],
-            'approved' => ['questions', 'flows', 'outline', 'finalize', 'approved'],
-            'written' => ['questions', 'flows', 'outline', 'finalize', 'approved', 'written'],
+            'plan' => [], 'questions' => ['questions'],
+            'outline' => ['questions', 'outline'],
+            'approved' => ['questions', 'outline', 'approved'],
+            'written' => ['questions', 'outline', 'approved', 'written'],
             'imported' => [],
         ][$state->value];
         foreach ($path as $step) {

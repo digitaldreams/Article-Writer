@@ -14,7 +14,7 @@ final class OllamaOptions
 {
     public const OPTIONS = [
         'num_ctx' => 16384,
-        'num_thread' => 4,
+        'num_thread' => 6,
         'keep_alive' => -1,
     ];
 

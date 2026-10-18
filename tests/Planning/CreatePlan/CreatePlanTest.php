@@ -14,26 +14,33 @@ final class CreatePlanTest extends WebTestCase
 {
     use LogsInAuthor;
 
-    public function testTopicAndIdeaAreSavedInStatePlanAndOpenBrainstorming(): void
+    public function testTopicIsSavedInStatePlanAndOpensBrainstorming(): void
     {
         $client = static::createClient();
         $this->logIn($client);
 
         $crawler = $client->request('GET', '/plans/new');
         self::assertResponseIsSuccessful();
-        self::assertSame(['create_plan[topic]', 'create_plan[idea]'], $crawler->filter('form [name^="create_plan["]:not([type=submit]):not([type=hidden])')->each(static fn ($n) => $n->attr('name')));
-        $client->submit($crawler->selectButton('Create')->form([
-            'create_plan[topic]' => 'Symfony AI Agents '.uniqid(),
-            'create_plan[idea]' => 'Hooks replace getters',
-        ]));
+        self::assertSame(['create_plan[topic]'], $crawler->filter('form [name^="create_plan["]:not([type=submit]):not([type=hidden])')->each(static fn ($n) => $n->attr('name')));
+        $client->submit($crawler->selectButton('Start brainstorming')->form(['create_plan[topic]' => 'Symfony AI Agents '.uniqid()]));
 
         $em = self::getContainer()->get(EntityManagerInterface::class);
         $article = $em->getRepository(Article::class)->findOneBy([]);
         self::assertInstanceOf(Article::class, $article);
         self::assertResponseRedirects('/plans/'.$article->getId().'/brainstorm');
         self::assertSame(ArticleState::Plan, $article->getState());
-        self::assertSame('Hooks replace getters', $em->getRepository(PlanInput::class)->findOneBy(['article' => $article])?->getRoughFlow());
+        self::assertSame('', $em->getRepository(PlanInput::class)->findOneBy(['article' => $article])?->getRoughFlow());
         self::assertSame(['generate_plan_title'], array_map(static fn (LlmJob $j) => $j->getStep(), $em->getRepository(LlmJob::class)->findBy(['article' => $article])));
+    }
+
+    public function testFormPostsToNewPlanFromInsideThePlansPageModal(): void
+    {
+        $client = static::createClient();
+        $this->logIn($client);
+
+        $crawler = $client->request('GET', '/plans/new');
+
+        self::assertSame('/plans/new', $crawler->filter('turbo-frame#new-plan form')->attr('action'));
     }
 
     public function testMissingTopicGives422AndSavesNothing(): void
@@ -41,7 +48,7 @@ final class CreatePlanTest extends WebTestCase
         $client = static::createClient();
         $this->logIn($client);
         $crawler = $client->request('GET', '/plans/new');
-        $client->submit($crawler->selectButton('Create')->form(['create_plan[topic]' => '']));
+        $client->submit($crawler->selectButton('Start brainstorming')->form(['create_plan[topic]' => '']));
 
         self::assertResponseStatusCodeSame(422);
         $em = self::getContainer()->get(EntityManagerInterface::class);

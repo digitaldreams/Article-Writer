@@ -16,7 +16,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Twig\Environment;
 
-/** The reader persona reads the whole article and leaves notes per section. A new review replaces the old notes. */
+/** The reader reads the whole article and leaves notes per section. A new review replaces the old notes. */
 #[AsMessageHandler(fromTransport: 'llm_primary')]
 final readonly class ReviewArticleHandler
 {
@@ -28,8 +28,6 @@ final readonly class ReviewArticleHandler
         private EntityManagerInterface $em,
         private ArticleFolder $folder,
         private Environment $twig,
-        #[Autowire('%kernel.project_dir%/personas/reader.md')]
-        private string $readerPersona,
     ) {
     }
 
@@ -46,10 +44,8 @@ final readonly class ReviewArticleHandler
                 'body' => $body,
             ])),
         ), ['response_format' => ReaderReview::class, 'template_vars' => [
-            'reader' => strtr($this->persona(), [
-                '{audience}' => '' !== $input->getAudience() ? $input->getAudience() : 'not given',
-                '{reader_level}' => $input->getReaderLevel() ?? 'not given',
-            ]),
+            'audience' => '' !== $input->getAudience() ? $input->getAudience() : 'not given',
+            'reader_level' => $input->getReaderLevel() ?? 'not given',
             'max' => self::MAX_NOTES,
             'language_level' => $article->getUser()->getLanguageLevel(),
         ]]), ReaderReview::class);
@@ -64,12 +60,5 @@ final readonly class ReviewArticleHandler
                 $this->em->persist(new ReaderNote($article, $section, trim($note->problem), trim($note->suggestion), $position));
             }
         });
-    }
-
-    private function persona(): string
-    {
-        $content = file_get_contents($this->readerPersona);
-
-        return false === $content ? throw new \RuntimeException('The persona file "reader.md" is missing.') : $content;
     }
 }

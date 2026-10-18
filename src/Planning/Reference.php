@@ -28,13 +28,10 @@ class Reference
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $digest = null;
 
-    /** @param string $location the URL for a link, the `refs/<name>` path inside the article folder otherwise */
     public function __construct(
         #[ORM\ManyToOne]
         #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
         private Article $article,
-        #[ORM\Column(enumType: ReferenceType::class, length: 20)]
-        private ReferenceType $type,
         #[ORM\Column(type: Types::TEXT)]
         private string $location,
     ) {
@@ -49,11 +46,6 @@ class Reference
     public function getArticle(): Article
     {
         return $this->article;
-    }
-
-    public function getType(): ReferenceType
-    {
-        return $this->type;
     }
 
     public function getLocation(): string

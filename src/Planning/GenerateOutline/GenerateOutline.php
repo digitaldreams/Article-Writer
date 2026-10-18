@@ -11,7 +11,6 @@ final readonly class GenerateOutline implements LlmJobMessage
         public int $articleId,
         public int $round,
         public ?string $instruction = null,
-        public ?string $reason = null,
     ) {
     }
 

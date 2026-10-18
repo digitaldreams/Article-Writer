@@ -24,13 +24,29 @@ final class ListPlansTest extends WebTestCase
         self::assertSelectorTextContains('body', 'No plans yet.');
     }
 
+    public function testNewPlanOpensAModalThatLoadsTheTopicForm(): void
+    {
+        $client = static::createClient();
+        $this->logIn($client);
+        $crawler = $client->request('GET', '/plans');
+
+        self::assertSame('new-plan-dialog', $crawler->filter('button[command="show-modal"]')->attr('commandfor'));
+        self::assertSame('/plans/new', $crawler->filter('dialog#new-plan-dialog turbo-frame#new-plan')->attr('src'));
+
+        $client->request('GET', '/plans/new');
+        self::assertSelectorExists('turbo-frame#new-plan form[data-turbo-frame="_top"] input[name="create_plan[topic]"]');
+        self::assertSelectorTextContains('turbo-frame#new-plan', 'first step of your article');
+        self::assertSelectorExists('input[name="create_plan[topic]"][list="topic-options"]');
+        self::assertCount(60, $client->getCrawler()->filter('turbo-frame#new-plan datalist#topic-options option'));
+    }
+
     public function testSubmittedPlanAppearsWithItsState(): void
     {
         $client = static::createClient();
         $this->logIn($client);
         $client->disableReboot();
         $crawler = $client->request('GET', '/plans/new');
-        $client->submit($crawler->selectButton('Create')->form(['create_plan[topic]' => 'Listed topic '.uniqid()]));
+        $client->submit($crawler->selectButton('Start brainstorming')->form(['create_plan[topic]' => 'Listed topic '.uniqid()]));
 
         $client->request('GET', '/plans');
         self::assertSelectorTextContains('table.plans', 'Listed topic');
@@ -42,7 +58,7 @@ final class ListPlansTest extends WebTestCase
         $client = static::createClient();
         $this->logIn($client);
         $crawler = $client->request('GET', '/plans/new');
-        $client->submit($crawler->selectButton('Create')->form(['create_plan[topic]' => '']));
+        $client->submit($crawler->selectButton('Start brainstorming')->form(['create_plan[topic]' => '']));
 
         self::assertResponseStatusCodeSame(422);
         self::assertSelectorExists('form[name="create_plan"] ul li');

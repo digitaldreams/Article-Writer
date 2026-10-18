@@ -2,7 +2,6 @@
 
 namespace App\Planning\GenerateOutline;
 
-use App\Planning\FlowOption;
 use App\Planning\OutlineItem;
 use App\Planning\OutlineItems;
 use App\Planning\PlanContext;
@@ -38,10 +37,8 @@ final readonly class GenerateOutlineHandler
         }
 
         $context = $this->planContext->of($article) + [
-            'flow' => $this->em->getRepository(FlowOption::class)->findOneBy(['article' => $article, 'chosen' => true]),
             'previous_items' => $this->outline->ofRound($article, $message->round - 1),
             'instruction' => $message->instruction,
-            'reason' => $message->reason,
         ];
 
         $answer = AgentAnswer::object($this->agent->call(new MessageBag(

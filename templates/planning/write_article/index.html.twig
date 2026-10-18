@@ -16,7 +16,7 @@
         {% endif %}
 
         {% if body is not null %}
-            <p class="notice">Written to <code>{{ path }}</code> <a href="{{ path|file_link(1) }}" class="button">Open in VS Code</a></p>
+            <p class="notice">Written to <code>{{ path }}</code> <a href="{{ path|file_link(1) }}" class="button">Open in VS Code</a> <a href="{{ path('planning_download_article', {id: article.id}) }}" class="button">Download .md</a></p>
             {% if editing %}
                 <form class="card" method="post" action="{{ path('planning_save_article', {id: article.id}) }}" data-controller="autosave">
                     <textarea name="body" aria-label="Article" data-controller="markdown-editor" data-action="input->autosave#queue">{{ body }}</textarea>

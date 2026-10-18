@@ -2,7 +2,6 @@
 
 namespace App\Tests\Planning\EditOutline;
 
-use App\Planning\FinalizeRequested;
 use App\Planning\GenerateOutline\GenerateOutline;
 use App\Planning\GenerateOutline\OutlineAnswer;
 use App\Planning\GenerateOutline\ProposedItem;
@@ -13,7 +12,6 @@ use App\Shared\Article\ArticleState;
 use App\Shared\Llm\LlmJob;
 use App\Tests\Planning\PlanningTestCase;
 use Symfony\AI\Platform\Result\ObjectResult;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 final class EditOutlineTest extends PlanningTestCase
 {
@@ -80,24 +78,11 @@ final class EditOutlineTest extends PlanningTestCase
         self::assertCount(2, $this->outline()->ofRound($this->reload($article), 1));
     }
 
-    public function testFinalizeMovesToFinalizeAndFiresFinalizeRequested(): void
-    {
-        [$article] = $this->outlineRoundOne();
-        $fired = [];
-        self::getContainer()->get(EventDispatcherInterface::class)->addListener(FinalizeRequested::class, static function (FinalizeRequested $e) use (&$fired): void {
-            $fired[] = [$e->articleId, $e->round];
-        });
-
-        $this->client->request('POST', '/plans/'.$article->getId().'/outline/finalize');
-
-        self::assertSame(ArticleState::Finalize, $this->reload($article)->getState());
-        self::assertSame([[$article->getId(), 1]], $fired);
-    }
-
     public function testEditingOutsideTheOutlineStepIsAConflict(): void
     {
         [$article, [$first]] = $this->outlineRoundOne();
-        $this->client->request('POST', '/plans/'.$article->getId().'/outline/finalize');
+        $article->moveTo(ArticleState::Approved);
+        $this->em()->flush();
 
         $this->client->request('POST', $this->itemUrl($article, $first), ['title' => 'Late']);
 

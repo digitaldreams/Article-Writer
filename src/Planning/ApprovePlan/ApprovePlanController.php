@@ -2,9 +2,7 @@
 
 namespace App\Planning\ApprovePlan;
 
-use App\Planning\OutlineDecision;
 use App\Planning\OutlineItems;
-use App\Planning\OutlineReview;
 use App\Planning\PlanApproved;
 use App\Planning\PlanInput;
 use App\Planning\Question;
@@ -30,12 +28,13 @@ final class ApprovePlanController extends AbstractController
         OutlineItems $outline,
         PlanFiles $files,
     ): Response {
-        if (ArticleState::Finalize !== $article->getState()) {
-            throw new ConflictHttpException('A plan can only be approved at the review step.');
+        if (ArticleState::Outline !== $article->getState()) {
+            throw new ConflictHttpException('A plan can only be approved at the outline step.');
         }
-
-        $round = $outline->latestRound($article);
-        $items = $outline->ofRound($article, $round);
+        $items = $outline->latest($article);
+        if ([] === $items) {
+            throw new ConflictHttpException('An empty outline can\'t be approved.');
+        }
         try {
             $files->write(
                 $article,
@@ -46,15 +45,11 @@ final class ApprovePlanController extends AbstractController
                 new \DateTimeImmutable(),
             );
         } catch (IOExceptionInterface $e) {
-            // The review page belongs to ReviewPolish; it renders this error.
-            return $this->forward('App\Planning\ReviewPolish\ShowReviewController', ['article' => $article, 'approveError' => 'The plan files could not be written: '.$e->getMessage()]);
+            // The outline page belongs to EditOutline; it renders this error.
+            return $this->forward('App\Planning\EditOutline\ShowOutlineController', ['article' => $article, 'approveError' => 'The plan files could not be written: '.$e->getMessage()]);
         }
 
-        $em->wrapInTransaction(static function () use ($article, $em, $events, $items, $round): void {
-            foreach ($items as $item) {
-                $item->clearSuggestion();
-            }
-            $em->persist(new OutlineReview($article, $round, OutlineDecision::Approve));
+        $em->wrapInTransaction(static function () use ($article, $em, $events): void {
             $article->moveTo(ArticleState::Approved);
             $em->flush();
             $events->dispatch(new PlanApproved((int) $article->getId()));

@@ -4,31 +4,24 @@ namespace App\Tests\Planning\Brainstorm;
 
 use App\Planning\PlanInput;
 use App\Planning\Reference;
-use App\Planning\ReferenceType;
 use App\Shared\Article\ArticleState;
 use App\Shared\Llm\LlmJob;
 use App\Tests\Planning\PlanningTestCase;
 
 final class BrainstormTest extends PlanningTestCase
 {
-    public function testAddedReferencesAreSavedInRefsAndEachGetsAJob(): void
+    public function testAddedLinksAreSavedAndEachGetsAJob(): void
     {
         $article = $this->planIn(ArticleState::Plan);
-        $dir = sys_get_temp_dir();
-        file_put_contents($dir.'/notes.md', '# notes');
 
         $crawler = $this->client->request('GET', '/plans/'.$article->getId().'/brainstorm');
         self::assertSelectorTextSame('nav.steps a[aria-current=page]', 'Brainstorming');
-        $form = $crawler->selectButton('Add references')->form(['add_references[links]' => "https://symfony.com/doc\n\n"]);
-        $form['add_references[docs]'][0]->upload($dir.'/notes.md');
+        $form = $crawler->selectButton('Add references')->form(['add_references[links]' => "https://symfony.com/doc\n\nhttps://php.net\n"]);
         $this->client->submit($form);
 
         self::assertResponseRedirects('/plans/'.$article->getId().'/brainstorm');
         $references = $this->em()->getRepository(Reference::class)->findBy(['article' => $article], ['id' => 'ASC']);
-        self::assertSame([ReferenceType::Link, ReferenceType::Doc], array_map(static fn (Reference $r) => $r->getType(), $references));
-        self::assertSame(['https://symfony.com/doc', 'refs/notes.md'], array_map(static fn (Reference $r) => $r->getLocation(), $references));
-        $root = self::getContainer()->getParameter('kernel.project_dir').'/var/test-articles/'.$article->getFolder();
-        self::assertFileExists($root.'/refs/notes.md');
+        self::assertSame(['https://symfony.com/doc', 'https://php.net'], array_map(static fn (Reference $r) => $r->getLocation(), $references));
         self::assertSame(['extract_reference', 'extract_reference'], $this->jobSteps());
     }
 
@@ -55,10 +48,35 @@ final class BrainstormTest extends PlanningTestCase
         self::assertSame(['Symfony devs', null, "## Hooks\n- get, set"], [$input?->getAudience(), $input?->getReaderLevel(), $input?->getRoughFlow()]);
     }
 
+    public function testAudienceAndReaderLevelOfferChoicesAndEveryNoteFieldSaysWhyItMatters(): void
+    {
+        $article = $this->planIn(ArticleState::Plan);
+
+        $crawler = $this->client->request('GET', '/plans/'.$article->getId().'/brainstorm');
+
+        self::assertContains('Laravel developers', $crawler->filter('datalist#audience-options option')->each(static fn ($o) => $o->attr('value')));
+        self::assertSame(['Beginner', 'Intermediate', 'Advanced'], $crawler->filter('datalist#reader-level-options option')->each(static fn ($o) => $o->attr('value')));
+        foreach (['audience', 'reader-level', 'rough-flow'] as $id) {
+            self::assertSelectorExists('#'.$id.'-help.help-text');
+            self::assertSame($id.'-help', $crawler->filter('#'.$id)->attr('aria-describedby'));
+        }
+    }
+
+    public function testEachNextChoiceSaysWhenToPickItAndThatNotesLock(): void
+    {
+        $article = $this->planIn(ArticleState::Plan);
+
+        $this->client->request('GET', '/plans/'.$article->getId().'/brainstorm');
+
+        self::assertSelectorTextContains('button[value="questions"]', 'Idea still thin?');
+        self::assertSelectorTextContains('button[value="outline"]', 'Idea is clear?');
+        self::assertSelectorTextContains('main', 'After this, your notes and references are locked.');
+    }
+
     public function testNextWaitsWhileAReferenceIsBeingRead(): void
     {
         $article = $this->planIn(ArticleState::Plan);
-        $this->em()->persist(new Reference($article, ReferenceType::Link, 'https://symfony.com'));
+        $this->em()->persist(new Reference($article, 'https://symfony.com'));
         $this->em()->flush();
 
         $this->client->request('GET', '/plans/'.$article->getId().'/brainstorm');
@@ -73,7 +91,7 @@ final class BrainstormTest extends PlanningTestCase
     public function testNextMovesToQuestionsAndQueuesTheAskJob(): void
     {
         $article = $this->planIn(ArticleState::Plan);
-        $reference = new Reference($article, ReferenceType::Link, 'https://symfony.com');
+        $reference = new Reference($article, 'https://symfony.com');
         $reference->markUnreadable();
         $this->em()->persist($reference);
         $this->em()->flush();
@@ -85,7 +103,7 @@ final class BrainstormTest extends PlanningTestCase
         self::assertSame(['ask_questions'], $this->jobSteps());
     }
 
-    public function testNextOutlineSkipsQuestionsAndFlowsAndQueuesTheOutlineJob(): void
+    public function testNextOutlineSkipsQuestionsAndQueuesTheOutlineJob(): void
     {
         $article = $this->planIn(ArticleState::Plan);
 
@@ -96,21 +114,19 @@ final class BrainstormTest extends PlanningTestCase
         self::assertSame(['generate_outline'], $this->jobSteps());
     }
 
-    public function testSkippedQuestionsAndFlowsSaySo(): void
+    public function testSkippedQuestionsSaySo(): void
     {
         $article = $this->planIn(ArticleState::Plan);
         $this->client->request('POST', '/plans/'.$article->getId().'/brainstorm/next', ['to' => 'outline']);
 
         $this->client->request('GET', '/plans/'.$article->getId().'/questions');
         self::assertSelectorTextContains('main', 'Skipped: this plan went straight to the outline.');
-        $this->client->request('GET', '/plans/'.$article->getId().'/flows');
-        self::assertSelectorTextContains('main', 'Skipped: this plan went straight to the outline.');
     }
 
     public function testDoneReferenceShowsTheSavedNotesInACollapsedPanel(): void
     {
         $article = $this->planIn(ArticleState::Plan);
-        $reference = new Reference($article, ReferenceType::Link, 'https://symfony.com/doc');
+        $reference = new Reference($article, 'https://symfony.com/doc');
         $reference->markDone('Symfony 8 uses #[Route] on controllers.');
         $this->em()->persist($reference);
         $this->em()->flush();

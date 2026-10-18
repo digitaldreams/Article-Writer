@@ -49,8 +49,10 @@
             </form>
 
             {% if items is not empty %}
-                <form method="post" action="{{ path('planning_finalize_outline', {id: article.id}) }}">
-                    <button class="button button-primary" type="submit">Finalize</button>
+                <form method="post" action="{{ path('planning_approve_plan', {id: article.id}) }}">
+                    <p class="muted">The plan is locked after Approve.</p>
+                    {% if approve_error %}<p class="field-error">{{ approve_error }}</p>{% endif %}
+                    <button class="button button-primary" type="submit">Approve and write the article</button>
                 </form>
             {% endif %}
         {% endif %}

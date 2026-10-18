@@ -3,7 +3,6 @@
 namespace App\Tests\Planning\AnswerQuestions;
 
 use App\Planning\Question;
-use App\Planning\QuestionsDone;
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
 use App\Shared\Llm\LlmJob;
@@ -11,7 +10,6 @@ use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 final class AnswerQuestionsTest extends WebTestCase
 {
@@ -53,10 +51,6 @@ final class AnswerQuestionsTest extends WebTestCase
     public function testNextWorksWithEveryQuestionSkipped(): void
     {
         [$client, $article, $questions] = $this->planWithQuestions();
-        $fired = [];
-        self::getContainer()->get(EventDispatcherInterface::class)->addListener(QuestionsDone::class, static function (QuestionsDone $e) use (&$fired): void {
-            $fired[] = $e->articleId;
-        });
         foreach ($questions as $question) {
             $client->request('POST', $this->questionUrl($article, $question), ['skip' => '1']);
         }
@@ -64,31 +58,29 @@ final class AnswerQuestionsTest extends WebTestCase
         $client->request('POST', '/plans/'.$article->getId().'/questions/next');
 
         self::assertResponseRedirects('/plans/'.$article->getId());
-        self::assertSame(ArticleState::Flows, $this->em()->find(Article::class, $article->getId())?->getState());
-        self::assertSame([$article->getId()], $fired);
+        self::assertSame(ArticleState::Outline, $this->em()->find(Article::class, $article->getId())?->getState());
     }
 
-    public function testNextOutlineSkipsFlowsAndQueuesTheOutlineJob(): void
+    public function testNextQueuesTheOutlineJob(): void
     {
         [$client, $article] = $this->planWithQuestions();
 
-        $client->request('POST', '/plans/'.$article->getId().'/questions/next', ['to' => 'outline']);
+        $client->request('POST', '/plans/'.$article->getId().'/questions/next');
 
         self::assertResponseRedirects('/plans/'.$article->getId());
         $this->em()->clear();
         self::assertSame(ArticleState::Outline, $this->em()->find(Article::class, $article->getId())?->getState());
         self::assertNotNull($this->em()->getRepository(LlmJob::class)->findOneBy(['article' => $article->getId(), 'step' => 'generate_outline']));
-        self::assertNull($this->em()->getRepository(LlmJob::class)->findOneBy(['article' => $article->getId(), 'step' => 'generate_flows']));
     }
 
-    public function testQuestionsPageOffersOutlineAsTheMainNextStep(): void
+    public function testQuestionsPageOffersOutlineAsTheNextStep(): void
     {
         [$client, $article] = $this->planWithQuestions();
 
         $client->request('GET', '/plans/'.$article->getId().'/questions');
 
-        self::assertSelectorTextContains('button.button-primary[name="to"][value="outline"]', 'Next: outline');
-        self::assertSelectorTextContains('button.button-secondary[name="to"][value="flows"]', 'Show flows first');
+        self::assertSelectorTextContains('form[action$="/questions/next"] button.button-primary', 'Next: outline');
+        self::assertSelectorNotExists('form[action$="/questions/next"] button.button-secondary');
     }
 
     public function testQuestionsShowOneAtATimeWithProgress(): void
@@ -124,6 +116,19 @@ final class AnswerQuestionsTest extends WebTestCase
         self::assertSelectorExists('input[value="Benchmarks"][checked]');
         self::assertSelectorExists('input[value="Laravel"][checked]');
         self::assertSelectorNotExists('input[value="Old PHP versions"][checked]');
+    }
+
+    public function testAfterNextAnUnansweredQuestionShowsAsSkipped(): void
+    {
+        [$client, $article, [$first]] = $this->planWithQuestions();
+        $client->request('POST', $this->questionUrl($article, $first), ['answer' => 'It removes boilerplate.']);
+        $client->request('POST', '/plans/'.$article->getId().'/questions/next');
+
+        $client->request('GET', '/plans/'.$article->getId().'/questions');
+
+        self::assertSelectorCount(3, 'article.question');
+        self::assertSelectorCount(2, 'article.question.skipped .badge');
+        self::assertSelectorTextContains('article.question.skipped .badge', 'Skipped');
     }
 
     public function testSkipShowsTheNextQuestion(): void
@@ -162,7 +167,7 @@ final class AnswerQuestionsTest extends WebTestCase
         $this->logIn($client);
         $client->disableReboot();
         $crawler = $client->request('GET', '/plans/new');
-        $client->submit($crawler->selectButton('Create')->form(['create_plan[topic]' => 'PHP 8 features '.uniqid()]));
+        $client->submit($crawler->selectButton('Start brainstorming')->form(['create_plan[topic]' => 'PHP 8 features '.uniqid()]));
 
         $em = $this->em();
         $article = $em->getRepository(Article::class)->findOneBy([]) ?? throw new \LogicException('No article.');
