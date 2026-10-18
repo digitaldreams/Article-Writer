@@ -24,6 +24,11 @@ final readonly class ArticleFolder
         $this->fs->mkdir($this->path($folder));
     }
 
+    public function remove(string $folder): void
+    {
+        $this->fs->remove($this->path($folder));
+    }
+
     public static function slug(string $title): string
     {
         return (new AsciiSlugger())->slug($title)->lower()->toString();

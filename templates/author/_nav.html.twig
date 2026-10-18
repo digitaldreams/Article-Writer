@@ -1,0 +1,12 @@
+{% set route = app.current_route|default('') %}
+<nav class="subnav" aria-label="Author">
+    {% for link in [
+        {label: 'Bio', route: 'author_edit_bio'},
+        {label: 'Library', route: 'author_list_library'},
+        {label: 'Feeds', route: 'author_add_feeds'},
+        {label: 'Writing profile', route: 'author_edit_writing_profile'},
+        {label: 'Prompts', route: 'author_show_prompts'},
+    ] %}
+        <a href="{{ path(link.route) }}"{% if route == link.route %} aria-current="page"{% endif %}>{{ link.label }}</a>
+    {% endfor %}
+</nav>

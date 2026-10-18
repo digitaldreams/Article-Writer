@@ -26,13 +26,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::TEXT, options: ['default' => ''])]
     private string $longBio = '';
 
-    /** The English level every prompt writes for; empty before Setup. */
+    /** The English level every prompt writes for; empty before the bio is saved. */
     #[ORM\Column(type: Types::TEXT, options: ['default' => ''])]
     private string $languageLevel = '';
 
-    /** @var array<string, mixed>|null */
+    /** @var array{structure: array<string, string>, voice: array<string, string>}|null structure feeds the outline; voice feeds the article and rewrites */
     #[ORM\Column(type: Types::JSON, nullable: true)]
-    private ?array $structureProfile = null;
+    private ?array $writingProfile = null;
 
     public function __construct(
         #[ORM\Column(length: 180, unique: true)]
@@ -67,16 +67,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->languageLevel = $languageLevel;
     }
 
-    /** @return array<string, mixed>|null */
-    public function getStructureProfile(): ?array
+    /** @return array{structure: array<string, string>, voice: array<string, string>} empty arrays before the first analysis */
+    public function getWritingProfile(): array
     {
-        return $this->structureProfile;
+        return $this->writingProfile ?? ['structure' => [], 'voice' => []];
     }
 
-    /** @param array<string, mixed> $structureProfile */
-    public function setStructureProfile(array $structureProfile): void
+    /**
+     * @param array<string, string> $structure
+     * @param array<string, string> $voice
+     */
+    public function setWritingProfile(array $structure, array $voice): void
     {
-        $this->structureProfile = $structureProfile;
+        $this->writingProfile = ['structure' => $structure, 'voice' => $voice];
     }
 
     public function getEmail(): string

@@ -7,6 +7,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
+#[ORM\UniqueConstraint(columns: ['user_id', 'source_url'])]
 class Article
 {
     #[ORM\Id]
@@ -22,6 +23,13 @@ class Article
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $updatedAt;
+
+    /** Where an imported article was published; the dedupe key of the author's library. */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $sourceUrl = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $publishedAt = null;
 
     private function __construct(
         #[ORM\ManyToOne]
@@ -42,9 +50,13 @@ class Article
         return new self($user, $slug, $title, ArticleState::Plan);
     }
 
-    public static function imported(User $user, string $slug, string $title): self
+    public static function imported(User $user, string $slug, string $title, ?string $sourceUrl = null, ?\DateTimeImmutable $publishedAt = null): self
     {
-        return new self($user, $slug, $title, ArticleState::Imported);
+        $article = new self($user, $slug, $title, ArticleState::Imported);
+        $article->sourceUrl = $sourceUrl;
+        $article->publishedAt = $publishedAt;
+
+        return $article;
     }
 
     public function moveTo(ArticleState $to): void
@@ -108,5 +120,15 @@ class Article
     public function getUpdatedAt(): \DateTimeImmutable
     {
         return $this->updatedAt;
+    }
+
+    public function getSourceUrl(): ?string
+    {
+        return $this->sourceUrl;
+    }
+
+    public function getPublishedAt(): ?\DateTimeImmutable
+    {
+        return $this->publishedAt;
     }
 }

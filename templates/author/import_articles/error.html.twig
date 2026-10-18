@@ -1,0 +1,9 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Import · {{ parent() }}{% endblock %}
+
+{% block body %}
+    <h1>Import failed</h1>
+    <p class="import-error">{{ message }}</p>
+    <p><a href="{{ path('author_edit_bio') }}">Back</a></p>
+{% endblock %}

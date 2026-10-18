@@ -44,7 +44,8 @@ final readonly class WriteArticleHandler
                 'outline' => $this->folder->read($folder, 'outline.md')['body'],
                 'answers' => file_exists($this->folder->pathOf($folder, 'answers.md')) ? $this->folder->read($folder, 'answers.md')['body'] : null,
                 'digests' => $this->em->getRepository(Reference::class)->findBy(['article' => $article, 'status' => ReferenceStatus::Done], ['id' => 'ASC']),
-                'structure_profile' => $user->getStructureProfile() ?? [],
+                'structure_profile' => $user->getWritingProfile()['structure'],
+                'voice' => $user->getWritingProfile()['voice'],
             ])),
         ), ['template_vars' => ['language_level' => $user->getLanguageLevel()]]));
         if ('' === $body) {

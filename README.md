@@ -91,7 +91,7 @@ symfony console messenger:consume llm_primary llm_secondary -vv
 symfony console messenger:consume io -vv
 ```
 
-Open the printed URL, log in, fill your profile at `/setup`, then start a plan at `/plans`.
+Open the printed URL, log in, fill your bio at `/author`, then start a plan at `/plans`.
 
 Check the workers: `symfony server:status`. Watch the logs: `symfony server:log`.
 

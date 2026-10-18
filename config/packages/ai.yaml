@@ -32,18 +32,18 @@ ai:
             model: '%env(AI_SECONDARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/digest_agent.md'
-        # How one imported article is built (Setup).
-        structure_notes:
+        # How one library article is built and sounds (Author).
+        writing_notes:
             platform: '%app.ai.secondary_platform%'
             model: '%env(AI_SECONDARY_MODEL)%'
             prompt:
-                file: '%kernel.project_dir%/prompts/structure_notes_agent.md'
-        # Merges the structure notes into the writer's profile (Setup).
-        structure_profile:
+                file: '%kernel.project_dir%/prompts/writing_notes_agent.md'
+        # Merges the writing notes into the writer's profile (Author).
+        writing_profile:
             platform: '%app.ai.secondary_platform%'
             model: '%env(AI_SECONDARY_MODEL)%'
             prompt:
-                file: '%kernel.project_dir%/prompts/structure_profile_agent.md'
+                file: '%kernel.project_dir%/prompts/writing_profile_agent.md'
         # Interviewer + reader questions on the Questions tab.
         questions:
             platform: '%app.ai.primary_platform%'

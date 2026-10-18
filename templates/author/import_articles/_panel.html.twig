@@ -1,0 +1,21 @@
+<section>
+    <h2>Import past articles</h2>
+    <form method="post" action="{{ path('author_import_articles') }}" enctype="multipart/form-data" data-controller="file-dates">
+        <input type="hidden" name="modified" data-file-dates-target="modified">
+        <div>
+            <label for="import-files">Markdown files or a Medium export (.zip)</label>
+            <input id="import-files" type="file" name="files[]" accept=".md,.zip" multiple>
+        </div>
+        <div>
+            <label for="import-directory">Or a directory</label>
+            <input id="import-directory" type="file" name="directory[]" webkitdirectory multiple>
+        </div>
+        <button class="button button-secondary" type="submit">Import</button>
+    </form>
+    {% for file in files %}
+        <div class="import-file">
+            <strong>{{ file.filename }}</strong>
+            {{ include('shared/llm/job_card/_frame.html.twig', {job: file.job}) }}
+        </div>
+    {% endfor %}
+</section>

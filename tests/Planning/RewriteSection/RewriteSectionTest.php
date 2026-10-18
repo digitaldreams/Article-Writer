@@ -9,12 +9,35 @@ use App\Shared\Article\ArticleState;
 use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobStatus;
 use App\Shared\Storage\ArticleFolder;
+use App\Shared\User\User;
 use App\Tests\Planning\PlanningTestCase;
 use Symfony\AI\Platform\Result\TextResult;
 
 final class RewriteSectionTest extends PlanningTestCase
 {
     private const BODY = "# PHP 8 features\n## Typed at last\n\nIntro.\n\n## Setup\n\nInstall it.\n\n## Usage\n\nCall it.\n";
+
+    public function testTheRewriteRequestHasTheVoiceOnlyWhenSet(): void
+    {
+        $prompts = [];
+        $this->fakePrimary(static function ($input) use (&$prompts) {
+            $prompts[] = (string) $input->getUserMessage()?->asText();
+
+            return new TextResult('Install it with Composer.');
+        });
+        $article = $this->writtenArticle();
+        $this->client->request('POST', $this->url($article).'/sections', ['heading' => 'Setup', 'instruction' => 'Name the tool.']);
+        $this->consume();
+        // The worker cleared the entity manager: load the author again.
+        ($this->em()->find(User::class, $this->author->getId()) ?? throw new \LogicException('No author.'))->setWritingProfile([], ['tone' => 'dry humor', 'samples' => 'A verbatim paragraph.']);
+        $this->em()->flush();
+        $this->client->request('POST', $this->url($article).'/sections', ['heading' => 'Usage', 'instruction' => 'Shorter.']);
+        $this->consume();
+
+        self::assertStringNotContainsString('# Your voice', $prompts[0]);
+        self::assertStringContainsString("# Your voice\n- tone: dry humor\n", $prompts[1]);
+        self::assertStringContainsString('A verbatim paragraph.', $prompts[1]);
+    }
 
     public function testAcceptReplacesOnlyThatSectionAndKeepsTheFrontMatter(): void
     {

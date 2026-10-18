@@ -36,9 +36,10 @@ framework:
 
         routing:
             # Route your messages to the transports
-            'App\Setup\ImportArticles\ImportFile': io
-            'App\Setup\ImportArticles\ExtractStructureNotes': llm_secondary
-            'App\Setup\ImportArticles\MergeStructureProfile': llm_secondary
+            'App\Author\ImportArticle': io
+            'App\Author\AddFeeds\FetchFeed': io
+            'App\Author\AnalyzeWriting\ExtractWritingNotes': llm_secondary
+            'App\Author\AnalyzeWriting\MergeWritingProfile': llm_secondary
             'App\Planning\CreatePlan\GeneratePlanTitle': llm_secondary
             'App\Planning\DigestReferences\ExtractReference': io
             'App\Planning\DigestReferences\DigestReference': llm_secondary

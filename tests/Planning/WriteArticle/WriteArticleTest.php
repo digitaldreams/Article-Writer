@@ -39,6 +39,39 @@ final class WriteArticleTest extends PlanningTestCase
         self::assertSelectorTextContains('.notice code', 'article.md');
     }
 
+    public function testTheArticleRequestHasTheVoiceWhenSetAndTheStructureWithoutIt(): void
+    {
+        $this->author->setWritingProfile(['openingType' => 'a real bug story'], ['tone' => 'dry humor', 'codeHabit' => '', 'samples' => 'A verbatim paragraph.']);
+        $article = $this->approvedPlan();
+        $prompt = $this->articlePrompt($article);
+
+        self::assertStringContainsString("# The writer's usual structure\n- openingType: a real bug story\n\n# Your voice\n- tone: dry humor\n", $prompt);
+        self::assertStringNotContainsString('codeHabit', $prompt);
+        self::assertStringContainsString('A verbatim paragraph.', $prompt);
+    }
+
+    public function testTheArticleRequestHasNoVoiceWhenItIsEmpty(): void
+    {
+        $this->author->setWritingProfile(['openingType' => 'a real bug story'], ['tone' => '', 'samples' => '']);
+        $article = $this->approvedPlan();
+
+        self::assertStringNotContainsString('# Your voice', $this->articlePrompt($article));
+    }
+
+    private function articlePrompt(Article $article): string
+    {
+        $prompt = '';
+        $this->fakePrimary(static function ($input) use (&$prompt) {
+            $prompt = (string) $input->getUserMessage()?->asText();
+
+            return new TextResult("## Body\n\nText.");
+        });
+        $this->approve($article);
+        $this->consume();
+
+        return $prompt;
+    }
+
     public function testAFailedJobKeepsApprovedWithRetry(): void
     {
         $article = $this->approvedPlan();

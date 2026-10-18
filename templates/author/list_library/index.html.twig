@@ -1,0 +1,31 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Library · {{ parent() }}{% endblock %}
+
+{% block body %}
+    <h1>Library</h1>
+    {{ include('author/_nav.html.twig') }}
+    {% if rows is empty %}
+        <p>No published articles yet. Import them on the <a href="{{ path('author_edit_bio') }}">Bio</a> page.</p>
+    {% else %}
+        <table class="library">
+            <thead><tr><th>Title</th><th>Published</th><th>Source</th><th>Analyzed</th><th></th></tr></thead>
+            <tbody>
+            {% for row in rows %}
+                {% set article = row.article %}
+                <tr class="library-article">
+                    <td>{{ article.title }}</td>
+                    <td>{{ (article.publishedAt ?? article.createdAt)|date('Y-m-d') }}</td>
+                    <td>{% if article.sourceUrl %}<a href="{{ article.sourceUrl }}" rel="noopener noreferrer">link</a>{% endif %}</td>
+                    <td>{{ row.analyzed ? 'yes' : 'no' }}</td>
+                    <td>
+                        <form method="post" action="{{ path('author_delete_library_article', {id: article.id}) }}">
+                            <button class="button button-secondary" type="submit">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}
