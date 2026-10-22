@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Prompts · {{ parent() }}{% endblock %}
+
+{% block body %}
+    <h1>Prompts</h1>
+    {{ include('author/_nav.html.twig') }}
+    <p>The default system prompts, as on disk. Workers read prompts at start; restart them after edits.</p>
+    {% for name, text in prompts %}
+        <section class="prompt">
+            <h2>{{ name }}</h2>
+            <pre>{{ text }}</pre>
+        </section>
+    {% endfor %}
+{% endblock %}

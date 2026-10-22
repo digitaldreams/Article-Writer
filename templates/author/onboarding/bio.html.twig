@@ -1,0 +1,6 @@
+{% extends 'author/onboarding/_layout.html.twig' %}
+
+{% block step %}
+    <p>Your imports run in the background. Meanwhile, tell the app who you are and who you write for.</p>
+    {{ render(controller('App\\Author\\EditBio\\EditBioController::form')) }}
+{% endblock %}

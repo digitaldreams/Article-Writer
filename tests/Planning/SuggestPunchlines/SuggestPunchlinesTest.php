@@ -62,6 +62,46 @@ final class SuggestPunchlinesTest extends PlanningTestCase
         self::assertSelectorTextContains('.writer-idea', 'Lead with the getter pain');
     }
 
+    public function testARoundSavesFiveMediumTopicsToArticleMdAndShowsThem(): void
+    {
+        $article = $this->writtenArticle();
+        $this->fakePrimary(static fn () => self::punchlines('A', ['#Programming', 'PHP', ' ', 'Symfony', 'Messenger', 'RabbitMQ', 'Sixth']));
+
+        $this->client->request('POST', $this->shareUrl($article));
+        $this->consume();
+
+        $file = $this->folder()->read($article->getFolder(), 'article.md');
+        self::assertSame(['Programming', 'PHP', 'Symfony', 'Messenger', 'RabbitMQ'], $file['frontMatter']['topics']);
+        self::assertSame('PHP 8 features', $file['frontMatter']['title']);
+        self::assertSame("# PHP 8 features\n\nTyped at last.\n", $file['body']);
+        $this->client->request('GET', $this->shareUrl($article));
+        self::assertSelectorTextSame('.topics [data-copy-target=source]', 'Programming, PHP, Symfony, Messenger, RabbitMQ');
+    }
+
+    public function testARoundWithoutTopicsKeepsTheSavedOnes(): void
+    {
+        $article = $this->writtenArticle(['PHP']);
+        $this->fakePrimary(static fn () => self::punchlines('A'));
+
+        $this->client->request('POST', $this->shareUrl($article));
+        $this->consume();
+
+        self::assertSame(['PHP'], $this->folder()->read($article->getFolder(), 'article.md')['frontMatter']['topics']);
+        $this->client->request('GET', $this->shareUrl($article));
+        self::assertSelectorCount(5, '.punchline');
+    }
+
+    public function testAskingForMorePunchlinesWhileARoundIsComingIsAConflict(): void
+    {
+        $article = $this->writtenArticle();
+        $this->client->request('POST', $this->shareUrl($article));
+
+        $this->client->request('POST', $this->shareUrl($article), ['idea' => 'Short and bold']);
+
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame(1, $this->em()->getRepository(LlmJob::class)->count(['step' => 'suggest_punchlines']));
+    }
+
     public function testPunchlinesBeforeTheArticleIsWrittenAreAConflict(): void
     {
         $article = $this->planIn(ArticleState::Approved);
@@ -103,17 +143,28 @@ final class SuggestPunchlinesTest extends PlanningTestCase
         self::assertStringContainsString('for a reader with intermediate English', $prompt);
     }
 
-    private function writtenArticle(): Article
+    /**
+     * @param list<string> $topics
+     */
+    private function writtenArticle(array $topics = []): Article
     {
         $article = $this->planIn(ArticleState::Written);
-        self::getContainer()->get(ArticleFolder::class)->write($article->getFolder(), 'article.md', ['plan_id' => $article->getId(), 'title' => 'PHP 8 features'], "# PHP 8 features\n\nTyped at last.\n");
+        $this->folder()->write($article->getFolder(), 'article.md', ['plan_id' => $article->getId(), 'title' => 'PHP 8 features'] + ($topics ? ['topics' => $topics] : []), "# PHP 8 features\n\nTyped at last.\n");
 
         return $article;
     }
 
-    private static function punchlines(string $prefix): ObjectResult
+    /**
+     * @param list<string> $topics
+     */
+    private static function punchlines(string $prefix, array $topics = []): ObjectResult
     {
-        return new ObjectResult(new PunchlineList(array_map(static fn (int $i) => $prefix.' '.$i, range(1, 5))));
+        return new ObjectResult(new PunchlineList(array_map(static fn (int $i) => $prefix.' '.$i, range(1, 5)), $topics));
+    }
+
+    private function folder(): ArticleFolder
+    {
+        return self::getContainer()->get(ArticleFolder::class);
     }
 
     private function shareUrl(Article $article): string

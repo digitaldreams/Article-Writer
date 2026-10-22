@@ -1,0 +1,18 @@
+{% if idea %}
+# idea.md (the plan)
+{{ idea }}
+
+{% endif %}
+{% if outline %}
+# outline.md (the approved outline)
+{{ outline }}
+
+{% endif %}
+Section headings:
+{% for heading in headings %}
+- {{ heading }}
+{% endfor %}
+
+# article.md (the "# " line is the chosen title, the "## " line under it the subtitle)
+
+{{ body }}

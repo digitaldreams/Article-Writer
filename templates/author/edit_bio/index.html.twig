@@ -1,0 +1,10 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Bio · {{ parent() }}{% endblock %}
+
+{% block body %}
+    <h1>Bio</h1>
+    {{ include('author/_nav.html.twig') }}
+    {{ include('author/edit_bio/_form.html.twig') }}
+    {{ render(controller('App\\Author\\ImportArticles\\ImportArticlesController::panel')) }}
+{% endblock %}

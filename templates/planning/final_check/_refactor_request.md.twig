@@ -1,0 +1,19 @@
+{% if idea %}
+# idea.md (the plan)
+{{ idea }}
+
+{% endif %}
+{% if outline %}
+# outline.md (the approved outline)
+{{ outline }}
+
+{% endif %}
+# The notes to fix
+{% for note in notes %}
+- [{{ note.section }}] {{ note.problem }} → {{ note.suggestion }}
+{% endfor %}
+
+# article.md (refactor this)
+
+{{ body }}
+{% include 'planning/_voice.md.twig' %}

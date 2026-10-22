@@ -1,0 +1,22 @@
+{% extends 'author/onboarding/_layout.html.twig' %}
+
+{% block step %}
+    {% if profile_ready %}
+        <p>This is how the app will write for you. Edit anything that is wrong and save, then approve.</p>
+        {{ render(controller('App\\Author\\EditWritingProfile\\EditWritingProfileController::form')) }}
+        <form method="post" action="{{ path('author_onboarding_approve') }}">
+            <button class="button button-primary" type="submit">Approve and start writing</button>
+        </form>
+        <p class="muted">Unsaved edits are lost on approve.</p>
+    {% else %}
+        <section data-controller="page-poll" data-page-poll-interval-value="10000">
+            <p>Analyzing your articles. On a local model this can take hours: you can close this page and log in later, you come back here.</p>
+        </section>
+    {% endif %}
+    {% for row in analysis_jobs %}
+        <div class="structure-job">
+            <strong>{{ row.label }}</strong>
+            {{ include('shared/llm/job_card/_frame.html.twig', {job: row.job}) }}
+        </div>
+    {% endfor %}
+{% endblock %}

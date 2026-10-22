@@ -86,6 +86,17 @@ final class ApprovePlanTest extends PlanningTestCase
         self::assertSame(ArticleState::Outline, $this->reload($article)->getState());
     }
 
+    public function testApproveWhileAnOutlineRoundIsGeneratingIsAConflict(): void
+    {
+        $article = $this->outlinedPlan(answered: false);
+        $this->client->request('POST', '/plans/'.$article->getId().'/outline/direction', ['instruction' => 'Shorter']);
+
+        $this->client->request('POST', '/plans/'.$article->getId().'/approve');
+
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame(ArticleState::Outline, $this->reload($article)->getState());
+    }
+
     public function testApproveFromAnyOtherStateIsAConflict(): void
     {
         $article = $this->planIn(ArticleState::Questions);

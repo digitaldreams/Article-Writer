@@ -27,7 +27,7 @@ final readonly class PlanContext
             'input' => $this->em->getRepository(PlanInput::class)->findOneBy(['article' => $article]) ?? throw new \RuntimeException('The plan input is gone.'),
             'answers' => array_values(array_filter($questions, static fn (Question $q) => !$q->isSkipped() && null !== $q->getAnswer())),
             'digests' => $this->em->getRepository(Reference::class)->findBy(['article' => $article, 'status' => ReferenceStatus::Done], ['id' => 'ASC']),
-            'structure_profile' => $user->getStructureProfile() ?? [],
+            'structure_profile' => $user->getWritingProfile()['structure'],
             'language_level' => $user->getLanguageLevel(),
         ];
     }

@@ -1,0 +1,14 @@
+{% set fields = voice|filter((value, key) => key != 'samples' and value is not empty) %}
+{% if fields is not empty or (voice.samples ?? '') is not empty %}
+
+# Your voice
+{% for key, value in fields %}
+- {{ key }}: {{ value }}
+{% endfor %}
+{% if (voice.samples ?? '') is not empty %}
+
+Samples of your writing, to match the voice (never copy them):
+
+{{ voice.samples }}
+{% endif %}
+{% endif %}

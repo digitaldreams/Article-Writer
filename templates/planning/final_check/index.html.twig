@@ -1,0 +1,86 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title }} · Final check · {{ parent() }}{% endblock %}
+
+{% block body %}
+    {% set check_waiting = check_job and check_job.status.value in ['queued', 'working'] %}
+    {% set refactor_waiting = refactor and refactor.after is null and refactor.job and refactor.job.status.value in ['queued', 'working'] %}
+
+    <p><a href="{{ path('planning_list_plans') }}">Back to plans</a></p>
+    {% include 'planning/_steps.html.twig' %}
+    <h1>{{ article.title }}</h1>
+
+    {% if not written %}
+        <p class="muted">The final check opens once the article is written.</p>
+    {% else %}
+    <div {% if check_waiting or refactor_waiting %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
+        {% if error %}<p class="notice notice-warning final-check-error">{{ error }}</p>{% endif %}
+
+        <section class="final-check">
+            <div class="page-head">
+                <h2>Final check</h2>
+                {% if not check_waiting %}
+                    <form method="post" action="{{ path('planning_run_final_check', {id: article.id}) }}">
+                        <button class="button button-secondary" type="submit">{{ notes is empty ? 'Run final check' : 'Check again' }}</button>
+                    </form>
+                {% endif %}
+            </div>
+            <p class="muted final-check-help">The AI reads the whole article against its title, plan and outline, text and code, and lists what to fix.</p>
+            {% if check_job and check_job.status.value != 'done' %}
+                {% include 'shared/llm/job_card/_frame.html.twig' with {job: check_job} only %}
+            {% endif %}
+            {% if notes is empty and not check_waiting %}
+                <p class="muted empty-check">No final check yet. Run it after you chose the title.</p>
+            {% endif %}
+
+            {% if notes is not empty %}
+                <form method="post" action="{{ path('planning_request_refactor', {id: article.id}) }}">
+                    {% for section, section_notes in notes %}
+                        <div class="check-section" data-section="{{ section }}">
+                            <h3>{{ section }}</h3>
+                            <ul class="check-notes">
+                                {% for note in section_notes %}
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" name="notes[]" value="{{ note.id }}" checked>
+                                            <span><strong>{{ note.problem }}</strong> <span class="muted">{{ note.suggestion }}</span></span>
+                                        </label>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endfor %}
+                    {% if not refactor_waiting %}
+                        <div class="form-actions">
+                            <button class="button button-primary" type="submit">Refactor with these</button>
+                        </div>
+                    {% endif %}
+                </form>
+            {% endif %}
+        </section>
+
+        {% if refactor %}
+            <section class="refactor">
+                <h2>Refactor</h2>
+                {% if refactor.after is not null %}
+                    {% if refactor.changes is not empty %}
+                        <ul class="refactor-changes">
+                            {% for change in refactor.changes %}<li>{{ change }}</li>{% endfor %}
+                        </ul>
+                    {% endif %}
+                    <div class="before-after">
+                        <div><p class="muted">Before</p>{{ refactor.before|markdown_to_html }}</div>
+                        <div><p class="muted">After</p>{{ refactor.after|markdown_to_html }}</div>
+                    </div>
+                    <form class="form-actions" method="post" action="{{ path('planning_decide_refactor', {id: article.id, refactorId: refactor.id}) }}">
+                        <button class="button button-secondary" type="submit" name="decision" value="reject">Reject</button>
+                        <button class="button button-primary" type="submit" name="decision" value="accept">Accept</button>
+                    </form>
+                {% elseif refactor.job %}
+                    {% include 'shared/llm/job_card/_frame.html.twig' with {job: refactor.job} only %}
+                {% endif %}
+            </section>
+        {% endif %}
+    </div>
+    {% endif %}
+{% endblock %}

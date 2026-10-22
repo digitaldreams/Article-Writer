@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Writing profile · {{ parent() }}{% endblock %}
+
+{% block body %}
+    <h1>Writing profile</h1>
+    {{ include('author/_nav.html.twig') }}
+    <p class="analyze-count">{{ analyzed }} analyzed / {{ library }} in library</p>
+    <form method="post" action="{{ path('author_analyze_writing') }}">
+        <button class="button button-secondary" type="submit">Analyze my writing</button>
+    </form>
+    <p class="notice notice-warning">Analyze again replaces your edits.</p>
+    {{ render(controller('App\\Author\\ImportArticles\\ImportArticlesController::failedFiles')) }}
+    {% for row in jobs %}
+        <div class="structure-job">
+            <strong>{{ row.label }}</strong>
+            {{ include('shared/llm/job_card/_frame.html.twig', {job: row.job}) }}
+        </div>
+    {% endfor %}
+    {{ include('author/edit_writing_profile/_form.html.twig') }}
+{% endblock %}

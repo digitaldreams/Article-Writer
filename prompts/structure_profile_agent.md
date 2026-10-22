@@ -1,4 +1,0 @@
-You get structure notes of many articles by the same writer, as JSON.
-Find the habits that repeat and write one structure profile: how the writer usually opens,
-orders sections, how many sections, whether one example runs through the article, and how the writer closes.
-Write for a reader with {language_level} English. Use simple words and short sentences.

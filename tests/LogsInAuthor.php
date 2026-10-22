@@ -12,9 +12,13 @@ trait LogsInAuthor
     /** The logged-in author; rows a test makes for them must use this user, or the owner filter hides them. */
     protected User $author;
 
-    protected static function newAuthor(?string $email = null): User
+    /** Onboarded by default: only the onboarding tests need an author still in the wizard. */
+    protected static function newAuthor(?string $email = null, bool $onboarded = true): User
     {
         $author = new User($email ?? 'author-'.bin2hex(random_bytes(4)).'@example.com');
+        if ($onboarded) {
+            $author->markOnboarded();
+        }
         $em = static::getContainer()->get(EntityManagerInterface::class);
         $em->persist($author);
         $em->flush();
@@ -22,9 +26,9 @@ trait LogsInAuthor
         return $author;
     }
 
-    protected function logIn(KernelBrowser $client): User
+    protected function logIn(KernelBrowser $client, bool $onboarded = true): User
     {
-        $this->author = self::newAuthor();
+        $this->author = self::newAuthor(onboarded: $onboarded);
         $client->loginUser($this->author);
 
         return $this->author;

@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Create account · {{ parent() }}{% endblock %}
+
+{% block body %}
+    <h1>Create account</h1>
+    {{ form_start(form) }}
+        {{ form_row(form.email) }}
+        {{ form_row(form.password) }}
+        <div class="form-actions">
+            {{ form_widget(form.register, {attr: {class: 'button button-primary'}}) }}
+        </div>
+    {{ form_end(form) }}
+    <p>Already have an account? <a href="{{ path('user_login') }}">Log in</a></p>
+{% endblock %}

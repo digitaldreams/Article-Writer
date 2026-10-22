@@ -37,6 +37,7 @@ final readonly class RewriteSectionHandler
             Message::ofUser($this->twig->render('planning/rewrite_section/_request.md.twig', [
                 'body' => $this->folder->read($rewrite->getArticle()->getFolder(), 'article.md')['body'],
                 'rewrite' => $rewrite,
+                'voice' => $rewrite->getArticle()->getUser()->getWritingProfile()['voice'],
             ])),
         ), ['template_vars' => ['language_level' => $rewrite->getArticle()->getUser()->getLanguageLevel()]]));
         $after = trim(preg_replace('/\A## .*(\n|\z)/', '', $after) ?? $after);

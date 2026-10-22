@@ -12,11 +12,11 @@ final class StepTabsTest extends PlanningTestCase
         $article = $this->planIn(ArticleState::Written);
         self::getContainer()->get(ArticleFolder::class)->write($article->getFolder(), 'article.md', ['title' => 'PHP 8 features'], "# PHP 8 features\n");
 
-        foreach (['brainstorm' => 'Brainstorming', 'questions' => 'Questions', 'outline' => 'Outline', 'article' => 'Article', 'improve' => 'Improve', 'titles' => 'Titles', 'poster' => 'Poster', 'share' => 'Share'] as $step => $label) {
+        foreach (['brainstorm' => 'Brainstorming', 'questions' => 'Questions', 'outline' => 'Outline', 'article' => 'Article', 'improve' => 'Improve', 'titles' => 'Titles', 'final-check' => 'Final check', 'poster' => 'Poster', 'share' => 'Share'] as $step => $label) {
             $this->client->request('GET', '/plans/'.$article->getId().'/'.$step);
 
             self::assertResponseIsSuccessful($step);
-            self::assertSelectorCount(8, 'nav.steps a');
+            self::assertSelectorCount(9, 'nav.steps a');
             self::assertSelectorTextSame('nav.steps a[aria-current=page]', $label);
         }
     }
@@ -28,7 +28,7 @@ final class StepTabsTest extends PlanningTestCase
         $this->client->request('GET', '/plans/'.$article->getId().'/outline');
 
         self::assertSelectorCount(3, 'nav.steps a');
-        self::assertSelectorCount(5, 'nav.steps span[aria-disabled=true]');
+        self::assertSelectorCount(6, 'nav.steps span[aria-disabled=true]');
         self::assertSelectorTextSame('nav.steps li:last-child span', 'Share');
     }
 }

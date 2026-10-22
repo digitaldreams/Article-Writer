@@ -1,5 +1,35 @@
 # Release Notes
 
+## 2.1 — Onboarding — 2026-10-19
+
+New authors sign up and set up their author profile before they can plan: the app writes only from instructions the author approved.
+
+**Upgrade:** run `bin/console doctrine:migrations:migrate`. Existing authors are marked onboarded and skip the wizard.
+
+- **Register.** `/register`: email, password, repeat password. You are logged in right after; linked from the login page.
+- **Onboarding wizard.** `/welcome`, in order: import past articles (required) → bio → analyze your writing → review and approve the writing profile. Every other page sends you back to your current step until you approve, also after logging out and in. The analysis can take hours on a local model; you can leave and come back.
+- **Analyze waits for imports.** Analyze my writing is 409 while an import is still running.
+
+## 2.0 — Author — 2026-10-18
+
+The app learns how you write: import your published articles, analyze them, and the article and rewrites follow your voice.
+
+**Upgrade (in this order)**
+1. Stop the workers and let the queues drain (no queued or working job left).
+2. Run `bin/console doctrine:migrations:migrate`. It deletes the old setup job history (import and structure jobs) and queued setup messages: their message classes were renamed and can't be retried.
+3. Start the workers, open `/author/profile` and click **Analyze my writing**. The old structure notes are dropped (they have no voice), so every library article is analyzed again: one secondary-model call per article, slow on a local model. Your structure profile is kept until the new one replaces it.
+
+**Author** (was Setup)
+- **Bio.** `/author` (was `/setup`); `/setup` is gone.
+- **Library.** `/author/library` lists your imported articles: date published, source link, analyzed yes/no, Delete (409 while the article is being analyzed). Imports dedupe by source URL; a Medium post is the same article from the zip and the feed.
+- **Medium zip.** Upload the Medium export `.zip` on the Bio page. Posts become markdown (headings, fenced code); drafts, `__MACOSX` files and short responses (no heading, under 150 words) are skipped. Upload limit 64 MB: split a bigger zip.
+- **Feeds.** `/author/feeds`: add RSS or Atom feeds, **Refresh** imports new items. Medium feeds hold only your latest 10 posts: use the zip for older ones.
+- **Analyze my writing.** A button on `/author/profile` builds a writing profile: structure (opening, ordering, sections, running example, closing) and voice (tone, sentence style, devices, code habit, samples). Analyze again replaces your hand edits; voice fields are optional.
+- **Prompts.** `/author/prompts` shows every default system prompt, read-only.
+
+**Writing**
+- **Voice when writing.** The article and section rewrites get a "Your voice" section; the outline gets only the structure. The models are told never to copy the samples.
+
 ## 1.0 — First release — 2026-10-18
 
 Plan → write → polish a technical article with local or hosted LLMs; every LLM step runs as a background job.

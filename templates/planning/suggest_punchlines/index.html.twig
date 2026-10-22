@@ -11,6 +11,15 @@
     <h1>{{ article.title }}</h1>
 
     <section class="punchlines" {% if waiting %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
+        {% if topics %}
+            <h2>Medium topics</h2>
+            <p class="muted">Add them when you publish on Medium. Medium shows the story to readers who follow these topics.</p>
+            <div class="card topics" data-controller="copy">
+                <p data-copy-target="source">{{ topics|join(', ') }}</p>
+                <button class="button button-secondary" type="button" data-copy-target="button" data-action="copy#copy">Copy</button>
+            </div>
+        {% endif %}
+
         <h2>Punchlines for sharing</h2>
         <p class="muted">One or two sentences to post with the article link on LinkedIn, Reddit, Facebook and other places.</p>
         {% if job and job.status.value != 'done' %}

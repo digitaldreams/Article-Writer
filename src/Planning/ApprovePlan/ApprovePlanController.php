@@ -9,6 +9,7 @@ use App\Planning\Question;
 use App\Planning\Reference;
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
+use App\Shared\Llm\LlmJobs;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,9 +28,13 @@ final class ApprovePlanController extends AbstractController
         EventDispatcherInterface $events,
         OutlineItems $outline,
         PlanFiles $files,
+        LlmJobs $jobs,
     ): Response {
         if (ArticleState::Outline !== $article->getState()) {
             throw new ConflictHttpException('A plan can only be approved at the outline step.');
+        }
+        if ($jobs->isRunning($article, 'generate_outline')) {
+            throw new ConflictHttpException('A new outline round is being written.');
         }
         $items = $outline->latest($article);
         if ([] === $items) {

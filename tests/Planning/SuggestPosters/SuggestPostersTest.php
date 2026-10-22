@@ -119,6 +119,17 @@ final class SuggestPostersTest extends PlanningTestCase
         self::assertStringContainsString($body, $prompt);
     }
 
+    public function testAskingForMorePosterIdeasWhileARoundIsComingIsAConflict(): void
+    {
+        $article = $this->writtenArticle();
+        $this->client->request('POST', $this->posterUrl($article));
+
+        $this->client->request('POST', $this->posterUrl($article), ['idea' => 'A broken lock']);
+
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame(1, $this->em()->getRepository(LlmJob::class)->count(['step' => 'suggest_posters']));
+    }
+
     public function testPosterIdeasBeforeTheArticleIsWrittenAreAConflict(): void
     {
         $article = $this->planIn(ArticleState::Approved);

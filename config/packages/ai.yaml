@@ -32,18 +32,18 @@ ai:
             model: '%env(AI_SECONDARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/digest_agent.md'
-        # How one imported article is built (Setup).
-        structure_notes:
+        # How one library article is built and sounds (Author).
+        writing_notes:
             platform: '%app.ai.secondary_platform%'
             model: '%env(AI_SECONDARY_MODEL)%'
             prompt:
-                file: '%kernel.project_dir%/prompts/structure_notes_agent.md'
-        # Merges the structure notes into the writer's profile (Setup).
-        structure_profile:
+                file: '%kernel.project_dir%/prompts/writing_notes_agent.md'
+        # Merges the writing notes into the writer's profile (Author).
+        writing_profile:
             platform: '%app.ai.secondary_platform%'
             model: '%env(AI_SECONDARY_MODEL)%'
             prompt:
-                file: '%kernel.project_dir%/prompts/structure_profile_agent.md'
+                file: '%kernel.project_dir%/prompts/writing_profile_agent.md'
         # Interviewer + reader questions on the Questions tab.
         questions:
             platform: '%app.ai.primary_platform%'
@@ -62,12 +62,6 @@ ai:
             model: '%env(AI_PRIMARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/article_agent.md'
-        # Reader review on the Improve tab.
-        review:
-            platform: '%app.ai.primary_platform%'
-            model: '%env(AI_PRIMARY_MODEL)%'
-            prompt:
-                file: '%kernel.project_dir%/prompts/review_agent.md'
         # Rewrites one section on the Improve tab.
         rewrite:
             platform: '%app.ai.primary_platform%'
@@ -92,3 +86,15 @@ ai:
             model: '%env(AI_TITLE_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/share_agent.md'
+        # Final check on the Final check tab: notes on the whole article against its title, plan and outline.
+        final_check:
+            platform: '%app.ai.check_platform%'
+            model: '%env(AI_CHECK_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/final_check_agent.md'
+        # Refactors the whole article from the final-check notes the writer picked.
+        refactor:
+            platform: '%app.ai.check_platform%'
+            model: '%env(AI_CHECK_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/refactor_agent.md'

@@ -114,6 +114,17 @@ final class SuggestTitlesTest extends PlanningTestCase
         self::assertResponseStatusCodeSame(422);
     }
 
+    public function testAskingForMoreTitlesWhileARoundIsComingIsAConflict(): void
+    {
+        $article = $this->writtenArticle();
+        $this->client->request('POST', $this->titlesUrl($article));
+
+        $this->client->request('POST', $this->titlesUrl($article), ['idea' => 'Mention hooks']);
+
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame(1, $this->em()->getRepository(LlmJob::class)->count(['step' => 'suggest_titles']));
+    }
+
     public function testTitlesBeforeTheArticleIsWrittenAreAConflict(): void
     {
         $article = $this->planIn(ArticleState::Approved);

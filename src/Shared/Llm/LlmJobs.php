@@ -32,11 +32,21 @@ final readonly class LlmJobs
         private string $posterModel,
         #[Autowire(env: 'AI_POSTER_IMAGE_MODEL')]
         private string $posterImageModel,
+        #[Autowire('%app.ai.check_platform%')]
+        private string $checkPlatform,
+        #[Autowire(env: 'AI_CHECK_MODEL')]
+        private string $checkModel,
     ) {
     }
 
+    /** A queued or working job of this step: a second request would take the same round and do nothing. */
+    public function isRunning(Article $article, string $step): bool
+    {
+        return $this->em->getRepository(LlmJob::class)->count(['article' => $article, 'step' => $step, 'status' => [LlmJobStatus::Queued, LlmJobStatus::Working]]) > 0;
+    }
+
     /**
-     * @param 'primary'|'secondary'|'title'|'poster'|'poster_image'|'io' $role
+     * @param 'primary'|'secondary'|'title'|'poster'|'poster_image'|'check'|'io' $role
      * @param \Closure(int): LlmJobMessage $message builds the message from the job id
      * @param User|null $user only for a job without an article; otherwise the article's user owns it
      */
@@ -48,6 +58,7 @@ final readonly class LlmJobs
             'title' => [$this->titlePlatform, $this->titleModel],
             'poster' => [$this->posterPlatform, $this->posterModel],
             'poster_image' => [$this->posterPlatform, $this->posterImageModel],
+            'check' => [$this->checkPlatform, $this->checkModel],
             'io' => ['local', '-'],
         };
         $job = new LlmJob($article, $step, $role, str_replace('ai.platform.', '', $platform), $model, $user);

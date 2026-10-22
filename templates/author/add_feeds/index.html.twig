@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Feeds · {{ parent() }}{% endblock %}
+
+{% block body %}
+    <h1>Feeds</h1>
+    {{ include('author/_nav.html.twig') }}
+    <p>Add the RSS or Atom feed of your blog; Refresh imports new posts into the library. A Medium feed (https://medium.com/feed/@you) holds only your latest 10 posts: for older posts, import the Medium zip export on the Bio page.</p>
+    {{ form_start(form) }}
+        {{ form_row(form.url) }}
+        {{ form_row(form.add, {attr: {class: 'button button-primary'}}) }}
+    {{ form_end(form) }}
+    {% for row in feeds %}
+        <section class="feed">
+            <p><strong class="feed-url">{{ row.feed.url }}</strong>
+                <span class="muted">{{ row.feed.lastRefreshedAt ? 'refreshed ' ~ row.feed.lastRefreshedAt|date('Y-m-d H:i') : 'never refreshed' }}</span></p>
+            <form method="post" action="{{ path('author_refresh_feed', {id: row.feed.id}) }}">
+                <button class="button button-secondary" type="submit">Refresh</button>
+            </form>
+            <form method="post" action="{{ path('author_delete_feed', {id: row.feed.id}) }}">
+                <button class="button button-secondary" type="submit">Delete</button>
+            </form>
+            {% if row.job %}{{ include('shared/llm/job_card/_frame.html.twig', {job: row.job}) }}{% endif %}
+        </section>
+    {% endfor %}
+{% endblock %}

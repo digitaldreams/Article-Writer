@@ -3,7 +3,6 @@
 namespace App\Planning\RewriteSection;
 
 use App\Planning\ArticleSections;
-use App\Planning\ReaderNote;
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
 use App\Shared\Llm\LlmJobs;
@@ -16,7 +15,7 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
- * Asks for a rewrite of one section, with the writer's instruction or a reader note's suggestion.
+ * Asks for a rewrite of one section, with the writer's instruction.
  * A new request replaces the section's pending rewrite.
  */
 final class RequestRewriteController extends AbstractController
@@ -30,10 +29,6 @@ final class RequestRewriteController extends AbstractController
 
         $heading = $request->request->getString('heading');
         $instruction = trim($request->request->getString('instruction'));
-        if ($request->request->has('note')) {
-            $note = $em->getRepository(ReaderNote::class)->findOneBy(['article' => $article, 'id' => $request->request->getInt('note')]);
-            [$heading, $instruction] = null === $note ? ['', ''] : [$note->getSection(), $note->getSuggestion()];
-        }
         $sections = ArticleSections::split($folder->read($article->getFolder(), 'article.md')['body']);
         $error = match (true) {
             !\array_key_exists($heading, $sections) => 'This section is not in the article.',
