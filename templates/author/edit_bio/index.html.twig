@@ -5,11 +5,6 @@
 {% block body %}
     <h1>Bio</h1>
     {{ include('author/_nav.html.twig') }}
-    {{ form_start(form) }}
-        {{ form_row(form.shortBio) }}
-        {{ form_row(form.longBio, {attr: {'data-controller': 'markdown-editor'}}) }}
-        {{ form_row(form.languageLevel) }}
-        {{ form_row(form.save, {attr: {class: 'button button-primary'}}) }}
-    {{ form_end(form) }}
+    {{ include('author/edit_bio/_form.html.twig') }}
     {{ render(controller('App\\Author\\ImportArticles\\ImportArticlesController::panel')) }}
 {% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'author/onboarding/_layout.html.twig' %}
+
+{% block step %}
+    {% set ready = imports_open == 0 and imported > 0 %}
+    <section {% if not ready %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
+        <p class="analyze-count">{{ imported }} articles in your library{% if imports_open > 0 %} · {{ imports_open }} still importing{% endif %}</p>
+        <form method="post" action="{{ path('author_analyze_writing') }}">
+            <button class="button button-primary" type="submit"{% if not ready %} disabled{% endif %}>Analyze my writing</button>
+        </form>
+        {% if not ready %}<p class="muted">Analyze starts when every import has finished.</p>{% endif %}
+    </section>
+    {{ render(controller('App\\Author\\ImportArticles\\ImportArticlesController::panel')) }}
+{% endblock %}

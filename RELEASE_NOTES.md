@@ -1,5 +1,15 @@
 # Release Notes
 
+## 2.1 — Onboarding — 2026-10-19
+
+New authors sign up and set up their author profile before they can plan: the app writes only from instructions the author approved.
+
+**Upgrade:** run `bin/console doctrine:migrations:migrate`. Existing authors are marked onboarded and skip the wizard.
+
+- **Register.** `/register`: email, password, repeat password. You are logged in right after; linked from the login page.
+- **Onboarding wizard.** `/welcome`, in order: import past articles (required) → bio → analyze your writing → review and approve the writing profile. Every other page sends you back to your current step until you approve, also after logging out and in. The analysis can take hours on a local model; you can leave and come back.
+- **Analyze waits for imports.** Analyze my writing is 409 while an import is still running.
+
 ## 2.0 — Author — 2026-10-18
 
 The app learns how you write: import your published articles, analyze them, and the article and rewrites follow your voice.

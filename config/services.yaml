@@ -19,5 +19,11 @@ services:
     App\:
         resource: '../src/'
 
+    # Fetches URLs an author typed: refuses local and private addresses, also behind a DNS name or a redirect.
+    app.reference_http_client:
+        class: Symfony\Component\HttpClient\NoPrivateNetworkHttpClient
+        arguments: ['@http_client']
+        public: true # tests swap it for a MockHttpClient, so they never resolve DNS
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

@@ -78,6 +78,21 @@ final class EditOutlineTest extends PlanningTestCase
         self::assertCount(2, $this->outline()->ofRound($this->reload($article), 1));
     }
 
+    /** A second tab can still post: the new round would take the same number and drop the instruction, and edits would vanish under it. */
+    public function testTheOutlineIsLockedWhileARoundIsGenerating(): void
+    {
+        [$article, [$first]] = $this->outlineRoundOne();
+        $this->client->request('POST', '/plans/'.$article->getId().'/outline/direction', ['instruction' => 'Start with a real bug']);
+
+        $this->client->request('POST', '/plans/'.$article->getId().'/outline/direction', ['instruction' => 'No, start with a story']);
+        self::assertResponseStatusCodeSame(409);
+        $this->client->request('POST', $this->itemUrl($article, $first), ['title' => 'Edited meanwhile']);
+        self::assertResponseStatusCodeSame(409);
+        $this->client->request('POST', '/plans/'.$article->getId().'/outline/items', ['title' => 'Added meanwhile']);
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame(1, $this->em()->getRepository(LlmJob::class)->count(['step' => 'generate_outline']));
+    }
+
     public function testEditingOutsideTheOutlineStepIsAConflict(): void
     {
         [$article, [$first]] = $this->outlineRoundOne();

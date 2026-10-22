@@ -29,6 +29,10 @@ final class AnalyzeWritingController extends AbstractController
             if ($em->getRepository(LlmJob::class)->count(['step' => SettleWritingProfile::STEPS, 'status' => [LlmJobStatus::Queued, LlmJobStatus::Working]]) > 0) {
                 throw new ConflictHttpException('The analysis is already running.');
             }
+            // An article still importing would be left out of the profile.
+            if ($em->getRepository(LlmJob::class)->count(['step' => 'import_file', 'status' => [LlmJobStatus::Queued, LlmJobStatus::Working]]) > 0) {
+                throw new ConflictHttpException('Your imports are still running.');
+            }
             if (0 === $em->getRepository(Article::class)->count(['state' => ArticleState::Imported])) {
                 throw new ConflictHttpException('The library is empty: import your articles first.');
             }

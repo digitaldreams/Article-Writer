@@ -1,0 +1,17 @@
+{{ form_start(form) }}
+    <h2>Structure</h2>
+    <p class="muted">How your articles are built. Used for the outline and the article.</p>
+    {{ form_row(form.openingType) }}
+    {{ form_row(form.orderingHabit) }}
+    {{ form_row(form.sectionCount) }}
+    {{ form_row(form.runningExample) }}
+    {{ form_row(form.closing) }}
+    <h2>Voice</h2>
+    <p class="muted">How your articles sound. Used for the article and section rewrites. Optional.</p>
+    {{ form_row(form.tone) }}
+    {{ form_row(form.sentenceStyle) }}
+    {{ form_row(form.devices) }}
+    {{ form_row(form.codeHabit) }}
+    {{ form_row(form.samples) }}
+    {{ form_row(form.save, {attr: {class: 'button button-primary'}}) }}
+{{ form_end(form) }}

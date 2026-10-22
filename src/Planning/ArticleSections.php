@@ -3,9 +3,10 @@
 namespace App\Planning;
 
 /**
- * The "## " sections of an article.md body. The text before the first heading is the Introduction.
+ * The sections of an article.md body: its top heading level under the title, "## " usually (older articles use "### ").
+ * The text before the first heading is the Introduction.
  * A leading "# " title line and the "## " subtitle right under it (see SuggestTitles) belong to no section and are never changed.
- * "###" stays inside its section; "##" inside a fenced code block is not a heading.
+ * Deeper headings stay inside their section; a heading inside a fenced code block is not a heading.
  */
 final class ArticleSections
 {
@@ -65,14 +66,22 @@ final class ArticleSections
             }
         }
 
-        $segments = [['heading' => self::INTRODUCTION, 'line' => $head, 'text' => '']];
+        $levels = [];
         $inFence = false;
-        foreach ($lines as $line) {
+        foreach ($lines as $i => $line) {
             if (1 === preg_match('/\A {0,3}(```|~~~)/', $line)) {
                 $inFence = !$inFence;
             }
-            if (!$inFence && str_starts_with($line, '## ')) {
-                $segments[] = ['heading' => trim(substr($line, 3)), 'line' => $line, 'text' => ''];
+            if (!$inFence && 1 === preg_match('/\A(#{1,6}) /', $line, $hashes)) {
+                $levels[$i] = \strlen($hashes[1]);
+            }
+        }
+        $top = [] === $levels ? 2 : min($levels);
+
+        $segments = [['heading' => self::INTRODUCTION, 'line' => $head, 'text' => '']];
+        foreach ($lines as $i => $line) {
+            if ($top === ($levels[$i] ?? null)) {
+                $segments[] = ['heading' => trim(substr($line, $top + 1)), 'line' => $line, 'text' => ''];
                 continue;
             }
             $segments[array_key_last($segments)]['text'] .= $line;

@@ -18,9 +18,9 @@ final class RetryJobController extends AbstractController
     public function __invoke(int $id, EntityManagerInterface $em, MessageBusInterface $bus): Response
     {
         $job = $em->find(LlmJob::class, $id) ?? throw new NotFoundHttpException();
-        // ponytail: a stuck job that was only waiting behind a long one runs twice; rare, and Retry is the author's choice.
-        if (LlmJobStatus::Failed !== $job->getStatus() && !$job->isStuck(new \DateTimeImmutable())) {
-            throw new ConflictHttpException('Only a failed or stuck job can be retried.');
+        // A queued job's message is still in the queue (dispatched in the job's transaction); a second copy would run the step twice.
+        if (LlmJobStatus::Failed !== $job->getStatus()) {
+            throw new ConflictHttpException('Only a failed job can be retried.');
         }
 
         $em->wrapInTransaction(function () use ($job, $bus): void {

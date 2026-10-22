@@ -21,6 +21,9 @@ final class SuggestPostersController extends AbstractController
         if (ArticleState::Written !== $article->getState()) {
             throw new ConflictHttpException('Poster ideas come once the article is written.');
         }
+        if ($jobs->isRunning($article, 'suggest_posters')) {
+            throw new ConflictHttpException('A round of poster ideas is still coming.');
+        }
         $writerIdea = $request->request->has('idea') ? trim($request->request->getString('idea')) : null;
         if ('' === $writerIdea) {
             return $this->forward(ShowPostersController::class, ['article' => $article, 'ideaError' => 'Write your idea first.']);

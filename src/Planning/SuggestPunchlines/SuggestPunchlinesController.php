@@ -21,6 +21,9 @@ final class SuggestPunchlinesController extends AbstractController
         if (ArticleState::Written !== $article->getState()) {
             throw new ConflictHttpException('Punchlines are suggested once the article is written.');
         }
+        if ($jobs->isRunning($article, 'suggest_punchlines')) {
+            throw new ConflictHttpException('A round of punchlines is still coming.');
+        }
 
         $writerIdea = trim($request->request->getString('idea')) ?: null;
 

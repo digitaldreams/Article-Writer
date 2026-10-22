@@ -62,12 +62,6 @@ ai:
             model: '%env(AI_PRIMARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/article_agent.md'
-        # Reader review on the Improve tab.
-        review:
-            platform: '%app.ai.primary_platform%'
-            model: '%env(AI_PRIMARY_MODEL)%'
-            prompt:
-                file: '%kernel.project_dir%/prompts/review_agent.md'
         # Rewrites one section on the Improve tab.
         rewrite:
             platform: '%app.ai.primary_platform%'
@@ -92,3 +86,15 @@ ai:
             model: '%env(AI_TITLE_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/share_agent.md'
+        # Final check on the Final check tab: notes on the whole article against its title, plan and outline.
+        final_check:
+            platform: '%app.ai.check_platform%'
+            model: '%env(AI_CHECK_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/final_check_agent.md'
+        # Refactors the whole article from the final-check notes the writer picked.
+        refactor:
+            platform: '%app.ai.check_platform%'
+            model: '%env(AI_CHECK_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/refactor_agent.md'

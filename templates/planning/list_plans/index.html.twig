@@ -21,7 +21,7 @@
     </dialog>
 
     {% if stalled %}
-        <p class="notice notice-warning" role="status"><strong>Stalled:</strong> jobs are not moving. One has run over 30 minutes, a job is stuck (open it and Retry), or jobs wait and no worker is running.</p>
+        <p class="notice notice-warning" role="status"><strong>Stalled:</strong> jobs are not moving. One has run over 30 minutes, or jobs wait and no worker picks them up (check symfony server:status).</p>
     {% endif %}
 
     {% if rows is empty %}

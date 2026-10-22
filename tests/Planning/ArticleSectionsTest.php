@@ -38,6 +38,24 @@ final class ArticleSectionsTest extends TestCase
         self::assertSame(['Setup' => "\n```markdown\n## Not a heading\n```\n\n", 'Usage' => "\nCall it.\n"], ArticleSections::split($body));
     }
 
+    public function testSectionsUseTheArticlesTopHeadingLevel(): void
+    {
+        self::assertSame(
+            ['A' => "\nx\n\n#### A1\n\ny\n\n", 'B' => "\nz\n"],
+            ArticleSections::split("### A\n\nx\n\n#### A1\n\ny\n\n### B\n\nz\n"),
+        );
+    }
+
+    public function testATitleWithThirdLevelSectionsKeepsTheTitleOut(): void
+    {
+        self::assertSame(['Introduction' => "\nIntro.\n\n", 'A' => "\nx\n"], ArticleSections::split("# T\n\nIntro.\n\n### A\n\nx\n"));
+    }
+
+    public function testReplaceWorksOnThirdLevelSections(): void
+    {
+        self::assertSame("### A\n\nx\n\n### B\n\nnew\n", ArticleSections::replace("### A\n\nx\n\n### B\n\nz\n", 'B', 'new'));
+    }
+
     public function testReplaceChangesOnlyThatSectionAndKeepsTheBlankLines(): void
     {
         $body = "# Title\n## Subtitle\n\nIntro.\n\n## Setup\n\nInstall it.\n\n## Usage\n\nCall it.\n";

@@ -39,7 +39,8 @@ final class RetryJobTest extends WebTestCase
         self::assertSame($job->getId(), $message->llmJobId());
     }
 
-    public function testRetryOnJobQueuedOver10MinutesDispatchesItAgain(): void
+    /** Its message is still in the queue (same transaction as the job): a second copy would run the step twice. */
+    public function testRetryOnJobQueuedOver10MinutesIsRefused(): void
     {
         $client = static::createClient();
         $this->logIn($client);
@@ -48,13 +49,10 @@ final class RetryJobTest extends WebTestCase
 
         $client->request('POST', '/jobs/'.$job->getId().'/retry');
 
-        self::assertResponseRedirects('/jobs/'.$job->getId().'/card', 303);
+        self::assertResponseStatusCodeSame(409);
         $sent = self::getContainer()->get('messenger.transport.llm_primary');
         self::assertInstanceOf(InMemoryTransport::class, $sent);
-        self::assertCount(1, $sent->getSent());
-        $em = self::getContainer()->get(EntityManagerInterface::class);
-        $em->clear();
-        self::assertFalse($em->find(LlmJob::class, $job->getId())?->isStuck(new \DateTimeImmutable()));
+        self::assertCount(0, $sent->getSent());
     }
 
     public function testRetryOnJobQueuedUnder10MinutesIsRefused(): void
@@ -69,7 +67,7 @@ final class RetryJobTest extends WebTestCase
         self::assertResponseStatusCodeSame(409);
     }
 
-    public function testStuckJobCardOffersRetry(): void
+    public function testJobQueuedOver10MinutesPointsToTheWorkersWithoutRetry(): void
     {
         $client = static::createClient();
         $this->logIn($client);
@@ -78,8 +76,8 @@ final class RetryJobTest extends WebTestCase
 
         $client->request('GET', '/jobs/'.$job->getId().'/card');
 
-        self::assertSelectorTextContains('.job-error', 'most likely lost');
-        self::assertSelectorExists('form[action="/jobs/'.$job->getId().'/retry"]');
+        self::assertSelectorTextContains('.job-waiting', 'workers');
+        self::assertSelectorNotExists('form[action="/jobs/'.$job->getId().'/retry"]');
     }
 
     public function testRetryOnNonFailedJobIsRefused(): void

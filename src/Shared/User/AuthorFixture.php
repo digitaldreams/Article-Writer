@@ -6,7 +6,7 @@ use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-/** No registration: authors come from here (bin/console doctrine:fixtures:load). */
+/** A ready author for local use (bin/console doctrine:fixtures:load); new authors register at /register. */
 final class AuthorFixture extends Fixture
 {
     public function __construct(private readonly UserPasswordHasherInterface $hasher)
@@ -17,6 +17,7 @@ final class AuthorFixture extends Fixture
     {
         $author = new User('author@example.com');
         $author->setPassword($this->hasher->hashPassword($author, 'secret'));
+        $author->markOnboarded();
         $manager->persist($author);
         $manager->flush();
     }

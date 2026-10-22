@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Planning\ReviewArticle;
+namespace App\Planning\FinalCheck;
 
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
@@ -11,21 +11,21 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
-/** "Get reader review": the reader persona reads the written article. */
-final class ReviewArticleController extends AbstractController
+/** "Run final check": the check model reads the whole written article. */
+final class RunCheckController extends AbstractController
 {
-    #[Route('/plans/{id<\d+>}/improve/review', name: 'planning_review_article', methods: ['POST'])]
+    #[Route('/plans/{id<\d+>}/final-check', name: 'planning_run_final_check', methods: ['POST'])]
     public function __invoke(Article $article, EntityManagerInterface $em, LlmJobs $jobs): Response
     {
         if (ArticleState::Written !== $article->getState()) {
-            throw new ConflictHttpException('The article is reviewed once it is written.');
+            throw new ConflictHttpException('The final check runs once the article is written.');
         }
 
         $em->wrapInTransaction(static function () use ($article, $jobs): void {
             $articleId = (int) $article->getId();
-            $jobs->start($article, 'review_article', 'primary', static fn (int $id) => new ReviewArticle($id, $articleId));
+            $jobs->start($article, 'check_article', 'check', static fn (int $id) => new CheckArticle($id, $articleId));
         });
 
-        return $this->redirectToRoute('planning_improve', ['id' => $article->getId()], Response::HTTP_SEE_OTHER);
+        return $this->redirectToRoute('planning_show_final_check', ['id' => $article->getId()], Response::HTTP_SEE_OTHER);
     }
 }

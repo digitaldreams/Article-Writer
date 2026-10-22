@@ -16,12 +16,13 @@
         {% if job.role != 'io' and job.provider != 'ollama' %}
             <p class="notice notice-warning job-cloud"><strong>Cloud model:</strong> plan data leaves this machine.</p>
         {% endif %}
-        {% set stuck = job.isStuck(date()) %}
-        {% if job.status.value == 'failed' or stuck %}
-            <p class="job-error">{{ stuck ? 'Waiting over 10 minutes: the job was most likely lost. Retry sends it again.' : job.error }}</p>
+        {% if job.status.value == 'failed' %}
+            <p class="job-error">{{ job.error }}</p>
             <form method="post" action="{{ path('llm_retry_job', {id: job.id}) }}">
                 <button class="button button-primary" type="submit">Retry</button>
             </form>
+        {% elseif job.isStuck(date()) %}
+            <p class="job-waiting muted">Waiting over 10 minutes. If nothing else is running, check that the workers are running (symfony server:status); the job runs as soon as its worker picks it up.</p>
         {% endif %}
     </div>
 </turbo-frame>

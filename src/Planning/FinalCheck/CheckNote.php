@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Planning;
+namespace App\Planning\FinalCheck;
 
 use App\Shared\Article\Article;
 use App\Shared\User\User;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-/** One note of the reader review on a written article, tied to a "## " section (or "General"). */
+/** One note of the final check on a written article, tied to a "## " section (or "General"). */
 #[ORM\Entity]
-class ReaderNote
+class CheckNote
 {
     public const GENERAL = 'General';
 

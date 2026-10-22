@@ -28,6 +28,9 @@ symfony console doctrine:migrations:migrate -n
 symfony console doctrine:fixtures:load -n     # login: author@example.com / secret
 ```
 
+Load the fixtures once, on an empty database: `doctrine:fixtures:load` empties every table first. To add an
+author to a database that already has data, use `doctrine:fixtures:load --append`.
+
 Use `symfony console`, not `bin/console`: Docker maps PostgreSQL to a random host port, and the Symfony CLI
 injects the matching `DATABASE_URL`. With your own PostgreSQL, set `DATABASE_URL` in `.env.local` instead.
 
@@ -49,6 +52,8 @@ AI_TITLE_MODEL=llama3.1
 AI_POSTER_PLATFORM=ollama
 AI_POSTER_MODEL=llama3.1
 AI_POSTER_IMAGE_MODEL=
+AI_CHECK_PLATFORM=ollama
+AI_CHECK_MODEL=llama3.1
 
 # Hosted models: set the key and point a role at it, e.g. AI_TITLE_PLATFORM=openai
 OPENAI_API_KEY=
@@ -58,11 +63,12 @@ GEMINI_API_KEY=
 
 | Role | Used for |
 |---|---|
-| `AI_PRIMARY_*` | Questions, outline, article, review, rewrite |
+| `AI_PRIMARY_*` | Questions, outline, article, section rewrite |
 | `AI_SECONDARY_*` | Plan title, reference digests, article import |
 | `AI_TITLE_*` | Title and share suggestions |
 | `AI_POSTER_*` | Poster ideas |
 | `AI_POSTER_IMAGE_MODEL` | Poster picture, on the poster platform. Empty = no image button |
+| `AI_CHECK_*` | Final check: notes on the whole article and the refactor from them (a cloud model is best) |
 
 Platforms: `ollama`, `openai`, `anthropic`, `gemini`. Articles are written to `ARTICLES_DIR` (default `var/articles`).
 

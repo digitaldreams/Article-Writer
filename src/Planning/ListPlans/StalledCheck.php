@@ -43,7 +43,7 @@ final readonly class StalledCheck
 
         $beat = $this->heartbeat->lastBeat();
 
-        // Nothing working: a stuck job lost its message, or no worker is running.
+        // Nothing working: no worker reads the stuck job's queue (the heartbeat is shared by both workers), or no worker is running.
         return $anyQueued && !$anyWorking && ($anyStuck || null === $beat || $beat < $now->modify('-2 minutes'));
     }
 }

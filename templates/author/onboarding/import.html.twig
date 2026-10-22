@@ -1,0 +1,6 @@
+{% extends 'author/onboarding/_layout.html.twig' %}
+
+{% block step %}
+    <p>Upload articles you have already published. The app learns your structure and voice from them.</p>
+    {{ render(controller('App\\Author\\ImportArticles\\ImportArticlesController::panel')) }}
+{% endblock %}

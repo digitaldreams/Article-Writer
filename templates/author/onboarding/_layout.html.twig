@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Welcome · {{ parent() }}{% endblock %}
+
+{% block body %}
+    <h1>Set up your author profile</h1>
+    <p class="muted">The app writes only from your instructions. Finish these steps once, then start planning.</p>
+    <ol class="onboarding-steps">
+        {% for key, label in {import: 'Import past articles', bio: 'Bio', analyze: 'Analyze your writing', profile: 'Approve your writing profile'} %}
+            <li{% if key == step %} aria-current="step"{% endif %}>{{ label }}</li>
+        {% endfor %}
+    </ol>
+    {% block step %}{% endblock %}
+{% endblock %}

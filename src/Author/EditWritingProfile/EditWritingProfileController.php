@@ -9,6 +9,7 @@ use App\Shared\Llm\LlmJob;
 use App\Shared\User\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -19,8 +20,7 @@ final class EditWritingProfileController extends AbstractController
     #[Route('/author/profile', name: 'author_edit_writing_profile', methods: ['GET', 'POST'])]
     public function __invoke(Request $request, EntityManagerInterface $em, #[CurrentUser] User $user): Response
     {
-        $profile = $user->getWritingProfile();
-        $form = $this->createForm(EditWritingProfileType::class, $profile['structure'] + $profile['voice'])->handleRequest($request);
+        $form = $this->profileForm($user)->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             /** @var array<string, string|null> $data */
@@ -40,6 +40,20 @@ final class EditWritingProfileController extends AbstractController
             'analyzed' => $em->getRepository(WritingNote::class)->count([]),
             'library' => $em->getRepository(Article::class)->count(['state' => ArticleState::Imported]),
         ], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+    }
+
+    /** Rendered inside the onboarding wizard: the same form, posting to /author/profile. */
+    public function form(#[CurrentUser] User $user): Response
+    {
+        return $this->render('author/edit_writing_profile/_form.html.twig', ['form' => $this->profileForm($user)]);
+    }
+
+    /** @return FormInterface<array<string, string|null>> */
+    private function profileForm(User $user): FormInterface
+    {
+        $profile = $user->getWritingProfile();
+
+        return $this->createForm(EditWritingProfileType::class, $profile['structure'] + $profile['voice'], ['action' => $this->generateUrl('author_edit_writing_profile')]);
     }
 
     /** @return list<array{label: string, job: LlmJob}> */

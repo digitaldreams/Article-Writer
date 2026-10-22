@@ -135,7 +135,7 @@ class LlmJob
         $this->startedAt = $this->finishedAt = null;
     }
 
-    /** Queued this long: the message was most likely lost, so Retry may send it again. */
+    /** Queued this long: no worker is reading its queue (the message itself is never lost). Only a warning; Retry stays for failed jobs. */
     public function isStuck(\DateTimeInterface $now): bool
     {
         return LlmJobStatus::Queued === $this->status

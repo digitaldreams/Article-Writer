@@ -34,6 +34,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $writingProfile = null;
 
+    /** Set when the author approves the writing profile at the end of the onboarding wizard; null keeps them in the wizard. */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $onboardedAt = null;
+
     public function __construct(
         #[ORM\Column(length: 180, unique: true)]
         private string $email,
@@ -80,6 +84,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setWritingProfile(array $structure, array $voice): void
     {
         $this->writingProfile = ['structure' => $structure, 'voice' => $voice];
+    }
+
+    public function isOnboarded(): bool
+    {
+        return null !== $this->onboardedAt;
+    }
+
+    public function markOnboarded(): void
+    {
+        $this->onboardedAt ??= new \DateTimeImmutable();
     }
 
     public function getEmail(): string

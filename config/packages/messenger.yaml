@@ -1,7 +1,6 @@
 framework:
     messenger:
-        failure_transport: failed
-
+        # No failure transport: LlmJob records the failure and keeps the message, and Retry dispatches it again.
         transports:
             # https://symfony.com/doc/current/messenger.html#transport-configuration
             llm_primary:
@@ -24,7 +23,6 @@ framework:
                     queue_name: io
                 retry_strategy:
                     service: App\Shared\LlmRetryStrategy
-            failed: 'doctrine://default?queue_name=failed'
             # sync: 'sync://'
 
         default_bus: messenger.bus.default
@@ -50,7 +48,8 @@ framework:
             'App\Planning\SuggestPunchlines\SuggestPunchlines': llm_primary
             'App\Planning\SuggestPosters\SuggestPosters': llm_primary
             'App\Planning\SuggestPosters\GeneratePoster': llm_primary
-            'App\Planning\ReviewArticle\ReviewArticle': llm_primary
+            'App\Planning\FinalCheck\CheckArticle': llm_primary
+            'App\Planning\FinalCheck\RefactorArticle': llm_primary
             'App\Planning\RewriteSection\RewriteSection': llm_primary
 
 when@test:
