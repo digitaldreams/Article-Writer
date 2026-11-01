@@ -100,7 +100,7 @@
 
             <section>
                 <h2>What next?</h2>
-                {% if reading %}<p class="muted">Reading {{ reading }} {{ reading == 1 ? 'reference' : 'references' }}… You can go on when it's done.</p>{% endif %}
+                {% if reading %}<p class="muted">Reading {{ reading }} {{ reading == 1 ? 'reference' : 'references' }}…{% if reading_since %} {{ ((date().timestamp - reading_since.timestamp) / 60)|round(0, 'floor') }} min so far.{% endif %} You can go on when it's done.</p>{% endif %}
                 <form method="post" action="{{ path('planning_finish_brainstorm', {id: article.id}) }}" class="next-choices">
                     <button class="next-choice" type="submit" name="to" value="questions" {{ reading ? 'disabled' : '' }}>
                         <strong>Ask me questions first</strong>

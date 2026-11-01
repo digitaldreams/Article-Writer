@@ -22,7 +22,8 @@ final class CreatePlanTest extends WebTestCase
         $crawler = $client->request('GET', '/plans/new');
         self::assertResponseIsSuccessful();
         self::assertSame(['create_plan[topic]'], $crawler->filter('form [name^="create_plan["]:not([type=submit]):not([type=hidden])')->each(static fn ($n) => $n->attr('name')));
-        $client->submit($crawler->selectButton('Start brainstorming')->form(['create_plan[topic]' => 'Symfony AI Agents '.uniqid()]));
+        $topic = 'Symfony AI Agents '.uniqid();
+        $client->submit($crawler->selectButton('Start brainstorming')->form(['create_plan[topic]' => $topic]));
 
         $em = self::getContainer()->get(EntityManagerInterface::class);
         $article = $em->getRepository(Article::class)->findOneBy([]);
@@ -30,7 +31,8 @@ final class CreatePlanTest extends WebTestCase
         self::assertResponseRedirects('/plans/'.$article->getId().'/brainstorm');
         self::assertSame(ArticleState::Plan, $article->getState());
         self::assertSame('', $em->getRepository(PlanInput::class)->findOneBy(['article' => $article])?->getRoughFlow());
-        self::assertSame(['generate_plan_title'], array_map(static fn (LlmJob $j) => $j->getStep(), $em->getRepository(LlmJob::class)->findBy(['article' => $article])));
+        self::assertSame($topic, $article->getTitle());
+        self::assertSame([], $em->getRepository(LlmJob::class)->findBy(['article' => $article]));
     }
 
     public function testFormPostsToNewPlanFromInsideThePlansPageModal(): void

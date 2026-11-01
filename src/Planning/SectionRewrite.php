@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Planning\RewriteSection;
+namespace App\Planning;
 
 use App\Shared\Article\Article;
 use App\Shared\Llm\LlmJob;
@@ -46,6 +46,12 @@ class SectionRewrite
     public function trackedBy(LlmJob $job): void
     {
         $this->job = $job;
+    }
+
+    /** The author renamed the section's heading; the suggestion stays on it. */
+    public function renameTo(string $heading): void
+    {
+        $this->heading = $heading;
     }
 
     public function suggest(string $after): void

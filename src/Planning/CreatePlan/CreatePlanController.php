@@ -4,7 +4,6 @@ namespace App\Planning\CreatePlan;
 
 use App\Planning\PlanInput;
 use App\Shared\Article\Article;
-use App\Shared\Llm\LlmJobs;
 use App\Shared\Storage\ArticleFolder;
 use App\Shared\User\User;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,7 +17,7 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 final class CreatePlanController extends AbstractController
 {
     #[Route('/plans/new', name: 'planning_create_plan', methods: ['GET', 'POST'])]
-    public function __invoke(Request $request, EntityManagerInterface $em, ArticleFolder $articleFolder, LlmJobs $jobs, #[CurrentUser] User $user): Response
+    public function __invoke(Request $request, EntityManagerInterface $em, ArticleFolder $articleFolder, #[CurrentUser] User $user): Response
     {
         $form = $this->createForm(CreatePlanType::class)->handleRequest($request);
 
@@ -29,13 +28,12 @@ final class CreatePlanController extends AbstractController
         /** @var array{topic: string} $data */
         $data = $form->getData();
 
-        $article = $em->wrapInTransaction(function () use ($data, $em, $articleFolder, $jobs, $user): Article {
+        $article = $em->wrapInTransaction(function () use ($data, $em, $articleFolder, $user): Article {
             $article = Article::plan($user, ArticleFolder::slug($data['topic']), $data['topic']);
             $em->persist($article);
             $em->persist(new PlanInput($article, $data['topic'], '', null, ''));
             $em->flush();
             $articleFolder->create($article->getFolder());
-            $jobs->start($article, 'generate_plan_title', 'secondary', static fn (int $id) => new GeneratePlanTitle($id, (int) $article->getId()));
 
             return $article;
         });

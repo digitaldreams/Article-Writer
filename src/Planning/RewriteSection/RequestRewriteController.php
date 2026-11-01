@@ -3,6 +3,7 @@
 namespace App\Planning\RewriteSection;
 
 use App\Planning\ArticleSections;
+use App\Planning\SectionRewrite;
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
 use App\Shared\Llm\LlmJobs;
@@ -15,12 +16,13 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
- * Asks for a rewrite of one section, with the writer's instruction.
+ * Asks for a rewrite of one section, with the writer's instruction, from the section being edited on the Article page.
+ * The section's current text comes along and is saved first, so the rewrite starts from what the writer sees.
  * A new request replaces the section's pending rewrite.
  */
 final class RequestRewriteController extends AbstractController
 {
-    #[Route('/plans/{id<\d+>}/improve/sections', name: 'planning_request_rewrite', methods: ['POST'])]
+    #[Route('/plans/{id<\d+>}/article/rewrites', name: 'planning_request_rewrite', methods: ['POST'])]
     public function __invoke(Article $article, Request $request, EntityManagerInterface $em, ArticleFolder $folder, LlmJobs $jobs): Response
     {
         if (ArticleState::Written !== $article->getState()) {
@@ -29,21 +31,31 @@ final class RequestRewriteController extends AbstractController
 
         $heading = $request->request->getString('heading');
         $instruction = trim($request->request->getString('instruction'));
-        $sections = ArticleSections::split($folder->read($article->getFolder(), 'article.md')['body']);
-        $error = match (true) {
-            !\array_key_exists($heading, $sections) => 'This section is not in the article.',
-            '' === $instruction => 'Say what should change.',
-            default => null,
-        };
-        if (null !== $error) {
-            return $this->forward(ShowImproveController::class, ['article' => $article, 'error' => $error, 'status' => Response::HTTP_UNPROCESSABLE_ENTITY]);
+        $file = $folder->read($article->getFolder(), 'article.md');
+        $body = $file['body'];
+        if (!\array_key_exists($heading, ArticleSections::split($body))) {
+            return new Response('This section is not in the article.', Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-
-        $em->wrapInTransaction(static function () use ($article, $em, $jobs, $heading, $instruction, $sections): void {
-            foreach ($em->getRepository(SectionRewrite::class)->findBy(['article' => $article, 'heading' => $heading]) as $old) {
-                $em->remove($old);
+        if ('' === $instruction) {
+            return new Response('Say what should change.', Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+        $asked = $heading;
+        if ($request->request->has('text')) {
+            try {
+                ['body' => $body, 'heading' => $heading] = ArticleSections::edit($body, $heading, str_replace("\r\n", "\n", $request->request->getString('text')));
+            } catch (\InvalidArgumentException $e) {
+                return new Response($e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
             }
-            $rewrite = new SectionRewrite($article, $heading, $instruction, $sections[$heading]);
+            $folder->write($article->getFolder(), 'article.md', $file['frontMatter'], $body);
+            $article->touch();
+        }
+        $before = ArticleSections::split($body)[$heading];
+
+        $em->wrapInTransaction(static function () use ($article, $em, $jobs, $heading, $asked, $instruction, $before): void {
+            foreach ($em->getRepository(SectionRewrite::class)->findBy(['article' => $article, 'heading' => array_unique([$asked, $heading])]) as $stale) {
+                $em->remove($stale);
+            }
+            $rewrite = new SectionRewrite($article, $heading, $instruction, $before);
             $em->persist($rewrite);
             $em->flush();
             $rewriteId = (int) $rewrite->getId();
@@ -51,6 +63,6 @@ final class RequestRewriteController extends AbstractController
             $em->flush();
         });
 
-        return $this->redirectToRoute('planning_improve', ['id' => $article->getId()], Response::HTTP_SEE_OTHER);
+        return $this->redirectToRoute('planning_show_article', ['id' => $article->getId(), '_fragment' => 'section-'.ArticleSections::number($body, $heading)], Response::HTTP_SEE_OTHER);
     }
 }

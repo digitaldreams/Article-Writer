@@ -7,7 +7,9 @@ export default class extends Controller {
 
     async copy() {
         const article = this.sourceTarget.cloneNode(true);
-        article.querySelector('.article-edit')?.remove();
+        article.querySelectorAll('[data-copy-skip]').forEach((ui) => ui.remove());
+        // Sections are wrappers for editing; Medium gets the flat article.
+        article.querySelectorAll('section.article-section').forEach((section) => section.replaceWith(...section.childNodes));
         const subtitle = article.querySelector(':scope > h1:first-child + h2');
         [subtitle, ...article.querySelectorAll('h3, h5, h6')].forEach((heading) => {
             if (heading) heading.replaceWith(Object.assign(document.createElement('h4'), { innerHTML: heading.innerHTML }));

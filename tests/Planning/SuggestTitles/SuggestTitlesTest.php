@@ -105,6 +105,19 @@ final class SuggestTitlesTest extends PlanningTestCase
         self::assertSelectorTextSame('p.subtitle', 'Typed properties, hooks and private(set) in PHP 8.4');
     }
 
+    public function testChoosingAPairAddsTheHeadingsWhenTheArticleHasNone(): void
+    {
+        $article = $this->writtenArticle();
+        $this->folder()->write($article->getFolder(), 'article.md', ['plan_id' => $article->getId(), 'title' => 'PHP 8 features'], "## Intro\nTyped at last.\n");
+        $suggestion = new TitleSuggestion($article, 1, 'Typed properties cost $0 now', 'Hooks in PHP 8.4');
+        $this->em()->persist($suggestion);
+        $this->em()->flush();
+
+        $this->client->request('POST', $this->titlesUrl($article).'/choose', ['suggestion' => $suggestion->getId()]);
+
+        self::assertSame("# Typed properties cost \$0 now\n## Hooks in PHP 8.4\n\n## Intro\nTyped at last.\n", $this->folder()->read($article->getFolder(), 'article.md')['body']);
+    }
+
     public function testChoosingWithoutAPickedTitleIsAFormError(): void
     {
         $article = $this->writtenArticle();

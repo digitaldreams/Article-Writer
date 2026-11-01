@@ -3,6 +3,7 @@
 namespace App\Planning\EditOutline;
 
 use App\Planning\OutlineItem;
+use App\Planning\OutlineItems;
 use App\Shared\Article\Article;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -11,7 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-/** Autosave of one item's title and summary, or its removal. */
+/** Autosave of one item's title and summary, its removal, or a move up or down. */
 final class EditItemController extends AbstractController
 {
     #[Route('/plans/{id<\d+>}/outline/items/{itemId<\d+>}', name: 'planning_edit_outline_item', methods: ['POST'])]
@@ -21,8 +22,19 @@ final class EditItemController extends AbstractController
         Request $request,
         EntityManagerInterface $em,
         OutlineGuard $guard,
+        OutlineItems $outline,
     ): Response {
         $guard->assertEditable($article, $item);
+
+        if ($request->request->has('move')) {
+            $items = $outline->latest($article);
+            $at = array_search($item, $items, true);
+            $neighbour = $items[$at + ('up' === $request->request->getString('move') ? -1 : 1)] ?? null;
+            $neighbour?->swapPosition($item);
+            $em->flush();
+
+            return $this->redirectToRoute('planning_show_outline', ['id' => $article->getId(), '_fragment' => 'item-'.$item->getId()], Response::HTTP_SEE_OTHER);
+        }
 
         if ($request->request->has('remove')) {
             $em->remove($item);

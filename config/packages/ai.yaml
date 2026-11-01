@@ -20,12 +20,6 @@ ai:
     # One agent per LLM step. Each system prompt is a hand-edited prompts/*.md file (read when a worker starts);
     # {name} placeholders are filled from the call's template_vars option.
     agent:
-        # Plan title from the topic and idea.
-        plan_title:
-            platform: '%app.ai.secondary_platform%'
-            model: '%env(AI_SECONDARY_MODEL)%'
-            prompt:
-                file: '%kernel.project_dir%/prompts/plan_title_agent.md'
         # Notes of one reference on the Brainstorm tab.
         digest:
             platform: '%app.ai.secondary_platform%'

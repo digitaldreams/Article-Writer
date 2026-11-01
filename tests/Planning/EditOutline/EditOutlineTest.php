@@ -37,6 +37,48 @@ final class EditOutlineTest extends PlanningTestCase
         self::assertSame(['Typed properties', 'Property hooks'], array_map(static fn (OutlineItem $i) => $i->getTitle(), $this->outline()->latest($this->reload($article))));
     }
 
+    public function testAnItemMovesUpAndDownWithoutCountingAsAHandEdit(): void
+    {
+        [$article, [$first, $second]] = $this->outlineRoundOne();
+        $this->em()->persist(new OutlineItem($article, 1, 2, 'Hooks', 'Get and set.'));
+        $this->em()->flush();
+        $titles = fn () => array_map(static fn (OutlineItem $i) => $i->getTitle(), $this->outline()->latest($this->reload($article)));
+
+        $this->client->request('POST', $this->itemUrl($article, $second), ['move' => 'up']);
+        self::assertResponseRedirects('/plans/'.$article->getId().'/outline#item-'.$second->getId(), 303);
+        self::assertSame(['Typed properties', 'The old pain', 'Hooks'], $titles());
+
+        $this->client->request('POST', $this->itemUrl($article, $first), ['move' => 'down']);
+        self::assertSame(['Typed properties', 'Hooks', 'The old pain'], $titles());
+        self::assertFalse($this->em()->find(OutlineItem::class, $first->getId())?->isEditedByHand());
+
+        $this->client->request('POST', $this->itemUrl($article, $first), ['move' => 'down']);
+        self::assertSame(['Typed properties', 'Hooks', 'The old pain'], $titles());
+    }
+
+    public function testTheFirstItemHasNoUpAndTheLastNoDown(): void
+    {
+        [$article, [$first, $second]] = $this->outlineRoundOne();
+
+        $this->client->request('GET', '/plans/'.$article->getId().'/outline');
+
+        self::assertSelectorNotExists('#item-'.$first->getId().' button[value=up]');
+        self::assertSelectorExists('#item-'.$first->getId().' button[value=down]');
+        self::assertSelectorExists('#item-'.$second->getId().' button[value=up]');
+        self::assertSelectorNotExists('#item-'.$second->getId().' button[value=down]');
+    }
+
+    public function testMovingOutsideTheOutlineStepIsAConflict(): void
+    {
+        [$article, [, $second]] = $this->outlineRoundOne();
+        $article->moveTo(ArticleState::Approved);
+        $this->em()->flush();
+
+        $this->client->request('POST', $this->itemUrl($article, $second), ['move' => 'up']);
+
+        self::assertResponseStatusCodeSame(409);
+    }
+
     public function testADirectionChangeShowsRoundTwoWhenItsJobIsDone(): void
     {
         [$article] = $this->outlineRoundOne();

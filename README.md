@@ -121,3 +121,10 @@ vendor/bin/phpstan analyse
 - **Job card stays queued / "stalled" warning:** workers are not running. Run `symfony server:start -d` and check `symfony server:status`.
 - **Job failed with a connection error:** Ollama is not running, or the model is not pulled. Fix it, then press Retry on the card.
 - **Database connection refused:** run `docker compose up -d`, and use `symfony console` instead of `bin/console`.
+
+## License
+
+Copyright (c) 2026 Tuhin Bepari. Licensed under [GNU AGPL v3](LICENSE).
+
+Use it for anything, including paid writing. If you change the code and share it, or run it for other people
+over a network, you must publish your changed source under the same license.

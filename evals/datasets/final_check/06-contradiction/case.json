@@ -1,0 +1,6 @@
+{
+    "kind": "contradiction",
+    "section": "General",
+    "needle": null,
+    "planted": "The section 'What Are PHP Attributes?' says attributes were added in PHP 8.0. The section 'Key Takeaway: Writing Better Code' says PHP 8.1."
+}

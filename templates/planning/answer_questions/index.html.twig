@@ -45,6 +45,12 @@
                                         {{ option }}
                                     </label>
                                 {% endfor %}
+                                {% set own = chosen|filter(c => c and c not in question.options)|join('; ') %}
+                                <label class="choice-own">
+                                    {% if not question.multiple %}<input type="radio" name="answer" value="__own" data-action="change->autosave#save" {{ own ? 'checked' : '' }} {{ editable ? '' : 'disabled' }}>{% endif %}
+                                    Write your own
+                                    <input type="text" name="own" value="{{ own }}" placeholder="When none of these fit" data-action="{{ question.multiple ? '' : 'focus->autosave#pickOwn ' }}input->autosave#queue" {{ editable ? '' : 'disabled' }}>
+                                </label>
                             </fieldset>
                         {% endif %}
                         <p class="form-actions">

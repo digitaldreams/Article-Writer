@@ -1602,7 +1602,8 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         },
  *         huggingface?: array{
  *             api_key?: string|Param,
- *             provider?: string|Param, // Default: "hf-inference"
+ *             provider?: string|Param, // Inference provider for chat completion, Hugging Face picks one when null // Default: null
+ *             api_catalog?: bool|Param, // Resolve models through the Hugging Face Hub API instead of the static model catalog // Default: false
  *             http_client?: string|Param, // Service ID of the HTTP client to use // Default: "http_client"
  *         },
  *         lmstudio?: array{
@@ -1816,6 +1817,8 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             index_name?: string|Param,
  *             vector_field?: string|Param, // Default: "vector"
  *             bulk_write?: bool|Param, // Default: false
+ *             dimensions?: int|Param, // Number of dimensions of the vector index created by "ai:store:setup"
+ *             similarity?: "euclidean"|"cosine"|"dotProduct"|Param, // Similarity function of the vector index created by "ai:store:setup"
  *             setup_options?: array{
  *                 fields?: mixed, // Default: []
  *             },
@@ -1847,6 +1850,12 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             namespace?: string|Param,
  *             filter?: list<scalar|Param|null>,
  *             top_k?: int|Param,
+ *             setup_options?: array{
+ *                 dimension?: int|Param,
+ *                 metric?: "cosine"|"euclidean"|"dotproduct"|Param,
+ *                 cloud?: string|Param,
+ *                 region?: string|Param,
+ *             },
  *         }>,
  *         postgres?: array<string, array{ // Default: []
  *             dsn?: string|Param,
@@ -1860,8 +1869,8 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             setup_options?: array{
  *                 vector_type?: string|Param, // Default: "vector"
  *                 vector_size?: int|Param, // Default: 1536
- *                 index_method?: string|Param, // Default: "ivfflat"
- *                 index_opclass?: string|Param, // Default: "vector_cosine_ops"
+ *                 index_method?: string|Param, // The pgvector index method, "hnsw" by default.
+ *                 index_opclass?: string|Param, // The operator class of the index, the one of the distance by default (e.g. "vector_l2_ops").
  *             },
  *         }>,
  *         qdrant?: array<string, array{ // Default: []
@@ -1879,6 +1888,9 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             index_name?: string|Param,
  *             key_prefix?: string|Param, // Default: "vector:"
  *             distance?: "COSINE"|"L2"|"IP"|Param, // Distance metric to use for vector similarity search // Default: "COSINE"
+ *             setup_options?: array{
+ *                 vector_size?: int|Param,
+ *             },
  *         }>,
  *         s3vectors?: array<string, array{ // Default: []
  *             client?: string|Param, // Service reference to an existing S3VectorsClient
@@ -1886,6 +1898,10 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             vector_bucket_name?: string|Param,
  *             index_name?: string|Param,
  *             filter?: list<mixed>,
+ *             setup_options?: array{
+ *                 dimension?: int|Param,
+ *                 distance_metric?: "cosine"|"euclidean"|Param,
+ *             },
  *             top_k?: int|Param, // Default number of results to return // Default: 3
  *         }>,
  *         sqlite?: array<string, array{ // Default: []
@@ -1918,6 +1934,9 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             strategy?: string|Param, // Default: "cosine"
  *             dimensions?: int|Param, // Default: 1536
  *             namespaced_user?: bool|Param,
+ *             setup_options?: array{
+ *                 force_database_creation?: bool|Param, // Create the namespace and database as well, SurrealDB 3 no longer creates them on first use.
+ *             },
  *         }>,
  *         typesense?: array<string, array{ // Default: []
  *             endpoint?: string|Param,

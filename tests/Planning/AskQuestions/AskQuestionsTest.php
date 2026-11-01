@@ -5,7 +5,6 @@ namespace App\Tests\Planning\AskQuestions;
 use App\Tests\RenderingPlatform;
 use App\Planning\AskQuestions\AskedQuestion;
 use App\Planning\AskQuestions\QuestionList;
-use App\Planning\CreatePlan\PlanTitleAnswer;
 use App\Planning\Question;
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
@@ -119,7 +118,6 @@ final class AskQuestionsTest extends WebTestCase
     private function fakeQuestions(\Closure $answer): void
     {
         RenderingPlatform::install(self::getContainer(), 'ollama', static fn ($model, $input) => $answer($input));
-        RenderingPlatform::install(self::getContainer(), 'openai', static fn () => new ObjectResult(new PlanTitleAnswer('A title')));
     }
 
     private function createPlan(KernelBrowser $client): void

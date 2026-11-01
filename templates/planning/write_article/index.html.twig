@@ -3,7 +3,8 @@
 {% block title %}{{ article.title }} · Article · {{ parent() }}{% endblock %}
 
 {% block body %}
-    {% set waiting = job and job.status.value in ['queued', 'working'] %}
+    {% set rewriting = rewrites|filter(r => r.job and r.job.status.value in ['queued', 'working'])|length > 0 %}
+    {% set waiting = (job and job.status.value in ['queued', 'working']) or rewriting %}
 
     <p><a href="{{ path('planning_list_plans') }}">Back to plans</a></p>
     {% include 'planning/_steps.html.twig' %}
@@ -18,21 +19,60 @@
         {% if body is not null %}
             <div data-controller="medium-copy">
                 <p class="notice">Written to <code>{{ path }}</code> <a href="{{ path|file_link(1) }}" class="button">Open in VS Code</a> <a href="{{ path('planning_download_article', {id: article.id}) }}" class="button">Download .md</a>
-                    {% if not editing %}<button type="button" class="button" data-medium-copy-target="button" data-action="medium-copy#copy">Copy for Medium</button>{% endif %}</p>
-                {% if editing %}
-                    <form class="card" method="post" action="{{ path('planning_save_article', {id: article.id}) }}" data-controller="autosave">
-                        <textarea name="body" aria-label="Article" data-controller="markdown-editor" data-action="input->autosave#queue">{{ body }}</textarea>
-                        <p class="form-actions">
-                            <span class="muted" data-autosave-target="status" aria-live="polite"></span>
-                            <a href="{{ path('planning_show_article', {id: article.id}) }}" class="button">Done</a>
-                        </p>
-                    </form>
-                {% else %}
-                    <article class="card article-preview" data-medium-copy-target="source">
-                        <a href="{{ path('planning_show_article', {id: article.id, edit: 1}) }}" class="button article-edit" title="Edit article">✎ Edit</a>
-                        {{ body|markdown_to_html }}
-                    </article>
-                {% endif %}
+                    {% if not editing_section %}<button type="button" class="button" data-medium-copy-target="button" data-action="medium-copy#copy">Copy for Medium</button>{% endif %}</p>
+                {# The source of Copy for Medium: data-copy-skip parts are UI, not article. #}
+                <article class="card article-preview" data-medium-copy-target="source">
+                    {{ head|markdown_to_html }}
+                    {% for section in sections %}
+                        {% set n = loop.index %}
+                        {% set rewrite = rewrites[section.heading] ?? null %}
+                        {% set here = path('planning_show_article', {id: article.id}) ~ '#section-' ~ n %}
+                        {% set edit_here = path('planning_show_article', {id: article.id, section: n}) ~ '#section-' ~ n %}
+                        <section class="article-section{{ n == editing_section ? ' is-editing' : '' }}" id="section-{{ n }}" data-heading="{{ section.heading }}">
+                            {% if n != editing_section %}
+                                <a class="section-edit" href="{{ edit_here }}" aria-label="Edit {{ section.heading }}" title="Edit this section" data-copy-skip>✎</a>
+                            {% endif %}
+                            {{ section.line|markdown_to_html }}
+                            {% if n == editing_section %}
+                                {# Permanent: the rewrite poll morphs the page and must not reset the editor. #}
+                                <form id="section-editor-{{ n }}" class="section-editor" method="post" action="{{ path('planning_save_section', {id: article.id}) }}" data-controller="autosave" data-turbo-permanent data-turbo="false" data-copy-skip>
+                                    <input type="hidden" name="heading" value="{{ section.heading }}">
+                                    <textarea name="text" aria-label="Text of {{ section.heading }}" data-controller="markdown-editor" data-action="input->autosave#queue">{{ (section.line ~ section.text)|trim }}</textarea>
+                                    <p class="form-actions">
+                                        <span class="muted" data-autosave-target="status" aria-live="polite"></span>
+                                        <a href="{{ here }}" class="button button-primary button-small">Done</a>
+                                    </p>
+                                    <label for="instruction">Rewrite with AI</label>
+                                    <textarea id="instruction" name="instruction" rows="2" required placeholder="e.g. add a short code example">{{ rewrite ? rewrite.instruction : '' }}</textarea>
+                                    <p class="form-actions">
+                                        <button class="button button-secondary button-small" type="submit" formaction="{{ path('planning_request_rewrite', {id: article.id}) }}">Rewrite with AI</button>
+                                    </p>
+                                </form>
+                            {% else %}
+                                {{ section.text|markdown_to_html }}
+                            {% endif %}
+
+                            {% if rewrite %}
+                                <div class="rewrite-suggestion" data-copy-skip>
+                                    <p class="muted">AI suggestion · Asked: {{ rewrite.instruction }}</p>
+                                    {% if rewrite.after is not null %}
+                                        {% set stale = rewrite.before != section.text %}
+                                        <div class="rewrite-after">{{ rewrite.after|markdown_to_html }}</div>
+                                        {% if stale %}<p class="notice notice-warning">This section changed since you asked. Try again, or reject it.</p>{% endif %}
+                                        {# No Turbo: a plain submit keeps the #section-N of the redirect, so the page stays at this section. #}
+                                        <form class="form-actions" method="post" action="{{ path('planning_decide_rewrite', {id: article.id, rewriteId: rewrite.id}) }}" data-turbo="false">
+                                            <button class="button button-secondary button-small" type="submit" name="decision" value="reject">Reject</button>
+                                            <a class="button button-secondary button-small" href="{{ edit_here }}">Try again</a>
+                                            {% if not stale %}<button class="button button-primary button-small" type="submit" name="decision" value="accept">Accept</button>{% endif %}
+                                        </form>
+                                    {% elseif rewrite.job %}
+                                        {% include 'shared/llm/job_card/_frame.html.twig' with {job: rewrite.job} only %}
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </section>
+                    {% endfor %}
+                </article>
             </div>
         {% endif %}
     </section>
