@@ -19,6 +19,7 @@ final class AiAgentsTest extends KernelTestCase
         self::assertSame('ollama:test-primary', $container->get('ai.agent.outline')->call('hi')->getContent());
         self::assertSame('openai:test-secondary', $container->get('ai.agent.digest')->call('hi')->getContent());
         self::assertSame('ollama:test-check', $container->get('ai.agent.final_check')->call('hi')->getContent());
+        self::assertSame('ollama:test-check', $container->get('ai.agent.writing_profile')->call('hi')->getContent());
     }
 
     public function testEveryStepPromptIsAnMdFileOnItsAgent(): void

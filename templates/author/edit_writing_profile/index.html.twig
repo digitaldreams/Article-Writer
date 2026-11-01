@@ -11,6 +11,11 @@
     </form>
     <p class="notice notice-warning">Analyze again replaces your edits.</p>
     {{ render(controller('App\\Author\\ImportArticles\\ImportArticlesController::failedFiles')) }}
+    {% if jobs %}
+        <form method="post" action="{{ path('author_close_analysis') }}">
+            <button class="button button-secondary" type="submit">Close</button>
+        </form>
+    {% endif %}
     {% for row in jobs %}
         <div class="structure-job">
             <strong>{{ row.label }}</strong>

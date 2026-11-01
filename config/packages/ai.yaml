@@ -32,10 +32,11 @@ ai:
             model: '%env(AI_SECONDARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/writing_notes_agent.md'
-        # Merges the writing notes into the writer's profile (Author).
+        # Merges the writing notes into the writer's profile (Author). On the check model: keeping the rare,
+        # newest devices out of 10 notes is too hard for a small local model, and it is one call per analysis.
         writing_profile:
-            platform: '%app.ai.secondary_platform%'
-            model: '%env(AI_SECONDARY_MODEL)%'
+            platform: '%app.ai.check_platform%'
+            model: '%env(AI_CHECK_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/writing_profile_agent.md'
         # Interviewer + reader questions on the Questions tab.

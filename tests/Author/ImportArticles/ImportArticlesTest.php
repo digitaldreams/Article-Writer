@@ -95,6 +95,43 @@ final class ImportArticlesTest extends WebTestCase
         self::assertCount(1, $crawler->selectButton('Retry'));
     }
 
+    public function testTheBioPageShowsOnlyTheImportOfThisSession(): void
+    {
+        $client = static::createClient();
+        $this->logIn($client);
+        $this->import('<html></html>', 'https://example.com/older-'.uniqid());
+        $this->upload($client, ['fresh.md' => "# Fresh\nx\n"]);
+
+        $crawler = $client->request('GET', '/author');
+        self::assertCount(1, $crawler->filter('.import-file'));
+        self::assertStringContainsString('fresh.md', $crawler->filter('.import-file')->text());
+    }
+
+    public function testTheProfilePageShowsOnlyFailedFilesOfThisSession(): void
+    {
+        $client = static::createClient();
+        $this->logIn($client);
+        $this->import('  ', 'https://example.com/older-'.uniqid());
+        $this->upload($client, ['empty-two.md' => "  \n"]);
+        $this->consume();
+
+        $crawler = $client->request('GET', '/author/profile');
+        self::assertCount(1, $crawler->filter('.import-file'));
+        self::assertStringContainsString('empty-two.md', $crawler->filter('.import-file')->text());
+    }
+
+    public function testCloseHidesTheImportCards(): void
+    {
+        $client = static::createClient();
+        $this->logIn($client);
+        $this->upload($client, ['closed.md' => "# Closed\nx\n"]);
+
+        $client->request('POST', '/author/import/close');
+        self::assertResponseRedirects('/author', 303);
+        $crawler = $client->request('GET', '/author');
+        self::assertCount(0, $crawler->filter('.import-file'));
+    }
+
     public function testTheFrontMatterDateWinsOverTheFileDate(): void
     {
         $client = static::createClient();

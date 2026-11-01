@@ -17,16 +17,39 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 final class ImportArticlesController extends AbstractController
 {
-    /** Rendered inside /author: the upload form and one job card per imported file. */
-    public function panel(EntityManagerInterface $em): Response
+    private const SESSION_KEY = 'import_job_ids';
+
+    /**
+     * The upload form and one job card per imported file.
+     * On /author ($all false): only this session's last import, until Close. The onboarding wizard shows all.
+     */
+    public function panel(Request $request, EntityManagerInterface $em, bool $all = false): Response
     {
-        return $this->render('author/import_articles/_panel.html.twig', ['files' => $this->files($em, ['step' => 'import_file'])]);
+        $ids = $all ? null : $request->getSession()->get(self::SESSION_KEY, []);
+        $files = match (true) {
+            null === $ids => $this->files($em, ['step' => 'import_file']),
+            [] === $ids => [],
+            default => $this->files($em, ['step' => 'import_file', 'id' => $ids]),
+        };
+
+        return $this->render('author/import_articles/_panel.html.twig', ['files' => $files]);
     }
 
-    /** Rendered inside /author/profile: the files that failed, each with Retry. */
-    public function failedFiles(EntityManagerInterface $em): Response
+    #[Route('/author/import/close', name: 'author_import_close', methods: ['POST'])]
+    public function close(Request $request): Response
     {
-        return $this->render('author/import_articles/_failed_files.html.twig', ['files' => $this->files($em, ['step' => 'import_file', 'status' => LlmJobStatus::Failed])]);
+        $request->getSession()->remove(self::SESSION_KEY);
+
+        return $this->redirectToRoute('author_edit_bio', status: Response::HTTP_SEE_OTHER);
+    }
+
+    /** Rendered inside /author/profile: the files of this session's import that failed, each with Retry. */
+    public function failedFiles(Request $request, EntityManagerInterface $em): Response
+    {
+        $ids = $request->getSession()->get(self::SESSION_KEY, []);
+        $files = [] === $ids ? [] : $this->files($em, ['step' => 'import_file', 'status' => LlmJobStatus::Failed, 'id' => $ids]);
+
+        return $this->render('author/import_articles/_failed_files.html.twig', ['files' => $files]);
     }
 
     /**
@@ -74,11 +97,15 @@ final class ImportArticlesController extends AbstractController
             }
         }
 
-        $em->wrapInTransaction(function () use ($entries, $jobs, $user): void {
+        $ids = $em->wrapInTransaction(function () use ($entries, $jobs, $user): array {
+            $ids = [];
             foreach ($entries as [$name, $content, $format, $date]) {
-                $jobs->start(null, 'import_file', 'io', static fn (int $id) => new ImportArticle($id, $name, $content, publishedAt: $date, format: $format), $user);
+                $ids[] = $jobs->start(null, 'import_file', 'io', static fn (int $id) => new ImportArticle($id, $name, $content, publishedAt: $date, format: $format), $user)->getId();
             }
+
+            return $ids;
         });
+        $request->getSession()->set(self::SESSION_KEY, $ids);
 
         return $this->redirectToRoute('author_edit_bio', status: Response::HTTP_SEE_OTHER);
     }

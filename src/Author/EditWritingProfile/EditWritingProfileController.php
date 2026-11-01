@@ -36,10 +36,18 @@ final class EditWritingProfileController extends AbstractController
 
         return $this->render('author/edit_writing_profile/index.html.twig', [
             'form' => $form,
-            'jobs' => $this->jobs($em),
+            'jobs' => $this->jobs($em, $request->getSession()->get('analyze_since_job')),
             'analyzed' => $em->getRepository(WritingNote::class)->count([]),
             'library' => $em->getRepository(Article::class)->count(['state' => ArticleState::Imported]),
         ], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+    }
+
+    #[Route('/author/profile/close', name: 'author_close_analysis', methods: ['POST'])]
+    public function close(Request $request): Response
+    {
+        $request->getSession()->remove('analyze_since_job');
+
+        return $this->redirectToRoute('author_edit_writing_profile', status: Response::HTTP_SEE_OTHER);
     }
 
     /** Rendered inside the onboarding wizard: the same form, posting to /author/profile. */
@@ -57,12 +65,16 @@ final class EditWritingProfileController extends AbstractController
     }
 
     /** @return list<array{label: string, job: LlmJob}> */
-    private function jobs(EntityManagerInterface $em): array
+    private function jobs(EntityManagerInterface $em, mixed $since): array
     {
+        if (!\is_int($since)) {
+            return [];
+        }
         /** @var list<LlmJob> $jobs */
         $jobs = $em->getRepository(LlmJob::class)->createQueryBuilder('j')
             ->leftJoin('j.article', 'a')->addSelect('a')
             ->where('j.step IN (:steps)')->setParameter('steps', ['extract_writing_notes', 'merge_writing_profile'])
+            ->andWhere('j.id >= :since')->setParameter('since', $since)
             ->orderBy('j.id', 'DESC')->setMaxResults(100)
             ->getQuery()->getResult();
 

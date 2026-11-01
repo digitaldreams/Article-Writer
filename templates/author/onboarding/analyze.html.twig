@@ -9,5 +9,5 @@
         </form>
         {% if not ready %}<p class="muted">Analyze starts when every import has finished.</p>{% endif %}
     </section>
-    {{ render(controller('App\\Author\\ImportArticles\\ImportArticlesController::panel')) }}
+    {{ render(controller('App\\Author\\ImportArticles\\ImportArticlesController::panel', {all: true})) }}
 {% endblock %}

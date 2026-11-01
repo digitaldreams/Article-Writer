@@ -212,6 +212,9 @@ input:not([type="hidden"], [type="checkbox"], [type="radio"]), textarea, select 
 
 textarea { line-height: 1.7; }
 
+/* Writing profile: each box grows to show its whole text (Chrome 123+; older browsers keep the fixed box). */
+.profile-form textarea { max-width: none; field-sizing: content; min-height: 3lh; resize: vertical; }
+
 :is(input, textarea, select):hover { border-color: var(--color-text-muted); }
 :is(input, textarea, select):disabled { opacity: 0.5; cursor: not-allowed; }
 :is(input, textarea, select)[aria-invalid="true"] { border-color: var(--color-error); }
