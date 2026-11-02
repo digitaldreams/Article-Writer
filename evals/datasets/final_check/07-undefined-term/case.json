@@ -1,0 +1,6 @@
+{
+    "kind": "term",
+    "section": "Introduction: Why Clean Code Matters",
+    "needle": "metadata",
+    "planted": "The Introduction now says attributes 'keep the metadata right next to the code', but metadata is only explained later, in 'What Are PHP Attributes?'."
+}

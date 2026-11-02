@@ -32,11 +32,11 @@ ai:
             model: '%env(AI_SECONDARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/writing_notes_agent.md'
-        # Merges the writing notes into the writer's profile (Author). On the check model: keeping the rare,
+        # Merges the writing notes into the writer's profile (Author). On primary: keeping the rare,
         # newest devices out of 10 notes is too hard for a small local model, and it is one call per analysis.
         writing_profile:
-            platform: '%app.ai.check_platform%'
-            model: '%env(AI_CHECK_MODEL)%'
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/writing_profile_agent.md'
         # Interviewer + reader questions on the Questions tab.
@@ -65,31 +65,31 @@ ai:
                 file: '%kernel.project_dir%/prompts/rewrite_agent.md'
         # Title + subtitle suggestions on the titles page; the system prompt is a hand-edited repo file (read when a worker starts).
         title:
-            platform: '%app.ai.title_platform%'
-            model: '%env(AI_TITLE_MODEL)%'
+            platform: '%app.ai.secondary_platform%'
+            model: '%env(AI_SECONDARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/title_agent.md'
         # Poster ideas on the poster page; the system prompt is a hand-edited repo file (read when a worker starts).
         poster:
-            platform: '%app.ai.poster_platform%'
-            model: '%env(AI_POSTER_MODEL)%'
+            platform: '%app.ai.secondary_platform%'
+            model: '%env(AI_SECONDARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/poster_agent.md'
-        # Share punchlines on the share page; runs on the title agent's platform and model. The system prompt is a hand-edited repo file (read when a worker starts).
+        # Share punchlines on the share page; the system prompt is a hand-edited repo file (read when a worker starts).
         share:
-            platform: '%app.ai.title_platform%'
-            model: '%env(AI_TITLE_MODEL)%'
+            platform: '%app.ai.secondary_platform%'
+            model: '%env(AI_SECONDARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/share_agent.md'
         # Final check on the Final check tab: notes on the whole article against its title, plan and outline.
         final_check:
-            platform: '%app.ai.check_platform%'
-            model: '%env(AI_CHECK_MODEL)%'
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/final_check_agent.md'
         # Refactors the whole article from the final-check notes the writer picked.
         refactor:
-            platform: '%app.ai.check_platform%'
-            model: '%env(AI_CHECK_MODEL)%'
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/refactor_agent.md'

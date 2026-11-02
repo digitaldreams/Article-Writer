@@ -34,7 +34,7 @@ final class SuggestPostersController extends AbstractController
                 ->setParameter('article', $article)
                 ->getSingleScalarResult();
             $articleId = (int) $article->getId();
-            $jobs->start($article, 'suggest_posters', 'poster', static fn (int $id) => new SuggestPosters($id, $articleId, $round, $writerIdea));
+            $jobs->start($article, 'suggest_posters', 'secondary', static fn (int $id) => new SuggestPosters($id, $articleId, $round, $writerIdea));
         });
 
         return $this->redirectToRoute('planning_show_posters', ['id' => $article->getId()], Response::HTTP_SEE_OTHER);

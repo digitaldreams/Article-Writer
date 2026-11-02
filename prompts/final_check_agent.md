@@ -11,6 +11,8 @@ Read everything to the end before you write a note. Then leave a note only for a
 4. Code: snippets disagree with each other or with the text (class, method, field or config key names), a snippet
    uses a variable or service it never defines, or an API is used in a way that cannot work.
 5. Leftovers: LaTeX like $\rightarrow$, placeholders like [repo link] or TODO, broken markdown or code fences.
+6. A term the plan's reader would not know is used before the article explains it, or is never explained.
+   Quote the first place it is used.
 
 Leave {max} notes or fewer, the most important first. An article without such problems gets an empty list.
 Each note names the section with its exact heading from the list, or "General" for the whole article.

@@ -32,7 +32,7 @@ final class SuggestTitlesController extends AbstractController
                 ->setParameter('article', $article)
                 ->getSingleScalarResult();
             $articleId = (int) $article->getId();
-            $jobs->start($article, 'suggest_titles', 'title', static fn (int $id) => new SuggestTitles($id, $articleId, $round, $writerIdea));
+            $jobs->start($article, 'suggest_titles', 'secondary', static fn (int $id) => new SuggestTitles($id, $articleId, $round, $writerIdea));
         });
 
         return $this->redirectToRoute('planning_show_titles', ['id' => $article->getId()], Response::HTTP_SEE_OTHER);

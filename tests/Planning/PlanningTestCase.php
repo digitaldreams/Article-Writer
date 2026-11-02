@@ -52,6 +52,12 @@ abstract class PlanningTestCase extends WebTestCase
         RenderingPlatform::install(self::getContainer(), 'ollama', static fn ($model, $input, array $options) => $answer($input, $options));
     }
 
+    /** @param \Closure(mixed $input, array<string, mixed> $options): ResultInterface $answer */
+    protected function fakeSecondary(\Closure $answer): void
+    {
+        RenderingPlatform::install(self::getContainer(), 'openai', static fn ($model, $input, array $options) => $answer($input, $options));
+    }
+
     protected function consume(): void
     {
         $transports = [];

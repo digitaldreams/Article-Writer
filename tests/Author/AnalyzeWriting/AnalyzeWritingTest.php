@@ -62,7 +62,7 @@ final class AnalyzeWritingTest extends WebTestCase
             $this->em()->persist(new WritingNote($article, 'a story', 5, 'by feature', true, 'summary', 'friendly', 'short sentences', 'questions', 'snippet first', ["$title sample."]));
         }
         $this->em()->flush();
-        self::getContainer()->get(LlmJobs::class)->start(null, 'merge_writing_profile', 'secondary', static fn (int $id) => new MergeWritingProfile($id), $this->author);
+        self::getContainer()->get(LlmJobs::class)->start(null, 'merge_writing_profile', 'primary', static fn (int $id) => new MergeWritingProfile($id), $this->author);
         $this->em()->flush();
 
         $this->consume(['llm_secondary']);
@@ -166,7 +166,7 @@ final class AnalyzeWritingTest extends WebTestCase
 
         $client->request('POST', '/author/profile/analyze');
         $author = $this->em()->find(User::class, $this->author->getId());
-        self::getContainer()->get(LlmJobs::class)->start(null, 'merge_writing_profile', 'secondary', static fn (int $id) => new MergeWritingProfile($id), $author);
+        self::getContainer()->get(LlmJobs::class)->start(null, 'merge_writing_profile', 'primary', static fn (int $id) => new MergeWritingProfile($id), $author);
 
         $crawler = $client->request('GET', '/author/profile');
         self::assertCount(3, $crawler->filter('.structure-job'), 'Old again, New, then the merge');

@@ -18,7 +18,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * The real final_check model on evals/datasets/<dataset>: one planted problem per case, plus clean cases.
- * Costs tokens. The platform is fixed when the container is built (AI_CHECK_PLATFORM): switch it with cache:clear.
+ * Costs tokens. The platform is fixed when the container is built (AI_PRIMARY_PLATFORM): switch it with cache:clear.
  */
 #[When(env: 'dev')]
 #[AsCommand('app:eval:final-check', 'Measures the final check on the eval dataset (real model, costs tokens)')]
@@ -34,9 +34,9 @@ final readonly class FinalCheckEvalCommand
         private Judge $judge,
         private LlmCost $cost,
         private EventDispatcherInterface $dispatcher,
-        #[Autowire(param: 'app.ai.check_platform')]
+        #[Autowire(param: 'app.ai.primary_platform')]
         private string $platform,
-        #[Autowire(env: 'AI_CHECK_MODEL')]
+        #[Autowire(env: 'AI_PRIMARY_MODEL')]
         private string $model,
         #[Autowire('%kernel.project_dir%')]
         private string $projectDir,

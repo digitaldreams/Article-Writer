@@ -49,7 +49,7 @@ final class AnalyzeWritingController extends AbstractController
             }
             // Every article has its note: merge again now (e.g. after the author's hand edits).
             if ([] === $missing) {
-                $started[] = $jobs->start(null, 'merge_writing_profile', 'secondary', static fn (int $id) => new MergeWritingProfile($id), $user);
+                $started[] = $jobs->start(null, 'merge_writing_profile', 'primary', static fn (int $id) => new MergeWritingProfile($id), $user);
             }
 
             return $started[0];

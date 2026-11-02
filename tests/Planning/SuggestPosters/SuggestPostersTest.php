@@ -22,7 +22,7 @@ final class SuggestPostersTest extends PlanningTestCase
         $article = $this->writtenArticle();
         $prompt = '';
         $hasSystemPrompt = false;
-        $this->fakePrimary(static function ($input) use (&$prompt, &$hasSystemPrompt) {
+        $this->fakeSecondary(static function ($input) use (&$prompt, &$hasSystemPrompt) {
             $prompt = (string) $input->getUserMessage()?->asText();
             $hasSystemPrompt = null !== $input->getSystemMessage();
 
@@ -42,7 +42,7 @@ final class SuggestPostersTest extends PlanningTestCase
         self::assertSelectorTextSame('form[action$="/poster"] button', 'Suggest more');
         self::assertTrue($hasSystemPrompt);
         self::assertStringContainsString('Audience: PHP developers', $prompt);
-        self::assertSame('test-poster', $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'suggest_posters'])?->getModel());
+        self::assertSame('test-secondary', $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'suggest_posters'])?->getModel());
     }
 
     public function testSuggestMoreAddsThreeNewIdeasAndTellsTheAgentWhichOnesWereSeen(): void
@@ -50,7 +50,7 @@ final class SuggestPostersTest extends PlanningTestCase
         $article = $this->writtenArticle();
         $round = 0;
         $prompt = '';
-        $this->fakePrimary(static function ($input) use (&$round, &$prompt) {
+        $this->fakeSecondary(static function ($input) use (&$round, &$prompt) {
             $prompt = (string) $input->getUserMessage()?->asText();
 
             return self::posters(1 === ++$round ? 'A' : 'B');
@@ -70,7 +70,7 @@ final class SuggestPostersTest extends PlanningTestCase
     {
         $article = $this->writtenArticle();
         $prompt = '';
-        $this->fakePrimary(static function ($input) use (&$prompt) {
+        $this->fakeSecondary(static function ($input) use (&$prompt) {
             $prompt = (string) $input->getUserMessage()?->asText();
 
             return self::posters('A');
@@ -107,7 +107,7 @@ final class SuggestPostersTest extends PlanningTestCase
         $body = "## Start\n\n".str_repeat("A long middle paragraph about typed properties.\n\n", 2_000)."## Last section\n\nThe very end.\n";
         $this->folder()->write($article->getFolder(), 'article.md', ['plan_id' => $article->getId(), 'title' => 'PHP 8 features'], $body);
         $prompt = '';
-        $this->fakePrimary(static function ($input) use (&$prompt) {
+        $this->fakeSecondary(static function ($input) use (&$prompt) {
             $prompt = (string) $input->getUserMessage()?->asText();
 
             return self::posters('A');
@@ -142,7 +142,7 @@ final class SuggestPostersTest extends PlanningTestCase
     public function testAWrongNumberOfIdeasFailsTheJobWithRetry(): void
     {
         $article = $this->writtenArticle();
-        $this->fakePrimary(static fn () => new ObjectResult(new PosterList([new ProposedPoster('Only one', 'a cat', 'centered', 'black', '<svg/>')])));
+        $this->fakeSecondary(static fn () => new ObjectResult(new PosterList([new ProposedPoster('Only one', 'a cat', 'centered', 'black', '<svg/>')])));
 
         $this->client->request('POST', $this->posterUrl($article));
         $this->consume();
@@ -172,7 +172,7 @@ final class SuggestPostersTest extends PlanningTestCase
 
         self::assertStringContainsString('spelled exactly: Readonly at last', $prompt);
         self::assertStringContainsString('Picture: A sealed glass capsule', $prompt);
-        self::assertSame('test-poster-image', $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'generate_poster'])?->getModel());
+        self::assertSame('test-image', $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'generate_poster'])?->getModel());
         $this->client->request('GET', $this->posterUrl($article));
         self::assertSelectorExists('img.poster-image[alt="Poster: Readonly at last"]');
         self::assertSelectorTextSame('.poster-idea button', 'Generate again');
@@ -208,7 +208,7 @@ final class SuggestPostersTest extends PlanningTestCase
     public function testEachIdeaShowsItsSketchAsAnImage(): void
     {
         $article = $this->writtenArticle();
-        $this->fakePrimary(static fn () => self::posters('A'));
+        $this->fakeSecondary(static fn () => self::posters('A'));
 
         $this->client->request('POST', $this->posterUrl($article));
         $this->consume();
@@ -223,7 +223,7 @@ final class SuggestPostersTest extends PlanningTestCase
     public function testASketchThatIsNotASmallSvgIsDroppedAndTheIdeaIsStillSaved(): void
     {
         $article = $this->writtenArticle();
-        $this->fakePrimary(static fn () => new ObjectResult(new PosterList([
+        $this->fakeSecondary(static fn () => new ObjectResult(new PosterList([
             new ProposedPoster('Not svg', 'a cat', 'centered', 'black', '<div>nope</div>'),
             new ProposedPoster('Too big', 'a dog', 'centered', 'black', '<svg>'.str_repeat(' ', 11_000).'</svg>'),
             new ProposedPoster('Fine', 'a bird', 'centered', 'black', '<svg viewBox="0 0 1200 630"></svg>'),
@@ -265,7 +265,7 @@ final class SuggestPostersTest extends PlanningTestCase
         $article->getUser()->updateProfile('', '', 'intermediate');
         $this->em()->flush();
         $prompt = '';
-        $this->fakePrimary(static function ($input) use (&$prompt) {
+        $this->fakeSecondary(static function ($input) use (&$prompt) {
             $prompt = (string) $input->getSystemMessage()?->getContent();
 
             return self::posters('A');

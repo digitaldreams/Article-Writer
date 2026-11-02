@@ -32,7 +32,7 @@ final class SuggestPunchlinesController extends AbstractController
                 ->setParameter('article', $article)
                 ->getSingleScalarResult();
             $articleId = (int) $article->getId();
-            $jobs->start($article, 'suggest_punchlines', 'title', static fn (int $id) => new SuggestPunchlines($id, $articleId, $round, $writerIdea));
+            $jobs->start($article, 'suggest_punchlines', 'secondary', static fn (int $id) => new SuggestPunchlines($id, $articleId, $round, $writerIdea));
         });
 
         return $this->redirectToRoute('planning_show_punchlines', ['id' => $article->getId()], Response::HTTP_SEE_OTHER);

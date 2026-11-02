@@ -23,7 +23,7 @@ final class RunCheckController extends AbstractController
 
         $em->wrapInTransaction(static function () use ($article, $jobs): void {
             $articleId = (int) $article->getId();
-            $jobs->start($article, 'check_article', 'check', static fn (int $id) => new CheckArticle($id, $articleId));
+            $jobs->start($article, 'check_article', 'primary', static fn (int $id) => new CheckArticle($id, $articleId));
         });
 
         return $this->redirectToRoute('planning_show_final_check', ['id' => $article->getId()], Response::HTTP_SEE_OTHER);

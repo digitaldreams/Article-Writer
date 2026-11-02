@@ -22,20 +22,10 @@ final readonly class LlmJobs
         private string $secondaryPlatform,
         #[Autowire(env: 'AI_SECONDARY_MODEL')]
         private string $secondaryModel,
-        #[Autowire('%app.ai.title_platform%')]
-        private string $titlePlatform,
-        #[Autowire(env: 'AI_TITLE_MODEL')]
-        private string $titleModel,
-        #[Autowire('%app.ai.poster_platform%')]
-        private string $posterPlatform,
-        #[Autowire(env: 'AI_POSTER_MODEL')]
-        private string $posterModel,
-        #[Autowire(env: 'AI_POSTER_IMAGE_MODEL')]
-        private string $posterImageModel,
-        #[Autowire('%app.ai.check_platform%')]
-        private string $checkPlatform,
-        #[Autowire(env: 'AI_CHECK_MODEL')]
-        private string $checkModel,
+        #[Autowire('%app.ai.image_platform%')]
+        private string $imagePlatform,
+        #[Autowire(env: 'AI_IMAGE_MODEL')]
+        private string $imageModel,
     ) {
     }
 
@@ -46,7 +36,7 @@ final readonly class LlmJobs
     }
 
     /**
-     * @param 'primary'|'secondary'|'title'|'poster'|'poster_image'|'check'|'io' $role
+     * @param 'primary'|'secondary'|'image'|'io' $role
      * @param \Closure(int): LlmJobMessage $message builds the message from the job id
      * @param User|null $user only for a job without an article; otherwise the article's user owns it
      */
@@ -55,10 +45,7 @@ final readonly class LlmJobs
         [$platform, $model] = match ($role) {
             'primary' => [$this->primaryPlatform, $this->primaryModel],
             'secondary' => [$this->secondaryPlatform, $this->secondaryModel],
-            'title' => [$this->titlePlatform, $this->titleModel],
-            'poster' => [$this->posterPlatform, $this->posterModel],
-            'poster_image' => [$this->posterPlatform, $this->posterImageModel],
-            'check' => [$this->checkPlatform, $this->checkModel],
+            'image' => [$this->imagePlatform, $this->imageModel],
             'io' => ['local', '-'],
         };
         $job = new LlmJob($article, $step, $role, str_replace('ai.platform.', '', $platform), $model, $user);
