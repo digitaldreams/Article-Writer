@@ -20,14 +20,22 @@
         {% endif %}
 
         {% for item in items %}
-            <article class="card outline-item">
+            <article class="card outline-item" id="item-{{ item.id }}">
                 <form method="post" action="{{ path('planning_edit_outline_item', {id: article.id, itemId: item.id}) }}" data-controller="autosave">
-                    <label for="item-title-{{ item.id }}">Section {{ loop.index }}</label>
+                    <header class="outline-item-head">
+                        <label for="item-title-{{ item.id }}">Section {{ loop.index }}</label>
+                        {% if editable %}
+                            <span class="outline-item-move">
+                                {% if not loop.first %}<button class="button button-secondary button-small" type="submit" name="move" value="up" aria-label="Move section {{ loop.index }} up">↑</button>{% endif %}
+                                {% if not loop.last %}<button class="button button-secondary button-small" type="submit" name="move" value="down" aria-label="Move section {{ loop.index }} down">↓</button>{% endif %}
+                                <button class="button button-danger button-small" type="submit" name="remove" value="1" aria-label="Remove section {{ loop.index }}" title="Remove">✕</button>
+                            </span>
+                        {% endif %}
+                    </header>
                     <input id="item-title-{{ item.id }}" name="title" value="{{ item.title }}" required data-action="input->autosave#queue" {{ editable ? '' : 'disabled' }}>
                     <textarea name="summary" rows="3" aria-label="Section {{ loop.index }} summary" data-action="input->autosave#queue" {{ editable ? '' : 'disabled' }}>{{ item.summary }}</textarea>
                     <div class="form-actions">
                         <span class="muted" data-autosave-target="status" aria-live="polite"></span>
-                        {% if editable %}<button class="button button-danger button-small" type="submit" name="remove" value="1">Remove</button>{% endif %}
                     </div>
                 </form>
             </article>

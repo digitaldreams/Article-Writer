@@ -3,6 +3,7 @@
 namespace App\Planning\RewriteSection;
 
 use App\Planning\ArticleSections;
+use App\Planning\SectionRewrite;
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
 use App\Shared\Storage\ArticleFolder;
@@ -21,7 +22,7 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 final class DecideRewriteController extends AbstractController
 {
-    #[Route('/plans/{id<\d+>}/improve/sections/{rewriteId<\d+>}', name: 'planning_decide_rewrite', methods: ['POST'])]
+    #[Route('/plans/{id<\d+>}/article/rewrites/{rewriteId<\d+>}', name: 'planning_decide_rewrite', methods: ['POST'])]
     public function __invoke(
         Article $article,
         #[MapEntity(id: 'rewriteId')] SectionRewrite $rewrite,
@@ -39,14 +40,15 @@ final class DecideRewriteController extends AbstractController
         if ('accept' === $request->request->getString('decision')) {
             $file = $folder->read($article->getFolder(), 'article.md');
             if ((ArticleSections::split($file['body'])[$rewrite->getHeading()] ?? null) !== $rewrite->getBefore()) {
-                return $this->forward(ShowImproveController::class, ['article' => $article, 'error' => 'This section changed since you asked. Ask again.', 'status' => Response::HTTP_CONFLICT]);
+                throw new ConflictHttpException('This section changed since you asked. Ask again.');
             }
             $folder->write($article->getFolder(), 'article.md', $file['frontMatter'], ArticleSections::replace($file['body'], $rewrite->getHeading(), $rewrite->getAfter()));
         }
 
         $em->remove($rewrite);
         $em->flush();
+        $body = $folder->read($article->getFolder(), 'article.md')['body'];
 
-        return $this->redirectToRoute('planning_improve', ['id' => $article->getId()], Response::HTTP_SEE_OTHER);
+        return $this->redirectToRoute('planning_show_article', ['id' => $article->getId(), '_fragment' => 'section-'.ArticleSections::number($body, $rewrite->getHeading())], Response::HTTP_SEE_OTHER);
     }
 }

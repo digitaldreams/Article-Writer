@@ -1,0 +1,36 @@
+{% set running = job and job.status.value in ['queued', 'working'] %}
+{% set done = job and job.status.value == 'done' %}
+{% set general_points = (points ?? [])|filter(p => p.field == general) %}
+<turbo-frame id="cross-check">
+    {# ponytail: a failed job polls too, so a Retry from its card still brings the result in; stops when the job is done. #}
+    <div class="cross-check" {% if job and not done %}data-controller="job-poll" data-job-poll-interval-value="5000"{% endif %}>
+        {% if complete and not running %}
+            <form method="post" action="{{ path('author_start_cross_check') }}">
+                <button class="button button-secondary" type="submit">Cross Check my Structure and Voice</button>
+            </form>
+            <p class="muted">Checks your saved fields against writing research. It changes nothing.</p>
+        {% endif %}
+        {% if job and not done %}
+            {{ include('shared/llm/job_card/_frame.html.twig', {job: job}) }}
+        {% endif %}
+        {% if done and points is not null %}
+            <p class="muted">
+                {% if points is empty %}
+                    No issues found.
+                {% else %}
+                    Checked {{ job.finishedAt|date('Y-m-d H:i') }}. AI suggestions are shown under the fields.
+                {% endif %}
+            </p>
+        {% endif %}
+        {% if general_points %}
+            <div class="ai-suggestions ai-suggestions-general">{{ include('author/cross_check_profile/_points.html.twig', {points: general_points}) }}</div>
+        {% endif %}
+    </div>
+    {# Fill the empty boxes under the form's labels, outside this frame. A field without points is emptied, so old suggestions go away. #}
+    {% if points is not null %}
+        {% for field in fields %}
+            {% set field_points = points|filter(p => p.field == field) %}
+            <turbo-stream action="update" target="cross-check-{{ field }}"><template>{% if field_points %}{{ include('author/cross_check_profile/_points.html.twig', {points: field_points}) }}{% endif %}</template></turbo-stream>
+        {% endfor %}
+    {% endif %}
+</turbo-frame>

@@ -1,0 +1,50 @@
+{
+    "platform": "openai",
+    "model": "gpt-6-luna",
+    "judge": null,
+    "dataset": "final_check",
+    "runs": 3,
+    "recall": 0.9166666666666666,
+    "margin": 0.27638539919628335,
+    "falseAlarms": 3.6666666666666665,
+    "planted": {
+        "01-code-typo": [
+            "found",
+            "found",
+            "found"
+        ],
+        "02-leftover-todo": [
+            "found",
+            "found",
+            "found"
+        ],
+        "03-missing-section": [
+            "found",
+            "MISSED",
+            "found"
+        ],
+        "04-title-promise": [
+            "found",
+            "found",
+            "found"
+        ]
+    },
+    "clean": {
+        "05-clean": [
+            4,
+            3,
+            4
+        ]
+    },
+    "skipped": [
+        "06-contradiction"
+    ],
+    "judged": [],
+    "tokens": {
+        "gpt-6-luna": [
+            25884,
+            17226
+        ]
+    },
+    "cost": 0.0112014
+}

@@ -12,6 +12,11 @@
         </div>
         <button class="button button-secondary" type="submit">Import</button>
     </form>
+    {% if files %}
+        <form method="post" action="{{ path('author_import_close') }}">
+            <button class="button button-secondary" type="submit">Close</button>
+        </form>
+    {% endif %}
     {% for file in files %}
         <div class="import-file">
             <strong>{{ file.filename }}</strong>

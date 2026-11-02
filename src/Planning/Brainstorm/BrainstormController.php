@@ -61,6 +61,10 @@ final class BrainstormController extends AbstractController
             'form' => $form,
             'references' => $references,
             'reading' => \count(array_filter($references, static fn (Reference $r) => ReferenceStatus::Pending === $r->getStatus())),
+            'reading_since' => $jobs->findOneBy(
+                ['article' => $article, 'step' => ['extract_reference', 'digest_reference'], 'status' => [LlmJobStatus::Queued, LlmJobStatus::Working]],
+                ['createdAt' => 'ASC'],
+            )?->getCreatedAt(),
             'failed_jobs' => $jobs->findBy(
                 ['article' => $article, 'step' => ['extract_reference', 'digest_reference'], 'status' => LlmJobStatus::Failed],
                 ['id' => 'ASC'],

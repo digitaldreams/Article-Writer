@@ -46,6 +46,32 @@ final class AnalyzeWritingTest extends WebTestCase
         self::assertSame([], $this->jobsOf('merge_writing_profile', LlmJobStatus::Failed));
     }
 
+    public function testTheMergeGetsTheNotesNewestArticleFirstWithTitleAndMonth(): void
+    {
+        $client = static::createClient();
+        $this->logIn($client);
+        $sent = null;
+        RenderingPlatform::install(self::getContainer(), 'ollama', static function ($model, $input) use (&$sent) {
+            $sent = (string) $input->getUserMessage()?->asText();
+
+            return new ObjectResult(new WritingProfileAnswer('a story', 'by feature', '5', 'yes', 'summary', 'friendly', 'short sentences', 'questions', 'snippet first', ['One.']));
+        });
+        foreach (['Old' => '2021-05-20', 'Newest' => '2026-10-01', 'Middle' => '2024-04-10'] as $title => $date) {
+            $article = Article::imported($this->author, strtolower($title), $title, publishedAt: new \DateTimeImmutable($date));
+            $this->em()->persist($article);
+            $this->em()->persist(new WritingNote($article, 'a story', 5, 'by feature', true, 'summary', 'friendly', 'short sentences', 'questions', 'snippet first', ["$title sample."]));
+        }
+        $this->em()->flush();
+        self::getContainer()->get(LlmJobs::class)->start(null, 'merge_writing_profile', 'primary', static fn (int $id) => new MergeWritingProfile($id), $this->author);
+        $this->em()->flush();
+
+        $this->consume(['llm_secondary']);
+
+        $notes = json_decode((string) $sent, true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(['Newest', 'Middle', 'Old'], array_column($notes, 'title'));
+        self::assertSame(['2026-10', '2024-04', '2021-05'], array_column($notes, 'published'));
+    }
+
     public function testMergeRunsOnceWhenTheLastTwoNotesFinishTogether(): void
     {
         $client = static::createClient();
@@ -127,6 +153,37 @@ final class AnalyzeWritingTest extends WebTestCase
         $crawler = $client->request('GET', '/author/profile');
         self::assertSelectorTextContains('.analyze-count', '1 analyzed / 3 in library');
         self::assertCount(2, $crawler->filter('.structure-job'));
+    }
+
+    public function testTheProfilePageShowsOnlyTheAnalysisOfThisSession(): void
+    {
+        $client = static::createClient();
+        $this->logIn($client);
+        $this->library(['New']);
+        $this->startNotes(['Old' => "# Old\nx\n"]);
+        $this->jobsOf('extract_writing_notes')[0]->markFailed('model down');
+        $this->em()->flush();
+
+        $client->request('POST', '/author/profile/analyze');
+        $author = $this->em()->find(User::class, $this->author->getId());
+        self::getContainer()->get(LlmJobs::class)->start(null, 'merge_writing_profile', 'primary', static fn (int $id) => new MergeWritingProfile($id), $author);
+
+        $crawler = $client->request('GET', '/author/profile');
+        self::assertCount(3, $crawler->filter('.structure-job'), 'Old again, New, then the merge');
+        self::assertStringContainsString('Merge into one profile', $crawler->filter('.structure-job')->first()->text());
+    }
+
+    public function testCloseHidesTheAnalysisCards(): void
+    {
+        $client = static::createClient();
+        $this->logIn($client);
+        $this->library(['A']);
+        $client->request('POST', '/author/profile/analyze');
+
+        $client->request('POST', '/author/profile/close');
+        self::assertResponseRedirects('/author/profile', 303);
+        $crawler = $client->request('GET', '/author/profile');
+        self::assertCount(0, $crawler->filter('.structure-job'));
     }
 
     public function testAnalyzingAFullyAnalyzedLibraryMergesAtOnce(): void
@@ -234,11 +291,10 @@ final class AnalyzeWritingTest extends WebTestCase
 
     private function fakeModel(?string $failNotesFor = null): void
     {
-        RenderingPlatform::install(self::getContainer(), 'openai', 
-            static function ($model, $input, array $options) use ($failNotesFor) {
-                if (WritingProfileAnswer::class === $options['response_format']) {
-                    return new ObjectResult(new WritingProfileAnswer('a story', 'by feature', '5', 'yes', 'summary', 'friendly', 'short sentences', 'questions', 'snippet first', ['One.', 'Two.']));
-                }
+        // Notes on the secondary platform (openai in test), the merge on the check platform (ollama in test).
+        RenderingPlatform::install(self::getContainer(), 'ollama', static fn () => new ObjectResult(new WritingProfileAnswer('a story', 'by feature', '5', 'yes', 'summary', 'friendly', 'short sentences', 'questions', 'snippet first', ['One.', 'Two.'])));
+        RenderingPlatform::install(self::getContainer(), 'openai',
+            static function ($model, $input) use ($failNotesFor) {
                 if (null !== $failNotesFor && str_contains((string) $input->getUserMessage()?->asText(), "# $failNotesFor")) {
                     throw new \RuntimeException('model down');
                 }

@@ -23,7 +23,7 @@ final class GeneratePosterController extends AbstractController
         }
         $em->getRepository(PosterIdea::class)->findOneBy(['article' => $article, 'id' => $ideaId]) ?? throw new NotFoundHttpException();
 
-        $em->wrapInTransaction(static fn () => $jobs->start($article, 'generate_poster', 'poster_image', static fn (int $id) => new GeneratePoster($id, $ideaId)));
+        $em->wrapInTransaction(static fn () => $jobs->start($article, 'generate_poster', 'image', static fn (int $id) => new GeneratePoster($id, $ideaId)));
 
         return $this->redirectToRoute('planning_show_posters', ['id' => $article->getId()], Response::HTTP_SEE_OTHER);
     }

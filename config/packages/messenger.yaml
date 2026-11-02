@@ -38,7 +38,7 @@ framework:
             'App\Author\AddFeeds\FetchFeed': io
             'App\Author\AnalyzeWriting\ExtractWritingNotes': llm_secondary
             'App\Author\AnalyzeWriting\MergeWritingProfile': llm_secondary
-            'App\Planning\CreatePlan\GeneratePlanTitle': llm_secondary
+            'App\Author\CrossCheckProfile\CrossCheckProfile': llm_primary
             'App\Planning\DigestReferences\ExtractReference': io
             'App\Planning\DigestReferences\DigestReference': llm_secondary
             'App\Planning\AskQuestions\AskQuestions': llm_primary

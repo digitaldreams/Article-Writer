@@ -8,21 +8,21 @@ use Symfony\AI\Platform\PlatformInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
- * The poster picture of an idea: images/poster-{id}.png in the article folder, drawn by AI_POSTER_IMAGE_MODEL.
- * An image model takes a plain prompt, not a MessageBag, so it runs on the poster platform directly rather than through an agent.
+ * The poster picture of an idea: images/poster-{id}.png in the article folder, drawn by AI_IMAGE_MODEL.
+ * An image model takes a plain prompt, not a MessageBag, so it runs on the image platform directly rather than through an agent.
  */
 final readonly class PosterImage
 {
     public function __construct(
-        #[Autowire(service: 'app.ai.poster_platform')]
+        #[Autowire(service: 'app.ai.image_platform')]
         private PlatformInterface $platform,
-        #[Autowire(env: 'AI_POSTER_IMAGE_MODEL')]
+        #[Autowire(env: 'AI_IMAGE_MODEL')]
         private string $model,
         private ArticleFolder $folder,
     ) {
     }
 
-    /** False when AI_POSTER_IMAGE_MODEL is empty or names a model that can't draw; then the page shows no button. */
+    /** False when AI_IMAGE_MODEL is empty or names a model that can't draw; then the page shows no button. */
     public function canDraw(): bool
     {
         try {

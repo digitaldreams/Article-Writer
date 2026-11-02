@@ -81,10 +81,9 @@ class OutlineItem
         $this->editedByHand = true;
     }
 
-    /** A single-item rewrite by the model; not a hand edit. */
-    public function rewrite(string $title, string $summary): void
+    /** Swaps places with a neighbour; a move is not a hand edit. */
+    public function swapPosition(self $other): void
     {
-        $this->title = $title;
-        $this->summary = $summary;
+        [$this->position, $other->position] = [$other->position, $this->position];
     }
 }

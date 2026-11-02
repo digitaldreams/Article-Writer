@@ -18,7 +18,7 @@ final class SuggestPunchlinesTest extends PlanningTestCase
         $article = $this->writtenArticle();
         $prompt = '';
         $systemPrompt = '';
-        $this->fakePrimary(static function ($input) use (&$prompt, &$systemPrompt) {
+        $this->fakeSecondary(static function ($input) use (&$prompt, &$systemPrompt) {
             $prompt = (string) $input->getUserMessage()?->asText();
             $systemPrompt = (string) $input->getSystemMessage()?->getContent();
 
@@ -36,14 +36,14 @@ final class SuggestPunchlinesTest extends PlanningTestCase
         self::assertStringContainsString("doesn't deliver", $systemPrompt);
         self::assertStringContainsString('Audience: PHP developers', $prompt);
         self::assertStringContainsString('Typed at last', $prompt);
-        self::assertSame('test-title', $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'suggest_punchlines'])?->getModel());
+        self::assertSame('test-secondary', $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'suggest_punchlines'])?->getModel());
     }
 
     public function testSuggestMoreTellsTheAgentWhatWasSeenAndTheWritersIdea(): void
     {
         $article = $this->writtenArticle();
         $prompts = [];
-        $this->fakePrimary(static function ($input) use (&$prompts) {
+        $this->fakeSecondary(static function ($input) use (&$prompts) {
             $prompts[] = (string) $input->getUserMessage()?->asText();
 
             return self::punchlines(1 === \count($prompts) ? 'A' : 'B');
@@ -65,7 +65,7 @@ final class SuggestPunchlinesTest extends PlanningTestCase
     public function testARoundSavesFiveMediumTopicsToArticleMdAndShowsThem(): void
     {
         $article = $this->writtenArticle();
-        $this->fakePrimary(static fn () => self::punchlines('A', ['#Programming', 'PHP', ' ', 'Symfony', 'Messenger', 'RabbitMQ', 'Sixth']));
+        $this->fakeSecondary(static fn () => self::punchlines('A', ['#Programming', 'PHP', ' ', 'Symfony', 'Messenger', 'RabbitMQ', 'Sixth']));
 
         $this->client->request('POST', $this->shareUrl($article));
         $this->consume();
@@ -81,7 +81,7 @@ final class SuggestPunchlinesTest extends PlanningTestCase
     public function testARoundWithoutTopicsKeepsTheSavedOnes(): void
     {
         $article = $this->writtenArticle(['PHP']);
-        $this->fakePrimary(static fn () => self::punchlines('A'));
+        $this->fakeSecondary(static fn () => self::punchlines('A'));
 
         $this->client->request('POST', $this->shareUrl($article));
         $this->consume();
@@ -114,7 +114,7 @@ final class SuggestPunchlinesTest extends PlanningTestCase
     public function testAWrongNumberOfPunchlinesFailsTheJobWithRetry(): void
     {
         $article = $this->writtenArticle();
-        $this->fakePrimary(static fn () => new ObjectResult(new PunchlineList(['Only one'])));
+        $this->fakeSecondary(static fn () => new ObjectResult(new PunchlineList(['Only one'])));
 
         $this->client->request('POST', $this->shareUrl($article));
         $this->consume();
@@ -131,7 +131,7 @@ final class SuggestPunchlinesTest extends PlanningTestCase
         $article->getUser()->updateProfile('', '', 'intermediate');
         $this->em()->flush();
         $prompt = '';
-        $this->fakePrimary(static function ($input) use (&$prompt) {
+        $this->fakeSecondary(static function ($input) use (&$prompt) {
             $prompt = (string) $input->getSystemMessage()?->getContent();
 
             return self::punchlines('A');

@@ -1,17 +1,28 @@
-{{ form_start(form) }}
+{% macro field(row) %}
+    <div>
+        {{ form_label(row) }}
+        {# Filled by the cross check: right below the field name. #}
+        <div id="cross-check-{{ row.vars.name }}" class="ai-suggestions"></div>
+        {{ form_errors(row) }}
+        {{ form_widget(row, {attr: row.vars.attr|merge({'aria-describedby': row.vars.id ~ '_help'})}) }}
+        {{ form_help(row) }}
+    </div>
+{% endmacro %}
+{% import _self as profile %}
+{{ form_start(form, {attr: {class: 'profile-form'}}) }}
     <h2>Structure</h2>
     <p class="muted">How your articles are built. Used for the outline and the article.</p>
-    {{ form_row(form.openingType) }}
-    {{ form_row(form.orderingHabit) }}
-    {{ form_row(form.sectionCount) }}
-    {{ form_row(form.runningExample) }}
-    {{ form_row(form.closing) }}
+    {{ profile.field(form.openingType) }}
+    {{ profile.field(form.orderingHabit) }}
+    {{ profile.field(form.sectionCount) }}
+    {{ profile.field(form.runningExample) }}
+    {{ profile.field(form.closing) }}
     <h2>Voice</h2>
     <p class="muted">How your articles sound. Used for the article and section rewrites. Optional.</p>
-    {{ form_row(form.tone) }}
-    {{ form_row(form.sentenceStyle) }}
-    {{ form_row(form.devices) }}
-    {{ form_row(form.codeHabit) }}
-    {{ form_row(form.samples) }}
+    {{ profile.field(form.tone) }}
+    {{ profile.field(form.sentenceStyle) }}
+    {{ profile.field(form.devices) }}
+    {{ profile.field(form.codeHabit) }}
+    {{ profile.field(form.samples) }}
     {{ form_row(form.save, {attr: {class: 'button button-primary'}}) }}
 {{ form_end(form) }}

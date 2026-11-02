@@ -2,6 +2,7 @@
 
 namespace App\Planning\RewriteSection;
 
+use App\Planning\SectionRewrite;
 use App\Shared\Llm\AgentAnswer;
 use App\Shared\Storage\ArticleFolder;
 use Doctrine\ORM\EntityManagerInterface;

@@ -2,7 +2,7 @@
 
 namespace App\Tests\Shared;
 
-use Symfony\AI\Platform\Test\InMemoryPlatform;
+use Symfony\AI\Platform\Test\MockPlatformFactory;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class AiAgentsTest extends KernelTestCase
@@ -11,20 +11,25 @@ final class AiAgentsTest extends KernelTestCase
     {
         $container = self::getContainer();
         foreach (['ollama', 'openai'] as $platform) {
-            $container->set('ai.platform.'.$platform, new InMemoryPlatform(
-                static fn ($model) => $platform.':'.(\is_string($model) ? $model : $model->getName()),
+            $container->set('ai.platform.'.$platform, MockPlatformFactory::createPlatform(
+                static fn ($model) => $platform.':'.$model->getName(),
             ));
         }
 
         self::assertSame('ollama:test-primary', $container->get('ai.agent.outline')->call('hi')->getContent());
         self::assertSame('openai:test-secondary', $container->get('ai.agent.digest')->call('hi')->getContent());
-        self::assertSame('ollama:test-check', $container->get('ai.agent.final_check')->call('hi')->getContent());
+        foreach (['final_check', 'refactor', 'writing_profile', 'cross_check_profile'] as $agent) {
+            self::assertSame('ollama:test-primary', $container->get('ai.agent.'.$agent)->call('hi')->getContent(), $agent);
+        }
+        foreach (['title', 'share', 'poster'] as $agent) {
+            self::assertSame('openai:test-secondary', $container->get('ai.agent.'.$agent)->call('hi')->getContent(), $agent);
+        }
     }
 
     public function testEveryStepPromptIsAnMdFileOnItsAgent(): void
     {
         $dir = self::getContainer()->getParameter('kernel.project_dir').'/prompts';
-        foreach (['plan_title', 'digest', 'writing_notes', 'writing_profile', 'questions', 'outline', 'article', 'rewrite', 'title', 'poster', 'share', 'final_check', 'refactor'] as $agent) {
+        foreach (['digest', 'writing_notes', 'writing_profile', 'questions', 'outline', 'article', 'rewrite', 'title', 'poster', 'share', 'final_check', 'refactor', 'cross_check_profile'] as $agent) {
             self::assertFileExists($dir.'/'.$agent.'_agent.md');
             self::assertTrue(self::getContainer()->has('ai.agent.'.$agent), $agent);
         }

@@ -6,25 +6,25 @@ namespace App\Author\AnalyzeWriting;
 final readonly class WritingProfileAnswer
 {
     public function __construct(
-        /** The way the author usually opens an article. */
+        /** An instruction for the opening, with the writer's words in quotes. */
         public string $openingType,
-        /** The way the author usually orders sections. */
+        /** An instruction for the order of the sections. */
         public string $orderingHabit,
-        /** Usual number of sections, e.g. "5 to 7". */
+        /** Usual number of sections in the newest articles, e.g. '7 to 9'. */
         public string $sectionCount,
-        /** Whether the author usually runs one example through the article. */
+        /** An instruction for the running example. */
         public string $runningExample,
-        /** The way the author usually closes an article. */
+        /** An instruction for the last section. */
         public string $closing,
-        /** The writer's usual tone. */
+        /** An instruction for how to talk to the reader. */
         public string $tone,
-        /** The writer's usual sentence length and person. */
+        /** An instruction for sentence and paragraph length, and person. */
         public string $sentenceStyle,
-        /** Devices the writer uses again and again. */
+        /** The writer's repeated phrases and tricks to use, quoted word for word. */
         public string $devices,
-        /** How the writer usually shows and explains code. */
+        /** An instruction for how to show and explain code. */
         public string $codeHabit,
-        /** @var list<string> 2 to 3 of the given samples, word for word, that best show the voice */
+        /** @var list<string> 2 to 3 of the given samples from the newest articles, word for word, that best show the voice */
         public array $samples,
     ) {
     }

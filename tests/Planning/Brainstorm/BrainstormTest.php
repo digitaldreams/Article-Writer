@@ -88,6 +88,22 @@ final class BrainstormTest extends PlanningTestCase
         self::assertSame(ArticleState::Plan, $this->reload($article)->getState());
     }
 
+    public function testReadingShowsHowLongTheReferencesHaveBeenRead(): void
+    {
+        $article = $this->planIn(ArticleState::Plan);
+        $this->em()->persist(new Reference($article, 'https://symfony.com'));
+        $this->em()->persist($job = new LlmJob($article, 'digest_reference', 'secondary', 'ollama', 'gemma4'));
+        $this->em()->flush();
+        $this->em()->getConnection()->executeStatement('UPDATE llm_job SET created_at = :at WHERE id = :id', [
+            'at' => (new \DateTimeImmutable('-12 minutes'))->format('Y-m-d H:i:s'), 'id' => $job->getId(),
+        ]);
+        $this->em()->clear();
+
+        $this->client->request('GET', '/plans/'.$article->getId().'/brainstorm');
+
+        self::assertSelectorTextContains('main', 'Reading 1 reference… 12 min so far.');
+    }
+
     public function testNextMovesToQuestionsAndQueuesTheAskJob(): void
     {
         $article = $this->planIn(ArticleState::Plan);

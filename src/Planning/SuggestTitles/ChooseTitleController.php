@@ -14,7 +14,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * The chosen pair replaces the article title, the article.md front matter title and subtitle,
- * and, when the body starts with a "# " heading, that heading plus the "## " subtitle line right under it.
+ * and the "# " title + "## " subtitle lines at the top of the body (added when the body has none yet).
  */
 final class ChooseTitleController extends AbstractController
 {
@@ -32,7 +32,10 @@ final class ChooseTitleController extends AbstractController
         $subtitle = $suggestion->getSubtitle();
 
         $file = $folder->read($article->getFolder(), 'article.md');
-        $body = preg_replace_callback('/\A# .*\n(## .*\n)?/', static fn () => "# {$title}\n## {$subtitle}\n", $file['body'], 1) ?? $file['body'];
+        $headings = "# {$title}\n## {$subtitle}\n";
+        $body = str_starts_with($file['body'], '# ')
+            ? preg_replace_callback('/\A# .*\n(## .*\n)?/', static fn () => $headings, $file['body'], 1) ?? $file['body']
+            : $headings."\n".$file['body'];
         $folder->write($article->getFolder(), 'article.md', array_replace($file['frontMatter'], ['title' => $title, 'subtitle' => $subtitle]), $body);
 
         $article->setTitle($title);

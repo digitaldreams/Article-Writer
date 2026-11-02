@@ -36,7 +36,7 @@ final class FinalCheckTest extends PlanningTestCase
         self::assertStringContainsString('## Setup: install', $prompt);
         self::assertStringContainsString("- Setup\n- Usage", $prompt);
         self::assertStringContainsString("# PHP 8 features\n## Typed at last", $prompt);
-        self::assertSame('check', $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'check_article'])?->getRole());
+        self::assertSame('primary', $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'check_article'])?->getRole());
         $this->client->request('GET', $this->url($article));
         self::assertSelectorTextContains('[data-section="Setup"] .check-notes', 'Composer is never named.');
         self::assertSelectorTextContains('[data-section="General"] .check-notes', 'The title promises hooks.');
@@ -118,7 +118,7 @@ final class FinalCheckTest extends PlanningTestCase
         $refactor = $this->refactor();
         self::assertSame("# PHP 8 features\n## Typed at last\n\n## Setup\n\nInstall it with Composer.\n\n## Usage\n\nCall it.\n", $refactor->getAfter());
         self::assertSame(['Code: Setup names Composer.'], $refactor->getChanges());
-        self::assertSame('check', $refactor->getJob()?->getRole());
+        self::assertSame('primary', $refactor->getJob()?->getRole());
     }
 
     public function testAcceptWritesTheRefactoredArticleAndRemovesOnlyTheNotesItUsed(): void

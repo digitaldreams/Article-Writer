@@ -205,7 +205,7 @@ final class OnboardingTest extends WebTestCase
 
     private function profileMerged(): void
     {
-        $this->jobs()->start(null, 'merge_writing_profile', 'secondary', static fn (int $id) => new MergeWritingProfile($id), $this->author)->markDone();
+        $this->jobs()->start(null, 'merge_writing_profile', 'primary', static fn (int $id) => new MergeWritingProfile($id), $this->author)->markDone();
         $this->author->setWritingProfile(
             ['openingType' => 'a story', 'orderingHabit' => 'by feature', 'sectionCount' => '5', 'runningExample' => 'yes', 'closing' => 'summary'],
             [],

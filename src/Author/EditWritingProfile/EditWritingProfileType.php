@@ -11,9 +11,6 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 /** @extends AbstractType<array<string, string|null>> */
 final class EditWritingProfileType extends AbstractType
 {
-    public const STRUCTURE = ['openingType', 'orderingHabit', 'sectionCount', 'runningExample', 'closing'];
-    public const VOICE = ['tone', 'sentenceStyle', 'devices', 'codeHabit', 'samples'];
-
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $required = ['constraints' => [new NotBlank()]];

@@ -47,15 +47,10 @@ AI_PRIMARY_PLATFORM=ollama
 AI_PRIMARY_MODEL=llama3.1
 AI_SECONDARY_PLATFORM=ollama
 AI_SECONDARY_MODEL=llama3.1
-AI_TITLE_PLATFORM=ollama
-AI_TITLE_MODEL=llama3.1
-AI_POSTER_PLATFORM=ollama
-AI_POSTER_MODEL=llama3.1
-AI_POSTER_IMAGE_MODEL=
-AI_CHECK_PLATFORM=ollama
-AI_CHECK_MODEL=llama3.1
+AI_IMAGE_PLATFORM=openai
+AI_IMAGE_MODEL=
 
-# Hosted models: set the key and point a role at it, e.g. AI_TITLE_PLATFORM=openai
+# Hosted models: set the key and point a role at it, e.g. AI_PRIMARY_PLATFORM=openai
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 GEMINI_API_KEY=
@@ -63,12 +58,9 @@ GEMINI_API_KEY=
 
 | Role | Used for |
 |---|---|
-| `AI_PRIMARY_*` | Questions, outline, article, section rewrite |
-| `AI_SECONDARY_*` | Plan title, reference digests, article import |
-| `AI_TITLE_*` | Title and share suggestions |
-| `AI_POSTER_*` | Poster ideas |
-| `AI_POSTER_IMAGE_MODEL` | Poster picture, on the poster platform. Empty = no image button |
-| `AI_CHECK_*` | Final check: notes on the whole article and the refactor from them (a cloud model is best) |
+| `AI_PRIMARY_*` | Questions, outline, article, section rewrite, final check, refactor, writing profile merge, profile cross check (a cloud model is best) |
+| `AI_SECONDARY_*` | Plan title, reference digests, article import, writing notes, title and share suggestions, poster ideas |
+| `AI_IMAGE_*` | Poster picture. Empty `AI_IMAGE_MODEL` = no image button |
 
 Platforms: `ollama`, `openai`, `anthropic`, `gemini`. Articles are written to `ARTICLES_DIR` (default `var/articles`).
 
@@ -121,3 +113,10 @@ vendor/bin/phpstan analyse
 - **Job card stays queued / "stalled" warning:** workers are not running. Run `symfony server:start -d` and check `symfony server:status`.
 - **Job failed with a connection error:** Ollama is not running, or the model is not pulled. Fix it, then press Retry on the card.
 - **Database connection refused:** run `docker compose up -d`, and use `symfony console` instead of `bin/console`.
+
+## License
+
+Copyright (c) 2026 Tuhin Bepari. Licensed under [GNU AGPL v3](LICENSE).
+
+Use it for anything, including paid writing. If you change the code and share it, or run it for other people
+over a network, you must publish your changed source under the same license.

@@ -36,7 +36,7 @@ final class RequestRefactorController extends AbstractController
             $em->persist($refactor);
             $em->flush();
             $refactorId = (int) $refactor->getId();
-            $refactor->trackedBy($jobs->start($article, 'refactor_article', 'check', static fn (int $id) => new RefactorArticle($id, $refactorId)));
+            $refactor->trackedBy($jobs->start($article, 'refactor_article', 'primary', static fn (int $id) => new RefactorArticle($id, $refactorId)));
             $em->flush();
         });
 

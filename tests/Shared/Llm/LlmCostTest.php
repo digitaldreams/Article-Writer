@@ -2,9 +2,9 @@
 
 namespace App\Tests\Shared\Llm;
 
+use App\Planning\FinalCheck\CheckFinding;
+use App\Planning\FinalCheck\CheckReport;
 use App\Planning\SuggestPosters\PosterIdea;
-use App\Planning\SuggestPosters\PosterList;
-use App\Planning\SuggestPosters\ProposedPoster;
 use App\Shared\Article\ArticleState;
 use App\Shared\Llm\LlmCost;
 use App\Shared\Llm\LlmJob;
@@ -26,9 +26,12 @@ final class LlmCostTest extends PlanningTestCase
     public function testEveryModelCallOfAJobAddsItsTokensToTheJob(): void
     {
         $article = $this->planIn(ArticleState::Written);
-        self::getContainer()->get(ArticleFolder::class)->write($article->getFolder(), 'article.md', ['title' => 'PHP'], "# PHP\n");
+        $folder = self::getContainer()->get(ArticleFolder::class);
+        $folder->write($article->getFolder(), 'idea.md', ['plan_id' => $article->getId()], "# PHP\n");
+        $folder->write($article->getFolder(), 'outline.md', ['plan_id' => $article->getId()], "## Setup\n");
+        $folder->write($article->getFolder(), 'article.md', ['title' => 'PHP'], "# PHP\n");
         $this->fakePrimary(function () {
-            $result = new ObjectResult(new PosterList(array_map(static fn (int $i) => new ProposedPoster("H $i", 'p', 'l', 'c', '<svg/>'), range(1, 3))));
+            $result = new ObjectResult(new CheckReport([new CheckFinding('Setup', 'Problem.', 'Fix.')]));
             // A real platform reports every call; one agent call can make two of them.
             $this->reportCall(new TextResult('tool step'), new TokenUsage(promptTokens: 100, completionTokens: 10));
             $result->getMetadata()->add('token_usage', new TokenUsage(promptTokens: 1_000, completionTokens: 200));
@@ -36,12 +39,12 @@ final class LlmCostTest extends PlanningTestCase
             return $this->reportCall($result);
         });
 
-        $this->client->request('POST', '/plans/'.$article->getId().'/poster');
+        $this->client->request('POST', '/plans/'.$article->getId().'/final-check');
         $this->consume();
 
-        $job = $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'suggest_posters']) ?? throw new \LogicException('No job.');
+        $job = $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'check_article']) ?? throw new \LogicException('No job.');
         self::assertSame([1_100, 210, 0.0], [$job->getInputTokens(), $job->getOutputTokens(), $job->getCost()]);
-        $this->client->request('GET', '/plans/'.$article->getId().'/poster');
+        $this->client->request('GET', '/plans/'.$article->getId().'/final-check');
         self::assertSelectorTextSame('.steps-cost', 'Total cost: $0.0000');
     }
 

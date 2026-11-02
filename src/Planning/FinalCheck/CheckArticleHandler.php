@@ -35,19 +35,7 @@ final readonly class CheckArticleHandler
         $article = $this->em->find(Article::class, $message->articleId) ?? throw new \RuntimeException('The article is gone.');
         $body = $this->folder->read($article->getFolder(), 'article.md')['body'];
         $headings = array_keys(ArticleSections::split($body));
-
-        $answer = AgentAnswer::object($this->agent->call(new MessageBag(
-            Message::ofUser($this->twig->render('planning/final_check/_check_request.md.twig', [
-                ...$this->planFiles->of($article),
-                'headings' => $headings,
-                'body' => $body,
-            ])),
-        ), ['response_format' => CheckReport::class, 'template_vars' => [
-            'max' => self::MAX_NOTES,
-            'language_level' => $article->getUser()->getLanguageLevel(),
-        ]]), CheckReport::class);
-        // ponytail: a weak model may return too many; the first ones matter most
-        $notes = \array_slice($answer->notes, 0, self::MAX_NOTES);
+        $notes = $this->ask($this->planFiles->of($article), $body, $article->getUser()->getLanguageLevel());
 
         $this->em->wrapInTransaction(function () use ($article, $notes, $headings): void {
             $this->em->createQuery('DELETE FROM '.CheckNote::class.' n WHERE n.article = :article')->setParameter('article', $article)->execute();
@@ -56,5 +44,29 @@ final readonly class CheckArticleHandler
                 $this->em->persist(new CheckNote($article, $section, trim($note->problem), trim($note->suggestion), $position));
             }
         });
+    }
+
+    /**
+     * The model's notes on one article, most important first; no database. app:eval:final-check calls this too.
+     *
+     * @param array{idea: ?string, outline: ?string} $plan
+     *
+     * @return list<CheckFinding>
+     */
+    public function ask(array $plan, string $body, string $languageLevel): array
+    {
+        $answer = AgentAnswer::object($this->agent->call(new MessageBag(
+            Message::ofUser($this->twig->render('planning/final_check/_check_request.md.twig', [
+                ...$plan,
+                'headings' => array_keys(ArticleSections::split($body)),
+                'body' => $body,
+            ])),
+        ), ['response_format' => CheckReport::class, 'template_vars' => [
+            'max' => self::MAX_NOTES,
+            'language_level' => $languageLevel,
+        ]]), CheckReport::class);
+
+        // ponytail: a weak model may return too many; the first ones matter most
+        return \array_slice($answer->notes, 0, self::MAX_NOTES);
     }
 }

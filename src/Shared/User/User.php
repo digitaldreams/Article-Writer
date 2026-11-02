@@ -12,6 +12,9 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\Table(name: '`user`')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    public const WRITING_STRUCTURE = ['openingType', 'orderingHabit', 'sectionCount', 'runningExample', 'closing'];
+    public const WRITING_VOICE = ['tone', 'sentenceStyle', 'devices', 'codeHabit', 'samples'];
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -33,6 +36,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /** @var array{structure: array<string, string>, voice: array<string, string>}|null structure feeds the outline; voice feeds the article and rewrites */
     #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $writingProfile = null;
+
+    /** @var list<array{field: string, issue: string, suggestion: string}>|null the last cross check; null = never checked, empty = no issues */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $writingProfileCheck = null;
 
     /** Set when the author approves the writing profile at the end of the onboarding wizard; null keeps them in the wizard. */
     #[ORM\Column(nullable: true)]
@@ -84,6 +91,31 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setWritingProfile(array $structure, array $voice): void
     {
         $this->writingProfile = ['structure' => $structure, 'voice' => $voice];
+    }
+
+    /** Every structure and voice field has a value. */
+    public function hasCompleteWritingProfile(): bool
+    {
+        $profile = $this->getWritingProfile();
+        foreach ([...self::WRITING_STRUCTURE, ...self::WRITING_VOICE] as $field) {
+            if ('' === trim($profile['structure'][$field] ?? $profile['voice'][$field] ?? '')) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** @return list<array{field: string, issue: string, suggestion: string}>|null */
+    public function getWritingProfileCheck(): ?array
+    {
+        return $this->writingProfileCheck;
+    }
+
+    /** @param list<array{field: string, issue: string, suggestion: string}> $points */
+    public function setWritingProfileCheck(array $points): void
+    {
+        $this->writingProfileCheck = $points;
     }
 
     public function isOnboarded(): bool

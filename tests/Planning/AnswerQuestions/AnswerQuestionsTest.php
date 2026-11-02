@@ -30,7 +30,7 @@ final class AnswerQuestionsTest extends WebTestCase
     {
         [$client, $article, [, $second]] = $this->planWithQuestions();
         $client->request('GET', '/plans/'.$article->getId().'/questions?q=2');
-        self::assertSelectorCount(2, 'input[type=radio][name=answer]');
+        self::assertSelectorCount(2, 'input[type=radio][name=answer]:not([value="__own"])');
 
         $client->request('POST', $this->questionUrl($article, $second), ['answer' => 'Safer types']);
         $client->request('GET', '/plans/'.$article->getId().'/questions?q=2');
@@ -116,6 +116,31 @@ final class AnswerQuestionsTest extends WebTestCase
         self::assertSelectorExists('input[value="Benchmarks"][checked]');
         self::assertSelectorExists('input[value="Laravel"][checked]');
         self::assertSelectorNotExists('input[value="Old PHP versions"][checked]');
+    }
+
+    public function testAChoiceQuestionTakesTheWritersOwnAnswer(): void
+    {
+        [$client, $article, [, $second]] = $this->planWithQuestions();
+
+        $client->request('POST', $this->questionUrl($article, $second), ['answer' => '__own', 'own' => 'Faster deploys']);
+        $client->request('GET', '/plans/'.$article->getId().'/questions?q=2');
+
+        self::assertSame('Faster deploys', $this->em()->find(Question::class, $second->getId())?->getAnswer());
+        self::assertSelectorExists('input[type=radio][value="__own"][checked]');
+        self::assertSelectorNotExists('input[type=radio][value="Safer types"][checked]');
+        self::assertSelectorExists('input[name=own][value="Faster deploys"]');
+    }
+
+    public function testASeveralChoicesQuestionAddsTheWritersOwnAnswerToThePicks(): void
+    {
+        [$client, $article, [, , $third]] = $this->planWithQuestions();
+
+        $client->request('POST', $this->questionUrl($article, $third), ['answer' => ['Benchmarks'], 'own' => 'Symfony 5']);
+        $client->request('GET', '/plans/'.$article->getId().'/questions?q=3');
+
+        self::assertSame('Benchmarks; Symfony 5', $this->em()->find(Question::class, $third->getId())?->getAnswer());
+        self::assertSelectorExists('input[value="Benchmarks"][checked]');
+        self::assertSelectorExists('input[name=own][value="Symfony 5"]');
     }
 
     public function testAfterNextAnUnansweredQuestionShowsAsSkipped(): void

@@ -20,7 +20,7 @@ final class SuggestTitlesTest extends PlanningTestCase
         $article = $this->writtenArticle();
         $prompt = '';
         $hasSystemPrompt = false;
-        $this->fakePrimary(static function ($input) use (&$prompt, &$hasSystemPrompt) {
+        $this->fakeSecondary(static function ($input) use (&$prompt, &$hasSystemPrompt) {
             $prompt = (string) $input->getUserMessage()?->asText();
             $hasSystemPrompt = null !== $input->getSystemMessage();
 
@@ -40,7 +40,7 @@ final class SuggestTitlesTest extends PlanningTestCase
         self::assertTrue($hasSystemPrompt);
         self::assertStringContainsString('Audience: PHP developers', $prompt);
         self::assertStringContainsString('Typed at last', $prompt);
-        self::assertSame('test-title', $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'suggest_titles'])?->getModel());
+        self::assertSame('test-secondary', $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'suggest_titles'])?->getModel());
     }
 
     public function testSuggestMoreAddsFiveNewTitlesAndTellsTheAgentWhichOnesWereSeen(): void
@@ -48,7 +48,7 @@ final class SuggestTitlesTest extends PlanningTestCase
         $article = $this->writtenArticle();
         $round = 0;
         $prompt = '';
-        $this->fakePrimary(static function ($input) use (&$round, &$prompt) {
+        $this->fakeSecondary(static function ($input) use (&$round, &$prompt) {
             $prompt = (string) $input->getUserMessage()?->asText();
 
             return self::titles(1 === ++$round ? 'A' : 'B');
@@ -68,7 +68,7 @@ final class SuggestTitlesTest extends PlanningTestCase
     {
         $article = $this->writtenArticle();
         $prompts = [];
-        $this->fakePrimary(static function ($input) use (&$prompts) {
+        $this->fakeSecondary(static function ($input) use (&$prompts) {
             $prompts[] = (string) $input->getUserMessage()?->asText();
 
             return self::titles(1 === \count($prompts) ? 'A' : 'B');
@@ -105,6 +105,19 @@ final class SuggestTitlesTest extends PlanningTestCase
         self::assertSelectorTextSame('p.subtitle', 'Typed properties, hooks and private(set) in PHP 8.4');
     }
 
+    public function testChoosingAPairAddsTheHeadingsWhenTheArticleHasNone(): void
+    {
+        $article = $this->writtenArticle();
+        $this->folder()->write($article->getFolder(), 'article.md', ['plan_id' => $article->getId(), 'title' => 'PHP 8 features'], "## Intro\nTyped at last.\n");
+        $suggestion = new TitleSuggestion($article, 1, 'Typed properties cost $0 now', 'Hooks in PHP 8.4');
+        $this->em()->persist($suggestion);
+        $this->em()->flush();
+
+        $this->client->request('POST', $this->titlesUrl($article).'/choose', ['suggestion' => $suggestion->getId()]);
+
+        self::assertSame("# Typed properties cost \$0 now\n## Hooks in PHP 8.4\n\n## Intro\nTyped at last.\n", $this->folder()->read($article->getFolder(), 'article.md')['body']);
+    }
+
     public function testChoosingWithoutAPickedTitleIsAFormError(): void
     {
         $article = $this->writtenArticle();
@@ -138,7 +151,7 @@ final class SuggestTitlesTest extends PlanningTestCase
     public function testAWrongNumberOfTitlesFailsTheJobWithRetry(): void
     {
         $article = $this->writtenArticle();
-        $this->fakePrimary(static fn () => new ObjectResult(new TitleList([new ProposedTitle('Only one', 'and no more')])));
+        $this->fakeSecondary(static fn () => new ObjectResult(new TitleList([new ProposedTitle('Only one', 'and no more')])));
 
         $this->client->request('POST', $this->titlesUrl($article));
         $this->consume();
@@ -155,7 +168,7 @@ final class SuggestTitlesTest extends PlanningTestCase
         $body = "## Start\n\n".str_repeat("A long middle paragraph about typed properties.\n\n", 2_000)."## Last section\n\nThe very end.\n";
         $this->folder()->write($article->getFolder(), 'article.md', ['plan_id' => $article->getId(), 'title' => 'PHP 8 features'], $body);
         $prompt = '';
-        $this->fakePrimary(static function ($input) use (&$prompt) {
+        $this->fakeSecondary(static function ($input) use (&$prompt) {
             $prompt = (string) $input->getUserMessage()?->asText();
 
             return self::titles('A');
@@ -173,7 +186,7 @@ final class SuggestTitlesTest extends PlanningTestCase
         $body = "## Hooks\n\nBefore:\n\n```php\nclass User { public string \$name; }\n```\n\nAfter:\n\n~~~\nget => ucfirst(\$this->name);\n~~~\n\nUse `get` hooks.\n";
         $this->folder()->write($article->getFolder(), 'article.md', ['plan_id' => $article->getId(), 'title' => 'PHP 8 features'], $body);
         $prompt = '';
-        $this->fakePrimary(static function ($input) use (&$prompt) {
+        $this->fakeSecondary(static function ($input) use (&$prompt) {
             $prompt = (string) $input->getUserMessage()?->asText();
 
             return self::titles('A');
@@ -192,7 +205,7 @@ final class SuggestTitlesTest extends PlanningTestCase
         $article->getUser()->updateProfile('', '', 'intermediate');
         $this->em()->flush();
         $prompt = '';
-        $this->fakePrimary(static function ($input) use (&$prompt) {
+        $this->fakeSecondary(static function ($input) use (&$prompt) {
             $prompt = (string) $input->getSystemMessage()?->getContent();
 
             return self::titles('A');

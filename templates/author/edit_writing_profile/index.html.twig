@@ -11,11 +11,18 @@
     </form>
     <p class="notice notice-warning">Analyze again replaces your edits.</p>
     {{ render(controller('App\\Author\\ImportArticles\\ImportArticlesController::failedFiles')) }}
+    {% if jobs %}
+        <form method="post" action="{{ path('author_close_analysis') }}">
+            <button class="button button-secondary" type="submit">Close</button>
+        </form>
+    {% endif %}
     {% for row in jobs %}
         <div class="structure-job">
             <strong>{{ row.label }}</strong>
             {{ include('shared/llm/job_card/_frame.html.twig', {job: row.job}) }}
         </div>
     {% endfor %}
+    {# refresh="morph": the page morph after Save empties the boxes under the labels; this reload fills them again. #}
+    <turbo-frame id="cross-check" src="{{ path('author_cross_check_profile') }}" refresh="morph"></turbo-frame>
     {{ include('author/edit_writing_profile/_form.html.twig') }}
 {% endblock %}

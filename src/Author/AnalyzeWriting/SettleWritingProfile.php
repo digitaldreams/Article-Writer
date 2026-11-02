@@ -62,7 +62,7 @@ final readonly class SettleWritingProfile
                 ->getQuery()->getSingleScalarResult();
 
             if (0 === $pending && $em->getRepository(WritingNote::class)->count(['user' => $user]) > 0) {
-                $this->jobs->start(null, 'merge_writing_profile', 'secondary', static fn (int $id) => new MergeWritingProfile($id), $user);
+                $this->jobs->start(null, 'merge_writing_profile', 'primary', static fn (int $id) => new MergeWritingProfile($id), $user);
             }
         });
     }

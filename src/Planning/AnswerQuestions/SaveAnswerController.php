@@ -32,8 +32,11 @@ final class SaveAnswerController extends AbstractController
         }
 
         // ponytail: an option that itself contains "; " won't show as checked again; rare in short options.
+        // "own" is the writer's own answer: it replaces the pick of a one-choice question ("__own") and joins the picks of a several-choices one.
         $answer = $request->request->all()['answer'] ?? '';
-        $request->request->has('skip') ? $question->skip() : $question->saveAnswer(\is_array($answer) ? implode('; ', array_filter($answer, 'is_string')) : (\is_string($answer) ? $answer : ''));
+        $own = trim($request->request->getString('own'));
+        $picks = \is_array($answer) ? [...array_filter($answer, 'is_string'), $own] : [\is_string($answer) ? ('__own' === $answer ? $own : $answer) : ''];
+        $request->request->has('skip') ? $question->skip() : $question->saveAnswer(implode('; ', array_filter($picks, static fn (string $p) => '' !== $p)));
         $em->flush();
 
         return $request->request->has('skip')

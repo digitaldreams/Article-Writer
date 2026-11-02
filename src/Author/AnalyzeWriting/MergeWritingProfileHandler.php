@@ -26,9 +26,15 @@ final readonly class MergeWritingProfileHandler
     {
         $user = ($this->em->find(LlmJob::class, $message->llmJobId()) ?? throw new \RuntimeException('The job is gone.'))->getUser();
         // Workers have no owner filter: notes are read by the job's author.
-        // ponytail: samples only from the latest 10 notes keep the prompt in a local context (num_ctx 16k); the other fields stay ~100 tokens a note.
-        $notes = $this->em->getRepository(WritingNote::class)->findBy(['user' => $user], ['id' => 'DESC']);
+        // Newest article first, with its date: the prompt follows the newest habits when old and new disagree.
+        // ponytail: samples only from the newest 10 notes keep the prompt in a local context (num_ctx 16k); the other fields stay ~100 tokens a note.
+        /** @var list<WritingNote> $notes */
+        $notes = $this->em->createQuery('SELECT n, a, CASE WHEN a.publishedAt IS NULL THEN 1 ELSE 0 END AS HIDDEN undated
+            FROM '.WritingNote::class.' n JOIN n.article a WHERE n.user = :user ORDER BY undated ASC, a.publishedAt DESC, n.id DESC')
+            ->setParameter('user', $user)->getResult();
         $notes = array_map(static fn (WritingNote $n, int $i) => [
+            'title' => $n->getArticle()->getTitle(),
+            'published' => $n->getArticle()->getPublishedAt()?->format('Y-m'),
             'opening' => $n->openingType,
             'sections' => $n->sectionCount,
             'ordering' => $n->orderingPattern,

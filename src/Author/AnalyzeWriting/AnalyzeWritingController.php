@@ -12,6 +12,7 @@ use App\Shared\User\User;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\Routing\Attribute\Route;
@@ -21,9 +22,9 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 final class AnalyzeWritingController extends AbstractController
 {
     #[Route('/author/profile/analyze', name: 'author_analyze_writing', methods: ['POST'])]
-    public function __invoke(EntityManagerInterface $em, LlmJobs $jobs, #[CurrentUser] User $user): Response
+    public function __invoke(Request $request, EntityManagerInterface $em, LlmJobs $jobs, #[CurrentUser] User $user): Response
     {
-        $em->wrapInTransaction(static function () use ($em, $jobs, $user): void {
+        $first = $em->wrapInTransaction(static function () use ($em, $jobs, $user): LlmJob {
             // The user row lock makes two clicks take turns (SettleWritingProfile takes it too): the second sees the jobs of the first.
             $em->find(User::class, $user->getId(), LockMode::PESSIMISTIC_WRITE);
             if ($em->getRepository(LlmJob::class)->count(['step' => SettleWritingProfile::STEPS, 'status' => [LlmJobStatus::Queued, LlmJobStatus::Working]]) > 0) {
@@ -41,15 +42,20 @@ final class AnalyzeWritingController extends AbstractController
             $missing = $em->createQuery('SELECT a FROM '.Article::class.' a WHERE a.state = :imported
                 AND NOT EXISTS (SELECT n.id FROM '.WritingNote::class.' n WHERE n.article = a) ORDER BY a.id')
                 ->setParameter('imported', ArticleState::Imported)->getResult();
+            $started = [];
             foreach ($missing as $article) {
                 $articleId = (int) $article->getId();
-                $jobs->start($article, 'extract_writing_notes', 'secondary', static fn (int $id) => new ExtractWritingNotes($id, $articleId));
+                $started[] = $jobs->start($article, 'extract_writing_notes', 'secondary', static fn (int $id) => new ExtractWritingNotes($id, $articleId));
             }
             // Every article has its note: merge again now (e.g. after the author's hand edits).
             if ([] === $missing) {
-                $jobs->start(null, 'merge_writing_profile', 'secondary', static fn (int $id) => new MergeWritingProfile($id), $user);
+                $started[] = $jobs->start(null, 'merge_writing_profile', 'primary', static fn (int $id) => new MergeWritingProfile($id), $user);
             }
+
+            return $started[0];
         });
+        // /author/profile shows this run's cards (the merge comes later, with a higher id) until Close.
+        $request->getSession()->set('analyze_since_job', $first->getId());
 
         return $this->redirectToRoute('author_edit_writing_profile', status: Response::HTTP_SEE_OTHER);
     }

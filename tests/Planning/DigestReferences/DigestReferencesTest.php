@@ -3,7 +3,6 @@
 namespace App\Tests\Planning\DigestReferences;
 
 use App\Tests\RenderingPlatform;
-use App\Planning\CreatePlan\PlanTitleAnswer;
 use App\Planning\DigestReferences\DigestReferenceHandler;
 use App\Planning\DigestReferences\ExtractReference;
 use App\Planning\DigestReferences\ExtractReferenceHandler;
@@ -16,7 +15,6 @@ use App\Shared\Llm\LlmJobStatus;
 use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Platform\Model;
-use Symfony\AI\Platform\Result\ObjectResult;
 use Symfony\AI\Platform\Result\TextResult;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -162,9 +160,6 @@ final class DigestReferencesTest extends WebTestCase
     {
         RenderingPlatform::install(self::getContainer(), 'openai',
             static function (Model $model, $input, array $options) use ($onDigest) {
-                if (PlanTitleAnswer::class === ($options['response_format'] ?? null)) {
-                    return new ObjectResult(new PlanTitleAnswer('A title'));
-                }
                 $onDigest?->__invoke();
 
                 // The request starts with a label line ("The text of a reference:"), then the text.
