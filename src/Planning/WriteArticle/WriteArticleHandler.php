@@ -6,7 +6,6 @@ use App\Planning\Reference;
 use App\Planning\ReferenceStatus;
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
-use App\Shared\Llm\AgentAnswer;
 use App\Shared\Storage\ArticleFolder;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\AgentInterface;
@@ -38,7 +37,7 @@ final readonly class WriteArticleHandler
         $folder = $article->getFolder();
         $user = $article->getUser();
 
-        $body = AgentAnswer::text($this->agent->call(new MessageBag(
+        $body = trim($this->agent->call(new MessageBag(
             Message::ofUser($this->twig->render('planning/write_article/_plan_files.md.twig', [
                 'idea' => $this->folder->read($folder, 'idea.md')['body'],
                 'outline' => $this->folder->read($folder, 'outline.md')['body'],
@@ -47,7 +46,7 @@ final readonly class WriteArticleHandler
                 'structure_profile' => $user->getWritingProfile()['structure'],
                 'voice' => $user->getWritingProfile()['voice'],
             ])),
-        ), ['template_vars' => ['language_level' => $user->getLanguageLevel()]]));
+        ), ['template_vars' => ['language_level' => $user->getLanguageLevel()]])->asText());
         if ('' === $body) {
             throw new \RuntimeException('The model wrote an empty article.');
         }

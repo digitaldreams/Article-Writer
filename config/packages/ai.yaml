@@ -2,20 +2,16 @@ ai:
     platform:
         ollama:
             endpoint: '%env(OLLAMA_ENDPOINT)%'
-            http_client: llm.ollama
+            http_client: llm.slow
         openai:
             api_key: '%env(OPENAI_API_KEY)%'
+            http_client: llm.slow
         anthropic:
             api_key: '%env(ANTHROPIC_API_KEY)%'
+            http_client: llm.slow
         gemini:
             api_key: '%env(GEMINI_API_KEY)%'
-
-    # gpt-6-luna is newer than the bundled OpenAI catalog; same entry as gpt-5.6-luna there.
-    model:
-        openai:
-            gpt-6-luna:
-                class: Symfony\AI\Platform\Bridge\OpenAi\Gpt
-                capabilities: [input-messages, output-text, output-streaming, tool-calling, output-structured, thinking, input-image, input-pdf]
+            http_client: llm.slow
 
     # One agent per LLM step. Each system prompt is a hand-edited prompts/*.md file (read when a worker starts);
     # {name} placeholders are filled from the call's template_vars option.
@@ -63,7 +59,7 @@ ai:
             model: '%env(AI_PRIMARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/article_agent.md'
-        # Rewrites one section on the Improve tab.
+        # Rewrites one section on the Article tab.
         rewrite:
             platform: '%app.ai.primary_platform%'
             model: '%env(AI_PRIMARY_MODEL)%'

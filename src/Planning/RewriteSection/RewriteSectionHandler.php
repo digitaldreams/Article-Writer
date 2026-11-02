@@ -3,7 +3,6 @@
 namespace App\Planning\RewriteSection;
 
 use App\Planning\SectionRewrite;
-use App\Shared\Llm\AgentAnswer;
 use App\Shared\Storage\ArticleFolder;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\AgentInterface;
@@ -34,13 +33,13 @@ final readonly class RewriteSectionHandler
             return;
         }
 
-        $after = AgentAnswer::text($this->agent->call(new MessageBag(
+        $after = trim($this->agent->call(new MessageBag(
             Message::ofUser($this->twig->render('planning/rewrite_section/_request.md.twig', [
                 'body' => $this->folder->read($rewrite->getArticle()->getFolder(), 'article.md')['body'],
                 'rewrite' => $rewrite,
                 'voice' => $rewrite->getArticle()->getUser()->getWritingProfile()['voice'],
             ])),
-        ), ['template_vars' => ['language_level' => $rewrite->getArticle()->getUser()->getLanguageLevel()]]));
+        ), ['template_vars' => ['language_level' => $rewrite->getArticle()->getUser()->getLanguageLevel()]])->asText());
         $after = trim(preg_replace('/\A## .*(\n|\z)/', '', $after) ?? $after);
         if ('' === $after) {
             throw new \RuntimeException('The model wrote an empty section.');

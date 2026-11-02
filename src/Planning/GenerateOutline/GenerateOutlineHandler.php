@@ -6,7 +6,6 @@ use App\Planning\OutlineItem;
 use App\Planning\OutlineItems;
 use App\Planning\PlanContext;
 use App\Shared\Article\Article;
-use App\Shared\Llm\AgentAnswer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\AgentInterface;
 use Symfony\AI\Platform\Message\Message;
@@ -41,9 +40,9 @@ final readonly class GenerateOutlineHandler
             'instruction' => $message->instruction,
         ];
 
-        $answer = AgentAnswer::object($this->agent->call(new MessageBag(
+        $answer = $this->agent->call(new MessageBag(
             Message::ofUser($this->twig->render('planning/generate_outline/_request.md.twig', $context)),
-        ), ['response_format' => OutlineAnswer::class, 'template_vars' => ['language_level' => $context['language_level']]]), OutlineAnswer::class);
+        ), ['response_format' => OutlineAnswer::class, 'template_vars' => ['language_level' => $context['language_level']]])->asObject(OutlineAnswer::class);
 
         if ([] === $answer->items) {
             throw new \RuntimeException('The model answered with an empty outline.');

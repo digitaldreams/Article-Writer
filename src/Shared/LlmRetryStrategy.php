@@ -2,13 +2,14 @@
 
 namespace App\Shared;
 
+use Symfony\AI\Platform\Exception\RetryableExceptionInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\Retry\RetryStrategyInterface;
 use Symfony\Component\Messenger\Stamp\RedeliveryStamp;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
-/** Retries an LLM job once, only when the connection or the timeout failed. */
+/** Retries an LLM job once, only for a temporary failure: the connection, a timeout, or a provider overload or rate limit. */
 final class LlmRetryStrategy implements RetryStrategyInterface
 {
     private const MAX_RETRIES = 1;
@@ -20,7 +21,7 @@ final class LlmRetryStrategy implements RetryStrategyInterface
             $throwable = $throwable->getWrappedExceptions()[0] ?? $throwable;
         }
 
-        return $this->isConnectionFailure($throwable)
+        return $this->isTemporaryFailure($throwable)
             && RedeliveryStamp::getRetryCountFromEnvelope($message) < self::MAX_RETRIES;
     }
 
@@ -30,10 +31,10 @@ final class LlmRetryStrategy implements RetryStrategyInterface
     }
 
     /** Bridges wrap the HTTP error (e.g. Ollama's model lookup), so look through the whole chain. */
-    private function isConnectionFailure(?\Throwable $throwable): bool
+    private function isTemporaryFailure(?\Throwable $throwable): bool
     {
         for (; null !== $throwable; $throwable = $throwable->getPrevious()) {
-            if ($throwable instanceof TransportExceptionInterface) {
+            if ($throwable instanceof TransportExceptionInterface || $throwable instanceof RetryableExceptionInterface) {
                 return true;
             }
         }

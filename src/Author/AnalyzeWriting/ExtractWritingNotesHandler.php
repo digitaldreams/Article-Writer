@@ -3,7 +3,6 @@
 namespace App\Author\AnalyzeWriting;
 
 use App\Author\WritingNote;
-use App\Shared\Llm\AgentAnswer;
 use App\Shared\Article\Article;
 use App\Shared\Storage\ArticleFolder;
 use Doctrine\ORM\EntityManagerInterface;
@@ -32,9 +31,9 @@ final readonly class ExtractWritingNotesHandler
             return;
         }
         $body = $this->articleFolder->read($article->getFolder(), 'article.md')['body'];
-        $answer = AgentAnswer::object($this->agent->call(new MessageBag(
+        $answer = $this->agent->call(new MessageBag(
             Message::ofUser($body),
-        ), ['response_format' => WritingNotesAnswer::class, 'template_vars' => ['language_level' => $article->getUser()->getLanguageLevel()]]), WritingNotesAnswer::class);
+        ), ['response_format' => WritingNotesAnswer::class, 'template_vars' => ['language_level' => $article->getUser()->getLanguageLevel()]])->asObject(WritingNotesAnswer::class);
 
         $this->em->persist(new WritingNote(
             $article, $answer->openingType, $answer->sectionCount, $answer->orderingPattern, $answer->hasRunningExample, $answer->closing,

@@ -9,8 +9,13 @@ use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobStatus;
 use App\Shared\Storage\ArticleFolder;
 use App\Tests\Planning\PlanningTestCase;
+use Symfony\AI\Platform\Bridge\Ollama\Factory as OllamaFactory;
+use Symfony\AI\Platform\Result\MultiPartResult;
 use Symfony\AI\Platform\Result\TextResult;
+use Symfony\AI\Platform\Result\ThinkingResult;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
 
 final class WriteArticleTest extends PlanningTestCase
 {
@@ -88,6 +93,41 @@ final class WriteArticleTest extends PlanningTestCase
         self::assertSame(LlmJobStatus::Failed, $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'write_article'])?->getStatus());
         $this->client->request('GET', '/plans/'.$article->getId().'/article');
         self::assertSelectorExists('.job-failed button');
+        self::assertFileDoesNotExist($this->folder()->pathOf($article->getFolder(), 'article.md'));
+    }
+
+    public function testAReasoningModelsArticleIsWrittenWithoutItsReasoning(): void
+    {
+        $article = $this->approvedPlan();
+        $this->fakePrimary(static fn () => new MultiPartResult([new ThinkingResult('private thoughts'), new TextResult("  ## Body\n\nText.  ")]));
+
+        $this->approve($article);
+        $this->consume();
+
+        self::assertSame(ArticleState::Written, $this->reload($article)->getState());
+        self::assertSame("## Body\n\nText.\n", $this->folder()->read($article->getFolder(), 'article.md')['body']);
+    }
+
+    public function testACutOffArticleFailsTheJobAndWritesNoFile(): void
+    {
+        $article = $this->approvedPlan();
+        // The real Ollama bridge and dispatcher: RenderingPlatform has no dispatcher, so the listener would not run.
+        $http = new MockHttpClient(static fn (string $_, string $url) => str_ends_with($url, '/api/show')
+            ? new MockResponse('{"capabilities":["completion"]}')
+            : new MockResponse('{"message":{"content":"## Half an arti"},"done_reason":"length"}'));
+        self::getContainer()->set('ai.platform.ollama', OllamaFactory::createPlatform(
+            'http://ollama.test',
+            httpClient: $http,
+            eventDispatcher: self::getContainer()->get(EventDispatcherInterface::class),
+        ));
+
+        $this->approve($article);
+        $this->consume();
+
+        $job = $this->em()->getRepository(LlmJob::class)->findOneBy(['step' => 'write_article']);
+        self::assertSame(LlmJobStatus::Failed, $job?->getStatus());
+        self::assertSame('The model hit its length limit, so the answer is cut off.', $job->getError());
+        self::assertSame(ArticleState::Approved, $this->reload($article)->getState());
         self::assertFileDoesNotExist($this->folder()->pathOf($article->getFolder(), 'article.md'));
     }
 

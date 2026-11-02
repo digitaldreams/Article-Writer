@@ -2,7 +2,6 @@
 
 namespace App\Planning\DigestReferences;
 
-use App\Shared\Llm\AgentAnswer;
 use App\Planning\PlanInput;
 use App\Planning\Reference;
 use Doctrine\ORM\EntityManagerInterface;
@@ -44,8 +43,8 @@ final readonly class DigestReferenceHandler
 
     private function digest(string $topic, string $text, bool $mergingParts, string $level): string
     {
-        return AgentAnswer::text($this->agent->call(new MessageBag(
+        return trim($this->agent->call(new MessageBag(
             Message::ofUser(($mergingParts ? "Notes from the parts of one reference:\n\n" : "The text of a reference:\n\n").$text),
-        ), ['template_vars' => ['topic' => $topic, 'language_level' => $level]]));
+        ), ['template_vars' => ['topic' => $topic, 'language_level' => $level]])->asText());
     }
 }

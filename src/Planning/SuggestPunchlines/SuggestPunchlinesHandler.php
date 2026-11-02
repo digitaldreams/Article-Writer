@@ -4,7 +4,6 @@ namespace App\Planning\SuggestPunchlines;
 
 use App\Planning\PlanInput;
 use App\Shared\Article\Article;
-use App\Shared\Llm\AgentAnswer;
 use App\Shared\Storage\ArticleFolder;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\AgentInterface;
@@ -38,14 +37,14 @@ final readonly class SuggestPunchlinesHandler
             return;
         }
 
-        $answer = AgentAnswer::object($this->agent->call(new MessageBag(
+        $answer = $this->agent->call(new MessageBag(
             Message::ofUser($this->twig->render('planning/suggest_punchlines/_request.md.twig', [
                 'input' => $this->em->getRepository(PlanInput::class)->findOneBy(['article' => $article]) ?? throw new \RuntimeException('The plan input is gone.'),
                 'seen' => $punchlines->findBy(['article' => $article], ['id' => 'ASC']),
                 'writer_idea' => $message->writerIdea,
                 'body' => $this->folder->read($article->getFolder(), 'article.md')['body'],
             ])),
-        ), ['response_format' => PunchlineList::class, 'template_vars' => ['language_level' => $article->getUser()->getLanguageLevel()]]), PunchlineList::class);
+        ), ['response_format' => PunchlineList::class, 'template_vars' => ['language_level' => $article->getUser()->getLanguageLevel()]])->asObject(PunchlineList::class);
 
         $texts = self::nonEmpty($answer->punchlines);
         if (self::PUNCHLINES_PER_ROUND !== \count($texts)) {
