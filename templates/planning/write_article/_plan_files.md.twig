@@ -8,11 +8,11 @@
 # answers.md
 {{ answers }}
 {% endif %}
-{% if digests is not empty %}
+{% if references is not empty %}
 
-# Reference digests
-{% for reference in digests %}
-- {{ reference.location }}: {{ reference.digest }}
+# References
+{% for reference in references %}
+- {{ reference.location }}: {{ reference.text }}
 {% endfor %}
 {% endif %}
 {% if structure_profile is not empty %}

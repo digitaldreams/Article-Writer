@@ -3,12 +3,17 @@
 namespace App\Tests\Planning\WriteArticle;
 
 use App\Planning\PlanApproved;
+use App\Planning\Reference;
+use App\Planning\WriteArticle\WriteArticle;
+use App\Planning\WriteArticle\WriteArticleHandler;
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
 use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobStatus;
 use App\Shared\Storage\ArticleFolder;
 use App\Tests\Planning\PlanningTestCase;
+use App\Tests\RenderingPlatform;
+use Symfony\AI\Agent\Agent;
 use Symfony\AI\Platform\Bridge\Ollama\Factory as OllamaFactory;
 use Symfony\AI\Platform\Result\MultiPartResult;
 use Symfony\AI\Platform\Result\TextResult;
@@ -16,6 +21,7 @@ use Symfony\AI\Platform\Result\ThinkingResult;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Twig\Environment;
 
 final class WriteArticleTest extends PlanningTestCase
 {
@@ -96,6 +102,38 @@ final class WriteArticleTest extends PlanningTestCase
         self::assertFileDoesNotExist($this->folder()->pathOf($article->getFolder(), 'article.md'));
     }
 
+    public function testOnACloudModelTheArticleRequestHasTheFullReferenceTextAndSkipsUnreadableOnes(): void
+    {
+        $article = $this->approvedPlan();
+        $this->addReferences($article);
+        $this->em()->flush();
+        $prompt = '';
+        $platform = new RenderingPlatform(static function ($model, $input) use (&$prompt) {
+            $prompt = (string) $input->getUserMessage()?->asText();
+
+            return new TextResult("## Body\n\nText.");
+        }, self::getContainer()->get('ai.platform.template_renderer_listener'));
+        $handler = new WriteArticleHandler(new Agent($platform, 'test-primary'), $this->em(), $this->folder(), self::getContainer()->get(Environment::class), 'ai.platform.openai');
+
+        $handler(new WriteArticle(1, (int) $article->getId()));
+
+        self::assertStringContainsString("# References\n- https://read.test: The whole page.\n", $prompt);
+        self::assertStringNotContainsString('Short notes.', $prompt);
+        self::assertStringNotContainsString('Unreadable page.', $prompt);
+    }
+
+    public function testOnALocalModelTheArticleRequestKeepsTheNotesBecauseWholePagesDoNotFit(): void
+    {
+        $article = $this->approvedPlan();
+        $this->addReferences($article);
+
+        $prompt = $this->articlePrompt($article);
+
+        self::assertStringContainsString("# References\n- https://read.test: Short notes.\n", $prompt);
+        self::assertStringNotContainsString('The whole page.', $prompt);
+        self::assertStringNotContainsString('Unreadable page.', $prompt);
+    }
+
     public function testAReasoningModelsArticleIsWrittenWithoutItsReasoning(): void
     {
         $article = $this->approvedPlan();
@@ -147,6 +185,18 @@ final class WriteArticleTest extends PlanningTestCase
         $this->consume();
 
         self::assertSame("Version 2\n", $this->folder()->read($article->getFolder(), 'article.md')['body']);
+    }
+
+    private function addReferences(Article $article): void
+    {
+        $read = new Reference($article, 'https://read.test');
+        $read->saveExtractedText('The whole page.');
+        $read->markDone('Short notes.');
+        $unreadable = new Reference($article, 'https://unreadable.test');
+        $unreadable->saveExtractedText('Unreadable page.');
+        $unreadable->markUnreadable();
+        $this->em()->persist($read);
+        $this->em()->persist($unreadable);
     }
 
     private function approvedPlan(): Article
