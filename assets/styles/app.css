@@ -280,6 +280,20 @@ turbo-frame { display: block; }
 
 .notice-warning { border-left-color: var(--color-warning); background: var(--color-warning-tint); }
 
+/* AI cross-check points under a profile field: tinted so they never read as the writer's own text or as a warning. */
+.ai-suggestions {
+  padding: var(--space-3) var(--space-4);
+  border-left: 4px solid var(--color-primary);
+  background: var(--color-primary-tint);
+  font-size: var(--text-sm);
+}
+.ai-suggestions:empty { display: none; }
+.ai-suggestions ul { margin-block: var(--space-2) 0; padding-inline-start: var(--space-4); }
+.ai-suggestion-fix { display: block; font-weight: 500; }
+form div:has(> label) > .ai-suggestions { order: 1; }
+.cross-check { margin-block: var(--space-4); }
+.cross-check > .muted { margin-block: var(--space-2); }
+
 /* ===== Plans table ===== */
 .plans { width: 100%; border-collapse: collapse; }
 

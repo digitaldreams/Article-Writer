@@ -39,6 +39,12 @@ ai:
             model: '%env(AI_PRIMARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/writing_profile_agent.md'
+        # "Cross Check my Structure and Voice" on the profile page: the fields against the research rules.
+        cross_check_profile:
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/cross_check_profile_agent.md'
         # Interviewer + reader questions on the Questions tab.
         questions:
             platform: '%app.ai.primary_platform%'

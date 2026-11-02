@@ -26,8 +26,8 @@ final class EditWritingProfileController extends AbstractController
             /** @var array<string, string|null> $data */
             $data = array_map(static fn (?string $v): string => (string) $v, $form->getData());
             $user->setWritingProfile(
-                array_intersect_key($data, array_flip(EditWritingProfileType::STRUCTURE)),
-                array_intersect_key($data, array_flip(EditWritingProfileType::VOICE)),
+                array_intersect_key($data, array_flip(User::WRITING_STRUCTURE)),
+                array_intersect_key($data, array_flip(User::WRITING_VOICE)),
             );
             $em->flush();
 

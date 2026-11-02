@@ -18,7 +18,7 @@ final class AiAgentsTest extends KernelTestCase
 
         self::assertSame('ollama:test-primary', $container->get('ai.agent.outline')->call('hi')->getContent());
         self::assertSame('openai:test-secondary', $container->get('ai.agent.digest')->call('hi')->getContent());
-        foreach (['final_check', 'refactor', 'writing_profile'] as $agent) {
+        foreach (['final_check', 'refactor', 'writing_profile', 'cross_check_profile'] as $agent) {
             self::assertSame('ollama:test-primary', $container->get('ai.agent.'.$agent)->call('hi')->getContent(), $agent);
         }
         foreach (['title', 'share', 'poster'] as $agent) {
@@ -29,7 +29,7 @@ final class AiAgentsTest extends KernelTestCase
     public function testEveryStepPromptIsAnMdFileOnItsAgent(): void
     {
         $dir = self::getContainer()->getParameter('kernel.project_dir').'/prompts';
-        foreach (['digest', 'writing_notes', 'writing_profile', 'questions', 'outline', 'article', 'rewrite', 'title', 'poster', 'share', 'final_check', 'refactor'] as $agent) {
+        foreach (['digest', 'writing_notes', 'writing_profile', 'questions', 'outline', 'article', 'rewrite', 'title', 'poster', 'share', 'final_check', 'refactor', 'cross_check_profile'] as $agent) {
             self::assertFileExists($dir.'/'.$agent.'_agent.md');
             self::assertTrue(self::getContainer()->has('ai.agent.'.$agent), $agent);
         }

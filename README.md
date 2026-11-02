@@ -58,7 +58,7 @@ GEMINI_API_KEY=
 
 | Role | Used for |
 |---|---|
-| `AI_PRIMARY_*` | Questions, outline, article, section rewrite, final check, refactor, writing profile merge (a cloud model is best) |
+| `AI_PRIMARY_*` | Questions, outline, article, section rewrite, final check, refactor, writing profile merge, profile cross check (a cloud model is best) |
 | `AI_SECONDARY_*` | Plan title, reference digests, article import, writing notes, title and share suggestions, poster ideas |
 | `AI_IMAGE_*` | Poster picture. Empty `AI_IMAGE_MODEL` = no image button |
 

@@ -1,0 +1,6 @@
+<span class="badge badge-primary">AI suggestion</span>
+<ul>
+    {% for point in points %}
+        <li>{{ point.issue }} <span class="ai-suggestion-fix">Suggestion: {{ point.suggestion }}</span></li>
+    {% endfor %}
+</ul>
