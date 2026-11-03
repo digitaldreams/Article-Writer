@@ -12,9 +12,11 @@ use App\Shared\Llm\LlmJob;
 use App\Shared\Llm\LlmJobStatus;
 use App\Tests\LogsInAuthor;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\AI\Platform\Result\MultiPartResult;
 use Symfony\AI\Platform\Result\ObjectResult;
 use Symfony\AI\Platform\Result\ResultInterface;
 use Symfony\AI\Platform\Result\TextResult;
+use Symfony\AI\Platform\Result\ThinkingResult;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -73,6 +75,20 @@ final class AskQuestionsTest extends WebTestCase
         self::assertStringContainsString('6 questions', (string) $this->askJob()->getError());
         $client->request('GET', '/plans/'.$this->article()->getId().'/questions');
         self::assertSelectorExists('.job-failed button');
+    }
+
+    public function testAReasoningModelsQuestionsAreReadNextToItsReasoning(): void
+    {
+        $client = $this->client();
+        $this->fakeQuestions(static fn () => new MultiPartResult([
+            new ThinkingResult('private thoughts'),
+            new ObjectResult(new QuestionList([new AskedQuestion('Which problem does it solve?')])),
+        ]));
+        $this->createPlan($client);
+
+        $this->consume();
+
+        self::assertSame(['Which problem does it solve?'], array_map(static fn (Question $q) => $q->getText(), $this->questions()));
     }
 
     public function testAnswerThatIsNotAQuestionListFailsTheJob(): void

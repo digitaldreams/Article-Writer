@@ -54,7 +54,7 @@
     <div {% if reading %}data-controller="page-poll" data-page-poll-interval-value="5000"{% endif %}>
         <section>
             <h2>References</h2>
-            <p class="muted">The AI reads each reference and saves short notes. Questions, outline and article use these notes, not the full page.</p>
+            <p class="muted">The AI reads each reference and saves short notes. Questions and outline use these notes. The article uses the full page on a cloud model, and the notes on a local model.</p>
             {% if references is empty %}
                 <p class="muted">No references.</p>
             {% else %}
@@ -92,6 +92,7 @@
         {% if editable %}
             <section>
                 <h2>Add references</h2>
+                <p class="notice notice-warning">Add only sources you know and trust. The AI reads the text of these pages, and a page can hide instructions for it. Read your draft before you publish.</p>
                 {{ form_start(form) }}
                     {{ form_row(form.links, {attr: {rows: 4}}) }}
                     {{ form_row(form.add, {attr: {class: 'button button-secondary'}}) }}

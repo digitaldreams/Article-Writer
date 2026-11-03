@@ -6,7 +6,6 @@ use App\Planning\Reference;
 use App\Planning\ReferenceStatus;
 use App\Shared\Article\Article;
 use App\Shared\Article\ArticleState;
-use App\Shared\Llm\AgentAnswer;
 use App\Shared\Storage\ArticleFolder;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\AgentInterface;
@@ -29,6 +28,8 @@ final readonly class WriteArticleHandler
         private EntityManagerInterface $em,
         private ArticleFolder $folder,
         private Environment $twig,
+        #[Autowire('%app.ai.primary_platform%')]
+        private string $primaryPlatform,
     ) {
     }
 
@@ -37,17 +38,22 @@ final readonly class WriteArticleHandler
         $article = $this->em->find(Article::class, $message->articleId) ?? throw new \RuntimeException('The article is gone.');
         $folder = $article->getFolder();
         $user = $article->getUser();
+        // Whole pages won a blind test on cloud models (2026-11-02); they don't fit a local model's context (num_ctx 16k), so it keeps the notes.
+        $wholePages = 'ai.platform.ollama' !== $this->primaryPlatform;
 
-        $body = AgentAnswer::text($this->agent->call(new MessageBag(
+        $body = trim($this->agent->call(new MessageBag(
             Message::ofUser($this->twig->render('planning/write_article/_plan_files.md.twig', [
                 'idea' => $this->folder->read($folder, 'idea.md')['body'],
                 'outline' => $this->folder->read($folder, 'outline.md')['body'],
                 'answers' => file_exists($this->folder->pathOf($folder, 'answers.md')) ? $this->folder->read($folder, 'answers.md')['body'] : null,
-                'digests' => $this->em->getRepository(Reference::class)->findBy(['article' => $article, 'status' => ReferenceStatus::Done], ['id' => 'ASC']),
+                'references' => array_map(static fn (Reference $reference) => [
+                    'location' => $reference->getLocation(),
+                    'text' => $wholePages ? $reference->getExtractedText() : $reference->getDigest(),
+                ], $this->em->getRepository(Reference::class)->findBy(['article' => $article, 'status' => ReferenceStatus::Done], ['id' => 'ASC'])),
                 'structure_profile' => $user->getWritingProfile()['structure'],
                 'voice' => $user->getWritingProfile()['voice'],
             ])),
-        ), ['template_vars' => ['language_level' => $user->getLanguageLevel()]]));
+        ), ['template_vars' => ['language_level' => $user->getLanguageLevel()]])->asText());
         if ('' === $body) {
             throw new \RuntimeException('The model wrote an empty article.');
         }

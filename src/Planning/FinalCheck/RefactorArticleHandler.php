@@ -2,7 +2,6 @@
 
 namespace App\Planning\FinalCheck;
 
-use App\Shared\Llm\AgentAnswer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\AgentInterface;
 use Symfony\AI\Platform\Message\Message;
@@ -35,7 +34,7 @@ final readonly class RefactorArticleHandler
         }
         $article = $refactor->getArticle();
 
-        $answer = AgentAnswer::object($this->agent->call(new MessageBag(
+        $answer = $this->agent->call(new MessageBag(
             Message::ofUser($this->twig->render('planning/final_check/_refactor_request.md.twig', [
                 ...$this->planFiles->of($article),
                 'body' => $refactor->getBefore(),
@@ -44,7 +43,7 @@ final readonly class RefactorArticleHandler
             ])),
         ), ['response_format' => RefactorAnswer::class, 'template_vars' => [
             'language_level' => $article->getUser()->getLanguageLevel(),
-        ]]), RefactorAnswer::class);
+        ]])->asObject(RefactorAnswer::class);
         if ('' === trim($answer->body)) {
             throw new \RuntimeException('The model wrote an empty article.');
         }

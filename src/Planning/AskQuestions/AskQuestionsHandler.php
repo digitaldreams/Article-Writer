@@ -2,7 +2,6 @@
 
 namespace App\Planning\AskQuestions;
 
-use App\Shared\Llm\AgentAnswer;
 use App\Planning\PlanInput;
 use App\Planning\Question;
 use App\Planning\Reference;
@@ -36,7 +35,7 @@ final readonly class AskQuestionsHandler
         $input = $this->em->getRepository(PlanInput::class)->findOneBy(['article' => $article]) ?? throw new \RuntimeException('The plan input is gone.');
         $user = $article->getUser();
 
-        $answer = AgentAnswer::object($this->agent->call(new MessageBag(
+        $answer = $this->agent->call(new MessageBag(
             Message::ofUser($this->twig->render('planning/ask_questions/_request.md.twig', [
                 'short_bio' => $user->getShortBio(),
                 'input' => $input,
@@ -47,7 +46,7 @@ final readonly class AskQuestionsHandler
             'audience' => '' !== $input->getAudience() ? $input->getAudience() : 'not given',
             'reader_level' => $input->getReaderLevel() ?? 'not given',
             'language_level' => $user->getLanguageLevel(),
-        ]]), QuestionList::class);
+        ]])->asObject(QuestionList::class);
         if (\count($answer->questions) > self::MAX_QUESTIONS) {
             throw new \RuntimeException(\sprintf('The model asked %d questions; at most %d are allowed.', \count($answer->questions), self::MAX_QUESTIONS));
         }

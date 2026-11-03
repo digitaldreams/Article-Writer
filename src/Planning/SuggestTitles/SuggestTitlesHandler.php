@@ -4,7 +4,6 @@ namespace App\Planning\SuggestTitles;
 
 use App\Planning\PlanInput;
 use App\Shared\Article\Article;
-use App\Shared\Llm\AgentAnswer;
 use App\Shared\Storage\ArticleFolder;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\AgentInterface;
@@ -37,7 +36,7 @@ final readonly class SuggestTitlesHandler
             return;
         }
 
-        $answer = AgentAnswer::object($this->agent->call(new MessageBag(
+        $answer = $this->agent->call(new MessageBag(
             Message::ofUser($this->twig->render('planning/suggest_titles/_request.md.twig', [
                 'input' => $this->em->getRepository(PlanInput::class)->findOneBy(['article' => $article]) ?? throw new \RuntimeException('The plan input is gone.'),
                 'seen' => $suggestions->findBy(['article' => $article], ['id' => 'ASC']),
@@ -45,7 +44,7 @@ final readonly class SuggestTitlesHandler
                 // Code adds many tokens and little to a title; on a local CPU model reading the prompt is the slow part.
                 'body' => preg_replace('/^(```|~~~).*?^\1[ \t]*$/ms', '(code omitted)', $this->folder->read($article->getFolder(), 'article.md')['body']),
             ])),
-        ), ['response_format' => TitleList::class, 'template_vars' => ['language_level' => $article->getUser()->getLanguageLevel()]]), TitleList::class);
+        ), ['response_format' => TitleList::class, 'template_vars' => ['language_level' => $article->getUser()->getLanguageLevel()]])->asObject(TitleList::class);
 
         $titles = array_values(array_filter($answer->titles, static fn (ProposedTitle $t) => '' !== trim($t->title) && '' !== trim($t->subtitle)));
         if (self::TITLES_PER_ROUND !== \count($titles)) {
