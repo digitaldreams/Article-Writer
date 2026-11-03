@@ -4,6 +4,8 @@ includes:
 
 parameters:
     level: 6
+    scanFiles:
+        - migrations/Version20261103120000.php
     paths:
         - src
         - tests

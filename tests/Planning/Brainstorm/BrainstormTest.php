@@ -174,7 +174,7 @@ final class BrainstormTest extends PlanningTestCase
         self::assertSelectorTextContains('.plan-input', 'PHP developers');
         self::assertSelectorTextContains('.notes', 'Typed properties, hooks');
 
-        foreach (['/brainstorm', '/brainstorm/notes', '/brainstorm/next'] as $path) {
+        foreach (['/references', '/brainstorm/notes', '/brainstorm/next'] as $path) {
             $this->client->request('POST', '/plans/'.$id.$path, ['roughFlow' => 'late']);
             self::assertResponseStatusCodeSame(409, $path);
         }

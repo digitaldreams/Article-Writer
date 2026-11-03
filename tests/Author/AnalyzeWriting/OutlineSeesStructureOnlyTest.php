@@ -2,9 +2,9 @@
 
 namespace App\Tests\Author\AnalyzeWriting;
 
-use App\Planning\GenerateOutline\OutlineAnswer;
-use App\Planning\GenerateOutline\ProposedItem;
-use App\Planning\OutlineItem;
+use App\Planning\Outline\OutlineAnswer;
+use App\Planning\Outline\ProposedItem;
+use App\Planning\Outline\OutlineItem;
 use App\Shared\Article\ArticleState;
 use App\Tests\Planning\PlanningTestCase;
 use Symfony\AI\Platform\Result\ObjectResult;

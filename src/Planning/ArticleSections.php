@@ -5,7 +5,7 @@ namespace App\Planning;
 /**
  * The sections of an article.md body: its top heading level under the title, "## " usually (older articles use "### ").
  * The text before the first heading is the Introduction.
- * A leading "# " title line and the "## " subtitle right under it (see SuggestTitles) belong to no section and are never changed.
+ * A leading "# " title line and the "## " subtitle right under it (see Titles) belong to no section and are never changed.
  * Deeper headings stay inside their section; a heading inside a fenced code block is not a heading.
  */
 final class ArticleSections

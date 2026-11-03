@@ -4,7 +4,7 @@ namespace App\Tests\Shared\Llm;
 
 use App\Planning\FinalCheck\CheckFinding;
 use App\Planning\FinalCheck\CheckReport;
-use App\Planning\SuggestPosters\PosterIdea;
+use App\Planning\Poster\PosterIdea;
 use App\Shared\Article\ArticleState;
 use App\Shared\Llm\LlmCost;
 use App\Shared\Llm\LlmJob;

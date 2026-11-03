@@ -76,7 +76,7 @@
                                 {{ reference.location }}
                             {% endif %}
                             {% if editable and reference.status.value != 'pending' %}
-                                <form method="post" action="{{ path('planning_remove_reference', {id: reference.id}) }}" class="reference-remove">
+                                <form method="post" action="{{ path('planning_remove_reference', {id: article.id, referenceId: reference.id}) }}" class="reference-remove">
                                     <button class="button button-secondary button-small" type="submit" aria-label="Remove {{ reference.location }}">Remove</button>
                                 </form>
                             {% endif %}
