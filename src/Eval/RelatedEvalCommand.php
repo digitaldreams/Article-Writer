@@ -2,6 +2,7 @@
 
 namespace App\Eval;
 
+use App\Planning\FindRelated\CandidateRetriever;
 use App\Planning\FindRelated\FindRelated;
 use App\Planning\FindRelated\RelatedLink;
 use App\Shared\Llm\LlmCost;
@@ -27,6 +28,7 @@ final readonly class RelatedEvalCommand
 
     public function __construct(
         private FindRelated $finder,
+        private CandidateRetriever $retriever,
         #[Autowire(service: 'app.find_related_tools')]
         private FindRelated $finderWithTools,
         private LlmCost $cost,
@@ -45,6 +47,7 @@ final readonly class RelatedEvalCommand
         #[Option('Runs per query; the model answers differently each time')] int $runs = 3,
         #[Option('Dataset folder under evals/datasets/')] string $dataset = 'related',
         #[Option('Let the model call read_article (subtitle + headings) on candidates')] bool $tools = false,
+        #[Option('Send only the K best candidates by word overlap (0 = all)')] int $top = 0,
         #[Option('Extra made-up distractor titles added to every candidate list (grows the haystack)')] int $pad = 0,
     ): int {
         $dir = "{$this->projectDir}/evals/datasets/$dataset";
@@ -64,12 +67,18 @@ final readonly class RelatedEvalCommand
             }
         });
 
-        [$planted, $extras, $log] = [[], [], []];
+        [$planted, $extras, $log, $retrieved] = [[], [], [], []];
         $start = microtime(true);
         foreach ($cases as $case) {
             $query = $corpus[$case['query']];
             $candidates = array_values(array_map(static fn (array $a) => ['id' => $a['id'], 'title' => $a['title'], 'subtitle' => $a['subtitle'], 'headings' => $a['headings']], array_filter($corpus, static fn (array $a) => $a['id'] !== $query['id'])));
             $candidates = [...$candidates, ...self::distractors($pad)];
+            if ($top > 0) {
+                $candidates = $this->retriever->top($query['title'], $query['subtitle'], $query['headings'], $candidates, $top);
+                foreach ($case['expected'] as $expected) {
+                    $retrieved["{$query['id']}>$expected"] = \in_array($expected, array_column($candidates, 'id'), true);
+                }
+            }
             for ($run = 0; $run < $runs; ++$run) {
                 $ids = array_map(static fn (RelatedLink $l) => $l->id, ($tools ? $this->finderWithTools : $this->finder)->ask($query['title'], $query['subtitle'], $query['headings'], $candidates));
                 $log[$query['id']][] = $ids;
@@ -82,6 +91,12 @@ final readonly class RelatedEvalCommand
         }
         $io->newLine(2);
 
+        if ($top > 0) {
+            $io->writeln(\sprintf('retriever: %d of %d expected articles are in the top %d (%s)', \count(array_filter($retrieved)), \count($retrieved), $top, implode(' ', array_map(static fn (string $c, bool $h) => $c.($h ? '' : ' OUT'), array_keys($retrieved), $retrieved))));
+        }
+        if (0 === $runs) {
+            return Command::SUCCESS;
+        }
         $score = new Score($planted, []);
         $io->table(['query>expected', 'runs'], array_map(static fn (string $c, array $r) => [$c, implode(' | ', $r)], array_keys($planted), $planted));
         $cost = 0.0;
@@ -101,7 +116,7 @@ final readonly class RelatedEvalCommand
         $file = \sprintf('%s/var/evals/%s-%s-%s.json', $this->projectDir, $dataset, date('Ymd-His'), $this->model);
         @mkdir(\dirname($file), recursive: true);
         file_put_contents($file, json_encode([
-            'platform' => $provider, 'model' => $this->model, 'dataset' => $dataset, 'runs' => $runs, 'candidates' => \count($corpus) - 1 + $pad, 'pad' => $pad, 'tools' => $tools, 'model_calls' => $calls,
+            'platform' => $provider, 'model' => $this->model, 'dataset' => $dataset, 'runs' => $runs, 'candidates' => \count($corpus) - 1 + $pad, 'pad' => $pad, 'tools' => $tools, 'top' => $top, 'retrieved' => $retrieved, 'model_calls' => $calls,
             'recall' => $score->recall(), 'interval' => [$low, $high], 'extras' => $extras, 'planted' => $planted, 'links' => $log, 'tokens' => $tokens, 'cost' => $cost,
         ], \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR));
         $io->comment('Saved '.substr($file, \strlen($this->projectDir) + 1));
