@@ -58,11 +58,13 @@ final readonly class RelatedEvalCommand
 
         $tokens = [];
         $calls = 0;
-        $this->dispatcher->addListener(ResultConvertedEvent::class, static function (ResultConvertedEvent $event) use (&$tokens, &$calls): void {
+        $steps = [];
+        $this->dispatcher->addListener(ResultConvertedEvent::class, static function (ResultConvertedEvent $event) use (&$tokens, &$calls, &$steps): void {
             ++$calls;
             $usage = $event->getResult()->getMetadata()->get('token_usage');
             if ($usage instanceof TokenUsageInterface) {
                 $m = $event->getModel()->getName();
+                $steps[array_key_last($steps) ?? 0][] = [(int) $usage->getPromptTokens(), (int) $usage->getCachedTokens()];
                 $tokens[$m] = [($tokens[$m][0] ?? 0) + (int) $usage->getPromptTokens(), ($tokens[$m][1] ?? 0) + (int) $usage->getCompletionTokens(), ($tokens[$m][2] ?? 0) + (int) $usage->getCachedTokens()];
             }
         });
@@ -80,6 +82,7 @@ final readonly class RelatedEvalCommand
                 }
             }
             for ($run = 0; $run < $runs; ++$run) {
+                $steps[] = []; // a new ask starts: its model calls are its steps
                 $ids = array_map(static fn (RelatedLink $l) => $l->id, ($tools ? $this->finderWithTools : $this->finder)->ask($query['title'], $query['subtitle'], $query['headings'], $candidates));
                 $log[$query['id']][] = $ids;
                 foreach ($case['expected'] as $expected) {
@@ -116,7 +119,7 @@ final readonly class RelatedEvalCommand
         $file = \sprintf('%s/var/evals/%s-%s-%s.json', $this->projectDir, $dataset, date('Ymd-His'), $this->model);
         @mkdir(\dirname($file), recursive: true);
         file_put_contents($file, json_encode([
-            'platform' => $provider, 'model' => $this->model, 'dataset' => $dataset, 'runs' => $runs, 'candidates' => \count($corpus) - 1 + $pad, 'pad' => $pad, 'tools' => $tools, 'top' => $top, 'retrieved' => $retrieved, 'model_calls' => $calls,
+            'platform' => $provider, 'model' => $this->model, 'dataset' => $dataset, 'runs' => $runs, 'candidates' => \count($corpus) - 1 + $pad, 'pad' => $pad, 'tools' => $tools, 'top' => $top, 'retrieved' => $retrieved, 'model_calls' => $calls, 'steps' => $steps,
             'recall' => $score->recall(), 'interval' => [$low, $high], 'extras' => $extras, 'planted' => $planted, 'links' => $log, 'tokens' => $tokens, 'cost' => $cost,
         ], \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR));
         $io->comment('Saved '.substr($file, \strlen($this->projectDir) + 1));
