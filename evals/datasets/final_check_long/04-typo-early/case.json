@@ -1,0 +1,6 @@
+{
+    "kind": "code",
+    "section": "Place the Order using the Message Bus",
+    "needle": "qauntity",
+    "planted": "In a snippet, the variable $quantity is used as $qauntity (line 102 of 717, 14% into the article)."
+}

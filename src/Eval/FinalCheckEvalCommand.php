@@ -48,6 +48,7 @@ final readonly class FinalCheckEvalCommand
         #[Option('Runs per case; the model answers differently each time')] int $runs = 3,
         #[Option('Folder under evals/datasets/')] string $dataset = 'final_check',
         #[Option('Grade cases without a needle with the LLM judge (more tokens)')] bool $judge = false,
+        #[Option('Context ablation: idea or outline (the job already sends only the outline headings)')] string $without = '',
     ): int {
         $dirs = glob($this->projectDir.'/evals/datasets/'.$dataset.'/*', \GLOB_ONLYDIR) ?: [];
         if ([] === $dirs) {
@@ -56,6 +57,11 @@ final readonly class FinalCheckEvalCommand
             return Command::FAILURE;
         }
 
+        if (!\in_array($without, ['', 'idea', 'outline'], true)) {
+            $io->error('--without must be idea or outline.');
+
+            return Command::FAILURE;
+        }
         $provider = substr($this->platform, \strlen('ai.platform.'));
         $io->title("final_check on $provider/{$this->model}".($judge ? ', judge '.Judge::PLATFORM.'/'.Judge::MODEL : ''));
         if ($judge && Judge::PLATFORM === $provider) {
@@ -67,7 +73,7 @@ final readonly class FinalCheckEvalCommand
             $usage = $event->getResult()->getMetadata()->get('token_usage');
             if ($usage instanceof TokenUsageInterface) {
                 $model = $event->getModel()->getName();
-                $tokens[$model] = [($tokens[$model][0] ?? 0) + (int) $usage->getPromptTokens(), ($tokens[$model][1] ?? 0) + (int) $usage->getCompletionTokens()];
+                $tokens[$model] = [($tokens[$model][0] ?? 0) + (int) $usage->getPromptTokens(), ($tokens[$model][1] ?? 0) + (int) $usage->getCompletionTokens(), ($tokens[$model][2] ?? 0) + (int) $usage->getCachedTokens()];
             }
         });
 
@@ -87,7 +93,7 @@ final readonly class FinalCheckEvalCommand
                 }
                 foreach (['attacks' => $dir, 'controls' => $control] as $set => $from) {
                     for ($run = 0; $run < $runs; ++$run) {
-                        $notes = $this->ask($from);
+                        $notes = $this->ask($from, $without);
                         $notesLog[$name][$set][] = self::dump($notes);
                         // hide: the payload tries to suppress the planted defect; fabricate: it asks for a false one
                         $redteam[$set][$name][] = 'hide' === $case['attack'] ? !self::mentions($notes, $case['needle']) : self::mentions($notes, $case['claim']);
@@ -101,7 +107,7 @@ final readonly class FinalCheckEvalCommand
                 continue;
             }
             for ($run = 0; $run < $runs; ++$run) {
-                $notes = $this->ask($dir);
+                $notes = $this->ask($dir, $without);
                 // Every run's notes are saved: read the MISSED ones before trusting recall, the needle can miss a good note.
                 $notesLog[$name][] = self::dump($notes);
                 if ('clean' === $case['kind']) {
@@ -130,7 +136,7 @@ final readonly class FinalCheckEvalCommand
         ]);
 
         $cost = 0.0;
-        foreach ($tokens as $model => [$in, $out]) {
+        foreach ($tokens as $model => [$in, $out]) { // [2] = cached input tokens, already inside $in
             $cost += $this->cost->of(Judge::MODEL === $model ? Judge::PLATFORM : $provider, $model, $in, $out) ?? 0.0;
         }
         [$low, $high] = $score->interval();
@@ -150,7 +156,7 @@ final readonly class FinalCheckEvalCommand
         @mkdir(\dirname($file), recursive: true);
         file_put_contents($file, json_encode([
             'platform' => $provider, 'model' => $this->model, 'judge' => $judge ? Judge::PLATFORM.'/'.Judge::MODEL : null,
-            'dataset' => $dataset, 'runs' => $runs,
+            'dataset' => $dataset, 'runs' => $runs, 'without' => $without,
             'recall' => $score->recall(), 'interval' => [$low, $high], 'falseAlarms' => $score->falseAlarms(), 'attackSuccessRate' => $score->attackSuccessRate(),
             'planted' => $planted, 'clean' => $clean, 'attacks' => $redteam['attacks'], 'controls' => $redteam['controls'],
             'skipped' => $skipped, 'judged' => $judged, 'notes' => $notesLog, 'tokens' => $tokens, 'cost' => $cost,
@@ -173,9 +179,9 @@ final readonly class FinalCheckEvalCommand
     }
 
     /** @return list<CheckFinding> the notes of one run, through the same method the job calls */
-    private function ask(string $dir): array
+    private function ask(string $dir, string $without = ''): array
     {
-        return $this->handler->ask(self::plan($dir), self::body($dir, 'article.md') ?? '', self::LANGUAGE_LEVEL);
+        return $this->handler->ask(self::plan($dir, $without), self::body($dir, 'article.md') ?? '', self::LANGUAGE_LEVEL);
     }
 
     /** @param list<CheckFinding> $notes */
@@ -196,9 +202,9 @@ final readonly class FinalCheckEvalCommand
     }
 
     /** @return array{idea: ?string, outline: ?string} like PlanFiles: an imported article has neither */
-    private static function plan(string $dir): array
+    private static function plan(string $dir, string $without = ''): array
     {
-        return ['idea' => self::body($dir, 'idea.md'), 'outline' => self::body($dir, 'outline.md')];
+        return ['idea' => 'idea' === $without ? null : self::body($dir, 'idea.md'), 'outline' => 'outline' === $without ? null : self::body($dir, 'outline.md')];
     }
 
     /** The file without its front matter, read the way the job reads it; null when the case has no such file. */
