@@ -89,6 +89,12 @@ ai:
             model: '%env(AI_PRIMARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/final_check_agent.md'
+        # Which older articles of the writer the article in progress should link to.
+        related:
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/related_agent.md'
         # Refactors the whole article from the final-check notes the writer picked.
         refactor:
             platform: '%app.ai.primary_platform%'
