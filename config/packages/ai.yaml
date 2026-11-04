@@ -95,6 +95,14 @@ ai:
             model: '%env(AI_PRIMARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/related_agent.md'
+        # Same job as `related`, but it may call read_article on the candidates it is unsure about.
+        related_tools:
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/related_tools_agent.md'
+            tools:
+                - App\Planning\FindRelated\ReadArticle
         # Refactors the whole article from the final-check notes the writer picked.
         refactor:
             platform: '%app.ai.primary_platform%'

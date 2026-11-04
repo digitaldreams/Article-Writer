@@ -27,6 +27,8 @@ final readonly class RelatedEvalCommand
 
     public function __construct(
         private FindRelated $finder,
+        #[Autowire(service: 'app.find_related_tools')]
+        private FindRelated $finderWithTools,
         private LlmCost $cost,
         private EventDispatcherInterface $dispatcher,
         #[Autowire(param: 'app.ai.primary_platform')]
@@ -42,6 +44,7 @@ final readonly class RelatedEvalCommand
         SymfonyStyle $io,
         #[Option('Runs per query; the model answers differently each time')] int $runs = 3,
         #[Option('Dataset folder under evals/datasets/')] string $dataset = 'related',
+        #[Option('Let the model call read_article (subtitle + headings) on candidates')] bool $tools = false,
         #[Option('Extra made-up distractor titles added to every candidate list (grows the haystack)')] int $pad = 0,
     ): int {
         $dir = "{$this->projectDir}/evals/datasets/$dataset";
@@ -51,7 +54,9 @@ final readonly class RelatedEvalCommand
         $io->title("related on $provider/{$this->model}");
 
         $tokens = [];
-        $this->dispatcher->addListener(ResultConvertedEvent::class, static function (ResultConvertedEvent $event) use (&$tokens): void {
+        $calls = 0;
+        $this->dispatcher->addListener(ResultConvertedEvent::class, static function (ResultConvertedEvent $event) use (&$tokens, &$calls): void {
+            ++$calls;
             $usage = $event->getResult()->getMetadata()->get('token_usage');
             if ($usage instanceof TokenUsageInterface) {
                 $m = $event->getModel()->getName();
@@ -63,10 +68,10 @@ final readonly class RelatedEvalCommand
         $start = microtime(true);
         foreach ($cases as $case) {
             $query = $corpus[$case['query']];
-            $candidates = array_values(array_map(static fn (array $a) => ['id' => $a['id'], 'title' => $a['title']], array_filter($corpus, static fn (array $a) => $a['id'] !== $query['id'])));
+            $candidates = array_values(array_map(static fn (array $a) => ['id' => $a['id'], 'title' => $a['title'], 'subtitle' => $a['subtitle'], 'headings' => $a['headings']], array_filter($corpus, static fn (array $a) => $a['id'] !== $query['id'])));
             $candidates = [...$candidates, ...self::distractors($pad)];
             for ($run = 0; $run < $runs; ++$run) {
-                $ids = array_map(static fn (RelatedLink $l) => $l->id, $this->finder->ask($query['title'], $query['subtitle'], $query['headings'], $candidates));
+                $ids = array_map(static fn (RelatedLink $l) => $l->id, ($tools ? $this->finderWithTools : $this->finder)->ask($query['title'], $query['subtitle'], $query['headings'], $candidates));
                 $log[$query['id']][] = $ids;
                 foreach ($case['expected'] as $expected) {
                     $planted["{$query['id']}>$expected"][] = \in_array($expected, $ids, true) ? Score::FOUND : Score::MISSED;
@@ -90,13 +95,13 @@ final readonly class RelatedEvalCommand
             \sprintf('links to unlabeled articles: %.2f per query (not wrong by itself: the labels are short)', array_sum($allExtras) / max(1, \count($allExtras))),
             $score->flaky() ? 'flaky: '.implode(', ', $score->flaky()) : null,
             $score->alwaysMissed() ? 'always missed: '.implode(', ', $score->alwaysMissed()) : null,
-            \sprintf('%s, $%.4f, %ds', json_encode($tokens), $cost, microtime(true) - $start),
+            \sprintf('%d model calls, %s, $%.4f, %ds', $calls, json_encode($tokens), $cost, microtime(true) - $start),
         ]));
 
         $file = \sprintf('%s/var/evals/%s-%s-%s.json', $this->projectDir, $dataset, date('Ymd-His'), $this->model);
         @mkdir(\dirname($file), recursive: true);
         file_put_contents($file, json_encode([
-            'platform' => $provider, 'model' => $this->model, 'dataset' => $dataset, 'runs' => $runs, 'candidates' => \count($corpus) - 1 + $pad, 'pad' => $pad,
+            'platform' => $provider, 'model' => $this->model, 'dataset' => $dataset, 'runs' => $runs, 'candidates' => \count($corpus) - 1 + $pad, 'pad' => $pad, 'tools' => $tools, 'model_calls' => $calls,
             'recall' => $score->recall(), 'interval' => [$low, $high], 'extras' => $extras, 'planted' => $planted, 'links' => $log, 'tokens' => $tokens, 'cost' => $cost,
         ], \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR));
         $io->comment('Saved '.substr($file, \strlen($this->projectDir) + 1));

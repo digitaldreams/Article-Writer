@@ -25,5 +25,11 @@ services:
         arguments: ['@http_client']
         public: true # tests swap it for a MockHttpClient, so they never resolve DNS
 
+    # FindRelated again, with the agent that may call read_article (chapter 10 of context-engineering).
+    app.find_related_tools:
+        class: App\Planning\FindRelated\FindRelated
+        arguments: { $agent: '@ai.agent.related_tools' }
+        public: true
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

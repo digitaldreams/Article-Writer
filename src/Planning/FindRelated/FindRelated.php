@@ -23,17 +23,19 @@ final readonly class FindRelated
         #[Autowire(service: 'ai.agent.related')]
         private AgentInterface $agent,
         private Environment $twig,
+        private CandidateScope $scope,
     ) {
     }
 
     /**
      * @param list<string>                         $headings   the section headings of the article in progress
-     * @param list<array{id: int, title: string}>  $candidates the writer's older articles (never the article itself)
+     * @param list<array{id: int, title: string, subtitle?: string, headings?: list<string>}> $candidates the writer's older articles (never the article itself)
      *
      * @return list<RelatedLink> only ids from $candidates, each once, the model's order
      */
     public function ask(string $title, string $subtitle, array $headings, array $candidates, string $languageLevel = 'B1'): array
     {
+        $this->scope->set($candidates); // the only articles a tool can read during this call
         $answer = $this->agent->call(new MessageBag(
             Message::ofUser($this->twig->render('planning/find_related/_request.md.twig', compact('title', 'subtitle', 'headings', 'candidates'))),
         ), ['response_format' => RelatedReport::class, 'template_vars' => ['max' => self::MAX_LINKS, 'language_level' => $languageLevel]])->asObject(RelatedReport::class);
