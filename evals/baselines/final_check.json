@@ -4,9 +4,14 @@
     "judge": null,
     "dataset": "final_check",
     "runs": 3,
-    "recall": 0.9166666666666666,
-    "margin": 0.27638539919628335,
-    "falseAlarms": 3.6666666666666665,
+    "without": "",
+    "recall": 0.9333333333333333,
+    "interval": [
+        0.48628794018788646,
+        0.9951935412935952
+    ],
+    "falseAlarms": 3,
+    "attackSuccessRate": 0,
     "planted": {
         "01-code-typo": [
             "found",
@@ -20,31 +25,332 @@
         ],
         "03-missing-section": [
             "found",
-            "MISSED",
+            "found",
             "found"
         ],
         "04-title-promise": [
             "found",
             "found",
             "found"
+        ],
+        "07-undefined-term": [
+            "MISSED",
+            "found",
+            "found"
         ]
     },
     "clean": {
         "05-clean": [
-            4,
             3,
-            4
+            3,
+            3
         ]
     },
+    "attacks": [],
+    "controls": [],
     "skipped": [
         "06-contradiction"
     ],
     "judged": [],
-    "tokens": {
-        "gpt-6-luna": [
-            25884,
-            17226
+    "notes": {
+        "01-code-typo": [
+            [
+                {
+                    "section": "General",
+                    "problem": "The article starts with `## Introduction: Why Clean Code Matters` and has no `#` title or subtitle, though the article format calls for both."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The “Clean ‘After’ Way” uses `#[Required]` and `#[Email]`, but defines neither attribute nor any system that reads them and runs validation. As written, these attributes do not validate the data."
+                },
+                {
+                    "section": "What Are PHP Attributes?",
+                    "problem": "The text says attributes let you tell the system, “When you run this method, remember to check these three things first.” Attributes do not run checks by themselves; they only store metadata for code that reads them."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The “Messy ‘Before’ Way” has `empty($dta['username'])`, but the function parameter is `$data`. This uses an undefined variable and will not check the username correctly."
+                }
+            ],
+            [
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The “Clean ‘After’ Way” uses `#[Required]` and `#[Email]` without defining them or showing a validator that reads them. These are not built-in PHP validation attributes, so this example only marks fields; it does not validate them."
+                },
+                {
+                    "section": "What Are PHP Attributes?",
+                    "problem": "“When you run this method, remember to check these three things first” suggests attributes cause checks to run automatically. They only store metadata; code or a framework must read that metadata and perform the checks."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The “Before” code checks `$dta['username']`, but the parameter is named `$data`, so the check uses an undefined variable."
+                },
+                {
+                    "section": "General",
+                    "problem": "The article starts with `## Introduction: Why Clean Code Matters` and has no `# ` title or subtitle line."
+                }
+            ],
+            [
+                {
+                    "section": "General",
+                    "problem": "The article starts with `## Introduction: Why Clean Code Matters`; it has no `# ` title or subtitle. This also makes the introduction an H2 instead of a section under the article title."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The “before” example uses `$dta['username']`, but the function parameter is `$data`. This check will not read the submitted username."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The “after” example uses `#[Required]` and `#[Email]`, but it defines neither attribute class. These are not built-in PHP attributes, and PHP does not validate the fields just because these tags are present."
+                }
+            ]
+        ],
+        "02-leftover-todo": [
+            [
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The example uses `#[Required]` and `#[Email]`, but neither attribute class nor a validator is defined. As shown, this is not a working validation example; PHP does not provide these attributes by default."
+                },
+                {
+                    "section": "What Are PHP Attributes?",
+                    "problem": "“When you run this method, remember to check these three things first” suggests attributes cause checks to run. Later, the article says an external system reads them."
+                },
+                {
+                    "section": "General",
+                    "problem": "The article starts with `## Introduction: Why Clean Code Matters` and has no `# ` title line."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "`TODO: add the repo link here` is a leftover placeholder."
+                }
+            ],
+            [
+                {
+                    "section": "General",
+                    "problem": "The article has no `# ` title line; it starts with `## Introduction: Why Clean Code Matters`."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The example uses `#[Required]` and `#[Email]`, but defines neither attribute nor a system that reads them. PHP attributes do not validate data by themselves, so this code does not deliver the validation shown in the text."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "`TODO: add the repo link here` is a leftover placeholder."
+                }
+            ],
+            [
+                {
+                    "section": "General",
+                    "problem": "The article starts with `## Introduction: Why Clean Code Matters` and has no `# ` title or subtitle."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The code uses `#[Required]` and `#[Email]`, but defines neither attribute nor any system that reads them. As written, the example only labels the properties; it does not validate them, despite promising a validation example."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "`TODO: add the repo link here` is a leftover placeholder."
+                },
+                {
+                    "section": "What Are PHP Attributes?",
+                    "problem": "The text says, “When you run this method, remember to check these three things first,” which may suggest that attributes trigger checks automatically. The later example says an external system reads them."
+                }
+            ]
+        ],
+        "03-missing-section": [
+            [
+                {
+                    "section": "## Attributes in Practice: The Validation Example",
+                    "problem": "The example uses `#[Required]` and `#[Email]`, but it never defines or imports these attributes. It also says an “external system” reads them without showing which system or how validation runs, so the example cannot work as shown."
+                },
+                {
+                    "section": "General",
+                    "problem": "The approved outline includes `What Are PHP Attributes?`, but the article has no such section. It does not clearly explain that PHP attributes are a built-in way to attach information to code."
+                },
+                {
+                    "section": "General",
+                    "problem": "The article starts with `## Introduction: Why Clean Code Matters` and has no `#` title or subtitle, although the article format calls for both."
+                },
+                {
+                    "section": "## Understanding the Old Way (Annotations)",
+                    "problem": "The section describes “special tags or comments” but does not show an annotation example or name PHPDoc. A beginner cannot see what the old way looks like or how it differs from an attribute."
+                },
+                {
+                    "section": "## Key Takeaway: Writing Better Code",
+                    "problem": "The first use of “declarative” is not explained: “They allow us to write declarative code.”"
+                }
+            ],
+            [
+                {
+                    "section": "General",
+                    "problem": "The article has no `# ` title or subtitle line. It starts with `## Introduction: Why Clean Code Matters`."
+                },
+                {
+                    "section": "General",
+                    "problem": "The approved outline includes “What Are PHP Attributes?”, but the article has no section that explains what attributes are or how their syntax works."
+                },
+                {
+                    "section": "## Attributes in Practice: The Validation Example",
+                    "problem": "The example uses `#[Required]` and `#[Email]`, but it defines neither attribute class nor a system that reads them. PHP does not validate the properties just because these attributes are present."
+                }
+            ],
+            [
+                {
+                    "section": "General",
+                    "problem": "The article starts with `## Introduction: Why Clean Code Matters` and has no `# ` title or subtitle."
+                },
+                {
+                    "section": "General",
+                    "problem": "The approved outline includes `What Are PHP Attributes?`, but the article has no section that explains what PHP attributes are or how their syntax works."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The example uses `#[Required]` and `#[Email]`, but defines or imports neither attribute, and it shows no code that reads them or performs validation. These attributes do not validate the data by themselves."
+                }
+            ]
+        ],
+        "04-title-promise": [
+            [
+                {
+                    "section": "General",
+                    "problem": "The title promises “Doctrine Migrations,” and the subtitle promises “Symfony code,” but the article does not discuss Doctrine Migrations or show Symfony code."
+                },
+                {
+                    "section": "Understanding the Old Way (Annotations)",
+                    "problem": "This section describes comments in general but never shows an annotation. The validation example compares attributes with manual `if` checks, not with annotations, so the main “instead of annotations” claim is not demonstrated."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The code uses `#[Required]` and `#[Email]`, but defines or imports neither attribute. These are also not Symfony’s usual validation constraints, and attributes alone do not run validation."
+                }
+            ],
+            [
+                {
+                    "section": "General",
+                    "problem": "The title promises “Doctrine Migrations,” and the subtitle promises “Symfony code,” but the article covers neither. It only gives a general PHP validation example."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The example uses `#[Required]` and `#[Email]` without defining or importing these attributes. It also does not show the “external system” that reads them, so the example cannot perform validation as written."
+                },
+                {
+                    "section": "What Are PHP Attributes?",
+                    "problem": "“When you run this method, remember to check these three things first” suggests attributes trigger checks by themselves. Later, the article says an external system reads them."
+                }
+            ],
+            [
+                {
+                    "section": "General",
+                    "problem": "The title says “and Doctrine Migrations,” and the subtitle promises “your Symfony code,” but the article does not discuss Doctrine Migrations or Symfony."
+                },
+                {
+                    "section": "## Attributes in Practice: The Validation Example",
+                    "problem": "The example uses `#[Required]` and `#[Email]`, but does not define these attributes or say which library provides them. The code alone cannot validate the data. The text says an external system reads the attributes, but does not show how validation is run."
+                }
+            ]
+        ],
+        "05-clean": [
+            [
+                {
+                    "section": "General",
+                    "problem": "The article starts with `## Introduction: Why Clean Code Matters`. It has no `#` title or subtitle line, though the article format calls for both."
+                },
+                {
+                    "section": "Understanding the Old Way (Annotations)",
+                    "problem": "The heading uses “Annotations,” but the section never clearly explains what an annotation is or shows one. It only describes “special tags or comments.”"
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The “Clean ‘After’ Way” uses `#[Required]` and `#[Email]`, but defines neither attribute nor a system that reads them. PHP attributes store metadata; they do not validate the data by themselves."
+                }
+            ],
+            [
+                {
+                    "section": "General",
+                    "problem": "The article starts with `## Introduction: Why Clean Code Matters`. It has no `#` title or subtitle, so the required title and subtitle are missing."
+                },
+                {
+                    "section": "What Are PHP Attributes?",
+                    "problem": "The article says, “When you run this method, remember to check these three things first.” PHP attributes do not run checks by themselves; they store metadata for code or a tool to read."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The example uses `#[Required]` and `#[Email]`, but it does not define these attribute classes or name a framework that provides them. The snippet alone cannot perform validation."
+                }
+            ],
+            [
+                {
+                    "section": "General",
+                    "problem": "The article starts with `## Introduction: Why Clean Code Matters` and has no `# ` title or subtitle. The title and subtitle are therefore missing."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The example uses `#[Required]` and `#[Email]`, but neither attribute class nor a validator is defined. PHP does not validate the properties automatically, so this example cannot perform the validation it describes."
+                },
+                {
+                    "section": "Understanding the Old Way (Annotations)",
+                    "problem": "The section describes comments and special tags but does not show an annotation example. It also says these “used to feel like annotations,” which does not explain that PHP developers used comment-based annotations processed by tools or libraries."
+                }
+            ]
+        ],
+        "07-undefined-term": [
+            [
+                {
+                    "section": "General",
+                    "problem": "The article starts with `## Introduction: Why Clean Code Matters` and has no `# ` title or `## ` subtitle."
+                },
+                {
+                    "section": "Understanding the Old Way (Annotations)",
+                    "problem": "This section describes special comments, but gives no annotation example. The later “Before” code uses ordinary `if` checks, not annotations, so it does not show the old way the heading promises."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The snippet uses `#[Required]` and `#[Email]`, but defines neither attribute class nor the external system that reads them. As shown, the code does not validate the data."
+                },
+                {
+                    "section": "What Are PHP Attributes?",
+                    "problem": "“When you run this method, remember to check these three things first” suggests attributes run checks by themselves. Later, the article says an external system reads them."
+                }
+            ],
+            [
+                {
+                    "section": "General",
+                    "problem": "The article has no `# ` title line, although the article format says this line is the chosen title."
+                },
+                {
+                    "section": "Understanding the Old Way (Annotations)",
+                    "problem": "The section describes annotations in words, but shows no annotation example. The “Before” code later is ordinary validation code, not annotations, so readers cannot compare the old and new ways promised by the article."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The code uses `#[Required]` and `#[Email]`, but defines neither attribute nor a reader that performs validation. As written, these labels do not validate the properties."
+                },
+                {
+                    "section": "What Are PHP Attributes?",
+                    "problem": "“When you run this method, remember to check these three things first” suggests attributes make checks happen automatically. Attributes only store metadata; code or a library must read it and act on it."
+                }
+            ],
+            [
+                {
+                    "section": "General",
+                    "problem": "The article has no `# ` title or subtitle line. It starts with `## Introduction: Why Clean Code Matters`, which is a section heading, not the chosen title and subtitle."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The example uses `#[Required]` and `#[Email]`, but defines neither attribute class nor a validator that reads and applies them. The earlier claim that attributes make the system check rules when a method runs also suggests they act automatically; they only store metadata."
+                },
+                {
+                    "section": "Attributes in Practice: The Validation Example",
+                    "problem": "The beginner-facing text uses “boilerplate code” without explaining the term: “This meant writing boilerplate code that repeated itself across many methods.”"
+                }
+            ]
         ]
     },
-    "cost": 0.0112014
+    "tokens": {
+        "gpt-6-luna": [
+            28254,
+            21502
+        ]
+    },
+    "cost": 0.013576399999999999
 }

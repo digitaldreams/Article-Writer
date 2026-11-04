@@ -57,6 +57,7 @@ final readonly class CheckArticleHandler
         $answer = $this->agent->call(new MessageBag(
             Message::ofUser($this->twig->render('planning/final_check/_check_request.md.twig', [
                 ...$plan,
+                'outline' => self::outlineHeadings($plan['outline']),
                 'headings' => array_keys(ArticleSections::split($body)),
                 'body' => $body,
             ])),
@@ -67,5 +68,11 @@ final readonly class CheckArticleHandler
 
         // ponytail: a weak model may return too many; the first ones matter most
         return \array_slice($answer->notes, 0, self::MAX_NOTES);
+    }
+
+    /** Only the outline's headings: the text under them made the model treat a missing section as covered. */
+    public static function outlineHeadings(?string $outline): ?string
+    {
+        return null === $outline ? null : implode("\n\n", preg_grep('/^#{2,3} /', explode("\n", $outline)));
     }
 }

@@ -43,6 +43,25 @@ final class FinalCheckTest extends PlanningTestCase
         self::assertSelectorTextSame('nav.steps [aria-current]', 'Final check');
     }
 
+    public function testTheCheckSendsTheOutlineHeadingsNotTheTextUnderThem(): void
+    {
+        $article = $this->writtenArticle();
+        $this->folder()->write($article->getFolder(), 'outline.md', ['plan_id' => $article->getId()], "## Setup: install\n\nExplain how to install it with Composer.\n\n### Usage: call\n\nShow one call.\n");
+        $prompt = '';
+        $this->fakePrimary(static function ($input) use (&$prompt) {
+            $prompt = (string) $input->getUserMessage()?->asText();
+
+            return self::report();
+        });
+
+        $this->client->request('POST', $this->url($article));
+        $this->consume();
+
+        self::assertStringContainsString("# outline.md (the approved outline)\n## Setup: install\n\n### Usage: call", $prompt);
+        self::assertStringNotContainsString('Explain how to install', $prompt);
+        self::assertStringNotContainsString('Show one call', $prompt);
+    }
+
     public function testANewCheckReplacesTheOldNotes(): void
     {
         $article = $this->writtenArticle();
