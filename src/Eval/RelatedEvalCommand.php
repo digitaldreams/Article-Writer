@@ -4,6 +4,7 @@ namespace App\Eval;
 
 use App\Planning\FindRelated\CandidateRetriever;
 use App\Planning\FindRelated\FindRelated;
+use App\Planning\FindRelated\JudgeRelated;
 use App\Planning\FindRelated\RelatedLink;
 use App\Shared\Llm\LlmCost;
 use Symfony\AI\Platform\Event\ResultConvertedEvent;
@@ -29,6 +30,7 @@ final readonly class RelatedEvalCommand
     public function __construct(
         private FindRelated $finder,
         private CandidateRetriever $retriever,
+        private JudgeRelated $judge,
         #[Autowire(service: 'app.find_related_tools')]
         private FindRelated $finderWithTools,
         private LlmCost $cost,
@@ -47,9 +49,15 @@ final readonly class RelatedEvalCommand
         #[Option('Runs per query; the model answers differently each time')] int $runs = 3,
         #[Option('Dataset folder under evals/datasets/')] string $dataset = 'related',
         #[Option('Let the model call read_article (subtitle + headings) on candidates')] bool $tools = false,
+        #[Option('Sub-agents: one separate model call per candidate (needs --top)')] bool $judge = false,
         #[Option('Send only the K best candidates by word overlap (0 = all)')] int $top = 0,
         #[Option('Extra made-up distractor titles added to every candidate list (grows the haystack)')] int $pad = 0,
     ): int {
+        if ($judge && $top < 1) {
+            $io->error('--judge needs --top=K: one call per candidate gets expensive fast.');
+
+            return Command::INVALID;
+        }
         $dir = "{$this->projectDir}/evals/datasets/$dataset";
         $corpus = array_column(json_decode((string) file_get_contents("$dir/corpus.json"), true, flags: \JSON_THROW_ON_ERROR), null, 'id');
         $cases = json_decode((string) file_get_contents("$dir/cases.json"), true, flags: \JSON_THROW_ON_ERROR)['cases'];
@@ -83,7 +91,7 @@ final readonly class RelatedEvalCommand
             }
             for ($run = 0; $run < $runs; ++$run) {
                 $steps[] = []; // a new ask starts: its model calls are its steps
-                $ids = array_map(static fn (RelatedLink $l) => $l->id, ($tools ? $this->finderWithTools : $this->finder)->ask($query['title'], $query['subtitle'], $query['headings'], $candidates));
+                $ids = array_map(static fn (RelatedLink $l) => $l->id, ($judge ? $this->judge : ($tools ? $this->finderWithTools : $this->finder))->ask($query['title'], $query['subtitle'], $query['headings'], $candidates));
                 $log[$query['id']][] = $ids;
                 foreach ($case['expected'] as $expected) {
                     $planted["{$query['id']}>$expected"][] = \in_array($expected, $ids, true) ? Score::FOUND : Score::MISSED;
@@ -119,7 +127,7 @@ final readonly class RelatedEvalCommand
         $file = \sprintf('%s/var/evals/%s-%s-%s.json', $this->projectDir, $dataset, date('Ymd-His'), $this->model);
         @mkdir(\dirname($file), recursive: true);
         file_put_contents($file, json_encode([
-            'platform' => $provider, 'model' => $this->model, 'dataset' => $dataset, 'runs' => $runs, 'candidates' => \count($corpus) - 1 + $pad, 'pad' => $pad, 'tools' => $tools, 'top' => $top, 'retrieved' => $retrieved, 'model_calls' => $calls, 'steps' => $steps,
+            'platform' => $provider, 'model' => $this->model, 'dataset' => $dataset, 'runs' => $runs, 'candidates' => \count($corpus) - 1 + $pad, 'pad' => $pad, 'tools' => $tools, 'judge' => $judge, 'top' => $top, 'retrieved' => $retrieved, 'model_calls' => $calls, 'steps' => $steps,
             'recall' => $score->recall(), 'interval' => [$low, $high], 'extras' => $extras, 'planted' => $planted, 'links' => $log, 'tokens' => $tokens, 'cost' => $cost,
         ], \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR));
         $io->comment('Saved '.substr($file, \strlen($this->projectDir) + 1));

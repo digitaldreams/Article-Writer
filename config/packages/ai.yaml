@@ -103,6 +103,12 @@ ai:
                 file: '%kernel.project_dir%/prompts/related_tools_agent.md'
             tools:
                 - App\Planning\FindRelated\ReadArticle
+        # One call per candidate: does this ONE older article fit the article in progress? (sub-agent; context-engineering ch. 13)
+        related_judge:
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/related_judge_agent.md'
         # Refactors the whole article from the final-check notes the writer picked.
         refactor:
             platform: '%app.ai.primary_platform%'
