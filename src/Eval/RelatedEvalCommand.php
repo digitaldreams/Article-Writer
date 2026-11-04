@@ -42,6 +42,7 @@ final readonly class RelatedEvalCommand
         SymfonyStyle $io,
         #[Option('Runs per query; the model answers differently each time')] int $runs = 3,
         #[Option('Dataset folder under evals/datasets/')] string $dataset = 'related',
+        #[Option('Extra made-up distractor titles added to every candidate list (grows the haystack)')] int $pad = 0,
     ): int {
         $dir = "{$this->projectDir}/evals/datasets/$dataset";
         $corpus = array_column(json_decode((string) file_get_contents("$dir/corpus.json"), true, flags: \JSON_THROW_ON_ERROR), null, 'id');
@@ -63,6 +64,7 @@ final readonly class RelatedEvalCommand
         foreach ($cases as $case) {
             $query = $corpus[$case['query']];
             $candidates = array_values(array_map(static fn (array $a) => ['id' => $a['id'], 'title' => $a['title']], array_filter($corpus, static fn (array $a) => $a['id'] !== $query['id'])));
+            $candidates = [...$candidates, ...self::distractors($pad)];
             for ($run = 0; $run < $runs; ++$run) {
                 $ids = array_map(static fn (RelatedLink $l) => $l->id, $this->finder->ask($query['title'], $query['subtitle'], $query['headings'], $candidates));
                 $log[$query['id']][] = $ids;
@@ -94,7 +96,7 @@ final readonly class RelatedEvalCommand
         $file = \sprintf('%s/var/evals/%s-%s-%s.json', $this->projectDir, $dataset, date('Ymd-His'), $this->model);
         @mkdir(\dirname($file), recursive: true);
         file_put_contents($file, json_encode([
-            'platform' => $provider, 'model' => $this->model, 'dataset' => $dataset, 'runs' => $runs, 'candidates' => \count($corpus) - 1,
+            'platform' => $provider, 'model' => $this->model, 'dataset' => $dataset, 'runs' => $runs, 'candidates' => \count($corpus) - 1 + $pad, 'pad' => $pad,
             'recall' => $score->recall(), 'interval' => [$low, $high], 'extras' => $extras, 'planted' => $planted, 'links' => $log, 'tokens' => $tokens, 'cost' => $cost,
         ], \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR));
         $io->comment('Saved '.substr($file, \strlen($this->projectDir) + 1));
@@ -107,5 +109,22 @@ final readonly class RelatedEvalCommand
         $io->success('Within the floor.');
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * Made-up titles on topics unrelated to the corpus, ids from 1000. Deterministic, so runs are comparable.
+     *
+     * @return list<array{id: int, title: string}>
+     */
+    private static function distractors(int $n): array
+    {
+        $subjects = ['Kubernetes', 'PostgreSQL indexes', 'Rust lifetimes', 'CSS grid', 'Terraform modules', 'React hooks', 'Redis streams', 'GraphQL schemas', 'Docker layers', 'Nginx caching', 'Go channels', 'Kafka partitions', 'Vue stores', 'SQLite WAL', 'Elasticsearch mappings', 'OAuth scopes', 'WebSocket scaling', 'Ansible roles', 'Tailwind themes', 'Prometheus alerts'];
+        $angles = ['A Practical Guide to', 'Common Mistakes with', 'Mastering', 'Debugging', 'Testing', 'Scaling', 'Migrating to', 'Securing'];
+        $out = [];
+        for ($i = 0; $i < $n; ++$i) {
+            $out[] = ['id' => 1000 + $i, 'title' => $angles[intdiv($i, \count($subjects)) % \count($angles)].' '.$subjects[$i % \count($subjects)].($i >= \count($angles) * \count($subjects) ? ', Part '.(intdiv($i, \count($angles) * \count($subjects)) + 1) : '')];
+        }
+
+        return $out;
     }
 }
