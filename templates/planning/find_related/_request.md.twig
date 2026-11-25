@@ -1,0 +1,13 @@
+# Article in progress
+Title: {{ title }}
+Subtitle: {{ subtitle }}
+
+Section headings:
+{% for heading in headings %}
+- {{ heading }}
+{% endfor %}
+
+# The writer's older articles (id: title)
+{% for candidate in candidates %}
+{{ candidate.id }}: {{ candidate.title }}
+{% endfor %}

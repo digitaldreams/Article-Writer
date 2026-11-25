@@ -4,7 +4,6 @@ namespace App\Planning\FinalCheck;
 
 use App\Planning\ArticleSections;
 use App\Shared\Article\Article;
-use App\Shared\Llm\AgentAnswer;
 use App\Shared\Storage\ArticleFolder;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\AgentInterface;
@@ -55,18 +54,25 @@ final readonly class CheckArticleHandler
      */
     public function ask(array $plan, string $body, string $languageLevel): array
     {
-        $answer = AgentAnswer::object($this->agent->call(new MessageBag(
+        $answer = $this->agent->call(new MessageBag(
             Message::ofUser($this->twig->render('planning/final_check/_check_request.md.twig', [
                 ...$plan,
+                'outline' => self::outlineHeadings($plan['outline']),
                 'headings' => array_keys(ArticleSections::split($body)),
                 'body' => $body,
             ])),
         ), ['response_format' => CheckReport::class, 'template_vars' => [
             'max' => self::MAX_NOTES,
             'language_level' => $languageLevel,
-        ]]), CheckReport::class);
+        ]])->asObject(CheckReport::class);
 
         // ponytail: a weak model may return too many; the first ones matter most
         return \array_slice($answer->notes, 0, self::MAX_NOTES);
+    }
+
+    /** Only the outline's headings: the text under them made the model treat a missing section as covered. */
+    public static function outlineHeadings(?string $outline): ?string
+    {
+        return null === $outline ? null : implode("\n\n", preg_grep('/^#{2,3} /', explode("\n", $outline)));
     }
 }

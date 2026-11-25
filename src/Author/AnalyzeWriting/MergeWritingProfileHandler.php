@@ -3,7 +3,6 @@
 namespace App\Author\AnalyzeWriting;
 
 use App\Author\WritingNote;
-use App\Shared\Llm\AgentAnswer;
 use App\Shared\Llm\LlmJob;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\AgentInterface;
@@ -47,9 +46,9 @@ final readonly class MergeWritingProfileHandler
             'samples' => $i < 10 ? $n->samples : [],
         ], $notes, array_keys($notes));
 
-        $answer = AgentAnswer::object($this->agent->call(new MessageBag(
+        $answer = $this->agent->call(new MessageBag(
             Message::ofUser(json_encode($notes, \JSON_THROW_ON_ERROR)),
-        ), ['response_format' => WritingProfileAnswer::class, 'template_vars' => ['language_level' => $user->getLanguageLevel()]]), WritingProfileAnswer::class);
+        ), ['response_format' => WritingProfileAnswer::class, 'template_vars' => ['language_level' => $user->getLanguageLevel()]])->asObject(WritingProfileAnswer::class);
 
         $user->setWritingProfile([
             'openingType' => $answer->openingType,

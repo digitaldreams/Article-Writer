@@ -1,0 +1,6 @@
+{
+    "kind": "code",
+    "section": "Survive Failures using Retries and a Failure Transport",
+    "needle": "rdeelivery",
+    "planted": "In a snippet, the variable $redelivery is used as $rdeelivery (line 632 of 717, 88% into the article)."
+}

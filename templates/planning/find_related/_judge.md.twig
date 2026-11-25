@@ -1,0 +1,17 @@
+# Article in progress
+Title: {{ title }}
+Subtitle: {{ subtitle }}
+
+Section headings:
+{% for heading in headings %}
+- {{ heading }}
+{% endfor %}
+
+# Older article to judge (id {{ candidate.id }})
+Title: {{ candidate.title }}
+Subtitle: {{ candidate.subtitle ?? '' }}
+
+Section headings:
+{% for heading in candidate.headings ?? [] %}
+- {{ heading }}
+{% endfor %}

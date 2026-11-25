@@ -1,0 +1,25 @@
+# idea.md
+{{ idea }}
+
+# outline.md
+{{ outline }}
+{% if answers %}
+
+# answers.md
+{{ answers }}
+{% endif %}
+{% if references is not empty %}
+
+# References
+{% for reference in references %}
+- {{ reference.location }}: {{ reference.text }}
+{% endfor %}
+{% endif %}
+{% if structure_profile is not empty %}
+
+# The writer's usual structure
+{% for key, value in structure_profile %}
+- {{ key }}: {{ value }}
+{% endfor %}
+{% endif %}
+{% include 'planning/_voice.md.twig' %}

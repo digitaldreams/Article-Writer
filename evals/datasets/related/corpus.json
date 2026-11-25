@@ -1,0 +1,285 @@
+[
+  {
+    "id": 1,
+    "title": "Symfony Security Architecture Explained",
+    "subtitle": "",
+    "headings": [
+      "How firewalls, authenticators, and user providers work together",
+      "What is a Firewall?",
+      "The Authenticator Contract",
+      "2. authenticate(Request $request): Passport",
+      "3. createToken(Passport $passport, string $firewallName): TokenInterface",
+      "4. onAuthenticationSuccess(…): ?Response",
+      "5. onAuthenticationFailure(…): Response"
+    ]
+  },
+  {
+    "id": 4,
+    "title": "PHP Property Type Safety from PHP 7.4 to PHP 8.4",
+    "subtitle": "Learn typed properties, constructor property promotion, readonly properties, property hooks, and asymmetric visibility",
+    "headings": [
+      "How PHP moved beyond unclear properties",
+      "Before typed properties: values had few rules",
+      "Typed properties: set rules for values",
+      "Constructor property promotion: less setup code",
+      "Readonly properties: protect initialized values",
+      "Property hooks: check or calculate values at access",
+      "Asymmetric visibility: allow reads, limit writes",
+      "Choose the right feature and check support"
+    ]
+  },
+  {
+    "id": 6,
+    "title": "Mastering SOLID: PHP Patterns for Maintainable Code",
+    "subtitle": "From single responsibility to interface segregation, guide your PHP application growth safely",
+    "headings": [
+      "Introduction: SOLID in a Real PHP Feature",
+      "Start with the Messy Shopping Cart",
+      "Make Each Class Have One Job",
+      "Add a Payment Method Without Editing Checkout",
+      "Keep Payment Methods Interchangeable",
+      "Depend on a Payment Contract",
+      "Keep Interfaces Small and Useful",
+      "Review the Refactored Cart",
+      "Conclusion: From Messy Code to a Clear Structure"
+    ]
+  },
+  {
+    "id": 7,
+    "title": "PHP SPL: Powerful Tools for Cleaner, Faster Code",
+    "subtitle": "",
+    "headings": [
+      "The file search that hides a bigger idea",
+      "Why SPL is easy to miss",
+      "Walk through folders with SPL",
+      "Filter the files you need",
+      "Send matching files to a queue",
+      "Prioritize work with a heap",
+      "Choose the right SPL structure",
+      "Read and inspect files with SPL",
+      "Keep the benefit claims honest",
+      "Make SPL part of daily PHP work"
+    ]
+  },
+  {
+    "id": 9,
+    "title": "Symfony for Laravel Developers: A Component Deep Dive",
+    "subtitle": "Learn how modern PHP Attributes simplify routing, data mapping, and service container wiring",
+    "headings": [
+      "The Laravel Mindset: Setting the Stage",
+      "Modern PHP Power: Attributes vs. YAML",
+      "Building Web Logic with Attributes",
+      "Easy Data Input and Output (CRUD Focus)",
+      "Powering Up the Command Line (Artisan Equivalent)",
+      "Beyond the Basics: Components Made Easy",
+      "Next Steps: The Symfony Journey"
+    ]
+  },
+  {
+    "id": 12,
+    "title": "PHP attributes instead of annotations",
+    "subtitle": "",
+    "headings": [
+      "Introduction: Why Clean Code Matters",
+      "Understanding the Old Way (Annotations)",
+      "What Are PHP Attributes?",
+      "Attributes in Practice: The Validation Example",
+      "Key Takeaway: Writing Better Code"
+    ]
+  },
+  {
+    "id": 24,
+    "title": "Domain Driven Design in Symfony",
+    "subtitle": "When Code Is Cheap, Design Is Everything.",
+    "headings": [
+      "Business Lasts for Years. Frameworks Come and Go.",
+      "Where DDD Starts: Talk to the Domain Expert",
+      "Domain",
+      "Application",
+      "Look at the Dependencies",
+      "Infrastructure",
+      "Back to the Domain: Domain Events",
+      "Talk Between Bounded Contexts",
+      "Conclusion"
+    ]
+  },
+  {
+    "id": 25,
+    "title": "Vertical Slice Architecture: Keep Related Code Together for Complex Laravel Apps",
+    "subtitle": "",
+    "headings": [
+      "A Better Way: Organize by Business Features",
+      "How VSA Works in Practice",
+      "Connecting Features Without Creating Mess",
+      "Scaling VSA for Larger Applications",
+      "Rules and Guidelines for Success",
+      "Testing Your VSA Features",
+      "The Trade-offs You Need to Know",
+      "Moving from Traditional to VSA Structure",
+      "Is VSA Right for Your Project?"
+    ]
+  },
+  {
+    "id": 26,
+    "title": "Symfony Security Architecture Explained",
+    "subtitle": "How firewalls, authenticators, and user providers work\\_together",
+    "headings": [
+      "The Big Picture",
+      "Further Reading"
+    ]
+  },
+  {
+    "id": 27,
+    "title": "Software Development Life Cycle Basics",
+    "subtitle": "From idea to final product — everything you need to\\_know",
+    "headings": []
+  },
+  {
+    "id": 28,
+    "title": "How to Upgrade Your Website Step by Step",
+    "subtitle": "Simple strategies for developers to update websites without breaking\\_anything",
+    "headings": []
+  },
+  {
+    "id": 29,
+    "title": "Mastering Symfony Service Container: Modern PHP Attributes Edition",
+    "subtitle": "From YAML Chaos to Attribute Clarity",
+    "headings": [
+      "Services.yaml for global configuration",
+      "What is Dependency Injection? (Quick Recap)",
+      "Create Product Service (The Basics)",
+      "Notify Admin When New Product Created using Injection",
+      "Show products from different vendors using Service Tag",
+      "Apply discount to products using Service Decorator",
+      "Handling Uploads: Service Selection Strategy (Service Locators)",
+      "Conclusion"
+    ]
+  },
+  {
+    "id": 30,
+    "title": "Mastering Symfony’s Service Container: With Real-life Examples",
+    "subtitle": "",
+    "headings": [
+      "What is a service container?",
+      "What is dependency injection?",
+      "Github Repo",
+      "How to create a service in services.yaml",
+      "Create Product",
+      "Notify admin when new product created",
+      "Decoupling ProductRepository using Dependency Inversion Principle",
+      "Show products from different vendors",
+      "Apply discount to products",
+      "Handling uploads"
+    ]
+  },
+  {
+    "id": 31,
+    "title": "10 Ways to Build Better Development Teams",
+    "subtitle": "Simple strategies to turn junior developers into\\_experts",
+    "headings": [
+      "1. Basic Software Engineering Knowledge",
+      "2. Keep up to date with Frameworks &amp; Languages",
+      "3. Team coding Guideline",
+      "4. Practical knowledge of Design Patterns",
+      "5. Testing &amp; Problem Solving",
+      "6. Weekly/Monthly group discussion about Tools / Skills / Topics",
+      "7. Code Quality Reviews by Another Developer",
+      "8. Pair Programming (Second opinion matters)",
+      "9. Training",
+      "10. Performance Bonus and appreciation",
+      "Conclusion"
+    ]
+  },
+  {
+    "id": 32,
+    "title": "Website Speed Optimisation: The Ultimate Guide",
+    "subtitle": "",
+    "headings": [
+      "Invokable Controller",
+      "Run background job for heavy task",
+      "Stop returning unnecessary data",
+      "Text Compression",
+      "Link Tag",
+      "Link Header with 103 Early Hints",
+      "Image Compression",
+      "Web Worker",
+      "Use of Defer and Async in Script Tag and css",
+      "Minify Css and Javascript",
+      "Module Preload",
+      "Dynamic Import"
+    ]
+  },
+  {
+    "id": 33,
+    "title": "Standard PHP Library From A to Z",
+    "subtitle": "",
+    "headings": [
+      "1. Interface",
+      "2. Data Structure",
+      "3. Iterators"
+    ]
+  },
+  {
+    "id": 34,
+    "title": "Mastering Symfony Messenger for robust service architecture",
+    "subtitle": "Implementing Commands, Events, Handlers, and resilient custom Transports in Symfony",
+    "headings": [
+      "Implementing Commands, Events, Handlers, and resilient custom Transports in Symfony",
+      "Meet the Shop and the Warehouse",
+      "Commands vs. Events",
+      "The Messenger Toolkit",
+      "Place the Order using the Message Bus",
+      "Handle the Order using a Handler",
+      "Move the Work to the Background using RabbitMQ",
+      "Step 1. Start RabbitMQ",
+      "Step 2. Install the AMQP transport",
+      "Step 3. Route the message to a transport",
+      "Ask the Warehouse for Stock using Message Chaining",
+      "Meet the Warehouse: Why the Default Serializer Breaks"
+    ]
+  },
+  {
+    "id": 35,
+    "title": "How PHP attribute make symfony Easier",
+    "subtitle": "",
+    "headings": [
+      "Introduction: The Old Way of Doing Things in Symfony",
+      "The Limits of Old Techniques (Annotations)",
+      "The Modern Solution: Understanding PHP Attributes",
+      "What is an Attribute?",
+      "Attributes in Action: Simplifying Routing and Controllers",
+      "The Old Way (Conceptual)",
+      "The New Way: Using `[Route]`",
+      "Automating Configuration and Dependency Injection",
+      "Understanding Dependency Injection (DI)",
+      "Attributes Keep Things Tidy",
+      "Beyond Controllers: Using Attributes in Data Mapping (Doctrine)",
+      "Best Practices: Embracing Modern, Attribute-Driven Code"
+    ]
+  },
+  {
+    "id": 36,
+    "title": "How to Stop Using Crontab for Symfony Tasks",
+    "subtitle": "A guide to implementing reliable job scheduling with Symfony Scheduler and Messenger consumers",
+    "headings": [
+      "The Crontab Pain Point",
+      "Move the Schedule into PHP using Symfony Scheduler",
+      "Setup and Defining Tasks",
+      "Running the Scheduler",
+      "Handling Job Safety",
+      "Summary and Next Steps"
+    ]
+  },
+  {
+    "id": 38,
+    "title": "[REFACTOR TEST] Symfony Clock component",
+    "subtitle": "",
+    "headings": [
+      "Stop waiting for real time in tests",
+      "Use a clock object to make time a dependency",
+      "Give the trial service its clock",
+      "Move time forward with MockClock",
+      "Replace flaky waits with a clock-based test"
+    ]
+  }
+]

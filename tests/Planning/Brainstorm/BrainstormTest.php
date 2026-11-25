@@ -154,6 +154,15 @@ final class BrainstormTest extends PlanningTestCase
         self::assertSelectorTextContains('details.reference .reference-digest', 'Symfony 8 uses #[Route] on controllers.');
     }
 
+    public function testAddingReferencesWarnsToUseOnlyTrustedSourcesAndALockedPageDoesNot(): void
+    {
+        $this->client->request('GET', '/plans/'.$this->planIn(ArticleState::Plan)->getId().'/brainstorm');
+        self::assertSelectorTextContains('.notice-warning', 'Add only sources you know and trust.');
+
+        $this->client->request('GET', '/plans/'.$this->planIn(ArticleState::Questions)->getId().'/brainstorm');
+        self::assertSelectorNotExists('.notice-warning');
+    }
+
     public function testAfterNextTheBrainstormIsReadOnly(): void
     {
         $article = $this->planIn(ArticleState::Questions);
@@ -165,7 +174,7 @@ final class BrainstormTest extends PlanningTestCase
         self::assertSelectorTextContains('.plan-input', 'PHP developers');
         self::assertSelectorTextContains('.notes', 'Typed properties, hooks');
 
-        foreach (['/brainstorm', '/brainstorm/notes', '/brainstorm/next'] as $path) {
+        foreach (['/references', '/brainstorm/notes', '/brainstorm/next'] as $path) {
             $this->client->request('POST', '/plans/'.$id.$path, ['roughFlow' => 'late']);
             self::assertResponseStatusCodeSame(409, $path);
         }

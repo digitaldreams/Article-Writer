@@ -48,6 +48,6 @@ final readonly class Judge
         ), ['response_format' => Verdict::class, 'template_vars' => [
             'planted_problem' => $planted,
             'checker_notes' => $list,
-        ]])->asObject();
+        ]])->asObject(Verdict::class);
     }
 }

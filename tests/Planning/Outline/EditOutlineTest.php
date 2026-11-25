@@ -1,0 +1,172 @@
+<?php
+
+namespace App\Tests\Planning\Outline;
+
+use App\Planning\Outline\GenerateOutline;
+use App\Planning\Outline\OutlineAnswer;
+use App\Planning\Outline\ProposedItem;
+use App\Planning\Outline\OutlineItem;
+use App\Planning\Outline\OutlineItems;
+use App\Shared\Article\Article;
+use App\Shared\Article\ArticleState;
+use App\Shared\Llm\LlmJob;
+use App\Tests\Planning\PlanningTestCase;
+use Symfony\AI\Platform\Result\ObjectResult;
+
+final class EditOutlineTest extends PlanningTestCase
+{
+    public function testAnEditSurvivesAReloadAndIsMarkedAsAHandEdit(): void
+    {
+        [$article, [$first]] = $this->outlineRoundOne();
+
+        $this->client->request('POST', $this->itemUrl($article, $first), ['title' => 'The real pain', 'summary' => 'Bugs from untyped code.']);
+        self::assertResponseStatusCodeSame(204);
+        $this->client->request('GET', '/plans/'.$article->getId().'/outline');
+
+        self::assertSelectorExists('input[value="The real pain"]');
+        self::assertTrue($this->em()->find(OutlineItem::class, $first->getId())?->isEditedByHand());
+    }
+
+    public function testAnItemCanBeAddedAndRemoved(): void
+    {
+        [$article, [$first]] = $this->outlineRoundOne();
+
+        $this->client->request('POST', '/plans/'.$article->getId().'/outline/items', ['title' => 'Property hooks', 'summary' => 'Get and set logic.']);
+        $this->client->request('POST', $this->itemUrl($article, $first), ['remove' => '1']);
+
+        self::assertSame(['Typed properties', 'Property hooks'], array_map(static fn (OutlineItem $i) => $i->getTitle(), $this->outline()->latest($this->reload($article))));
+    }
+
+    public function testAnItemMovesUpAndDownWithoutCountingAsAHandEdit(): void
+    {
+        [$article, [$first, $second]] = $this->outlineRoundOne();
+        $this->em()->persist(new OutlineItem($article, 1, 2, 'Hooks', 'Get and set.'));
+        $this->em()->flush();
+        $titles = fn () => array_map(static fn (OutlineItem $i) => $i->getTitle(), $this->outline()->latest($this->reload($article)));
+
+        $this->client->request('POST', $this->itemUrl($article, $second), ['move' => 'up']);
+        self::assertResponseRedirects('/plans/'.$article->getId().'/outline#item-'.$second->getId(), 303);
+        self::assertSame(['Typed properties', 'The old pain', 'Hooks'], $titles());
+
+        $this->client->request('POST', $this->itemUrl($article, $first), ['move' => 'down']);
+        self::assertSame(['Typed properties', 'Hooks', 'The old pain'], $titles());
+        self::assertFalse($this->em()->find(OutlineItem::class, $first->getId())?->isEditedByHand());
+
+        $this->client->request('POST', $this->itemUrl($article, $first), ['move' => 'down']);
+        self::assertSame(['Typed properties', 'Hooks', 'The old pain'], $titles());
+    }
+
+    public function testTheFirstItemHasNoUpAndTheLastNoDown(): void
+    {
+        [$article, [$first, $second]] = $this->outlineRoundOne();
+
+        $this->client->request('GET', '/plans/'.$article->getId().'/outline');
+
+        self::assertSelectorNotExists('#item-'.$first->getId().' button[value=up]');
+        self::assertSelectorExists('#item-'.$first->getId().' button[value=down]');
+        self::assertSelectorExists('#item-'.$second->getId().' button[value=up]');
+        self::assertSelectorNotExists('#item-'.$second->getId().' button[value=down]');
+    }
+
+    public function testMovingOutsideTheOutlineStepIsAConflict(): void
+    {
+        [$article, [, $second]] = $this->outlineRoundOne();
+        $article->moveTo(ArticleState::Approved);
+        $this->em()->flush();
+
+        $this->client->request('POST', $this->itemUrl($article, $second), ['move' => 'up']);
+
+        self::assertResponseStatusCodeSame(409);
+    }
+
+    public function testADirectionChangeShowsRoundTwoWhenItsJobIsDone(): void
+    {
+        [$article] = $this->outlineRoundOne();
+        $prompt = '';
+        $this->fakePrimary(static function ($input) use (&$prompt) {
+            $prompt = (string) $input->getUserMessage()?->asText();
+
+            return new ObjectResult(new OutlineAnswer([new ProposedItem('A real bug', 'Start with it.')]));
+        });
+
+        $this->client->request('POST', '/plans/'.$article->getId().'/outline/direction', ['instruction' => 'Start with a real bug']);
+        $this->consume();
+        $this->client->request('GET', '/plans/'.$article->getId().'/outline');
+
+        self::assertSelectorTextContains('.page-head', 'Round 2');
+        self::assertSelectorExists('input[value="A real bug"]');
+        self::assertStringContainsString('The writer asks for this change: Start with a real bug', $prompt);
+        self::assertStringContainsString('1. The old pain', $prompt);
+    }
+
+    public function testADirectionChangeNeedsAnInstruction(): void
+    {
+        [$article] = $this->outlineRoundOne();
+
+        $this->client->request('POST', '/plans/'.$article->getId().'/outline/direction', ['instruction' => ' ']);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('.field-error', 'Say what should change.');
+    }
+
+    public function testAReplayOfTheSameRoundAddsNothing(): void
+    {
+        [$article] = $this->outlineRoundOne();
+        $this->fakePrimary(static fn () => new ObjectResult(new OutlineAnswer([new ProposedItem('Extra', 'Should not appear.')])));
+
+        self::getContainer()->get('messenger.bus.default')->dispatch(new GenerateOutline(1, (int) $article->getId(), 1));
+        $this->consume();
+
+        self::assertCount(2, $this->outline()->ofRound($this->reload($article), 1));
+    }
+
+    /** A second tab can still post: the new round would take the same number and drop the instruction, and edits would vanish under it. */
+    public function testTheOutlineIsLockedWhileARoundIsGenerating(): void
+    {
+        [$article, [$first]] = $this->outlineRoundOne();
+        $this->client->request('POST', '/plans/'.$article->getId().'/outline/direction', ['instruction' => 'Start with a real bug']);
+
+        $this->client->request('POST', '/plans/'.$article->getId().'/outline/direction', ['instruction' => 'No, start with a story']);
+        self::assertResponseStatusCodeSame(409);
+        $this->client->request('POST', $this->itemUrl($article, $first), ['title' => 'Edited meanwhile']);
+        self::assertResponseStatusCodeSame(409);
+        $this->client->request('POST', '/plans/'.$article->getId().'/outline/items', ['title' => 'Added meanwhile']);
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame(1, $this->em()->getRepository(LlmJob::class)->count(['step' => 'generate_outline']));
+    }
+
+    public function testEditingOutsideTheOutlineStepIsAConflict(): void
+    {
+        [$article, [$first]] = $this->outlineRoundOne();
+        $article->moveTo(ArticleState::Approved);
+        $this->em()->flush();
+
+        $this->client->request('POST', $this->itemUrl($article, $first), ['title' => 'Late']);
+
+        self::assertResponseStatusCodeSame(409);
+    }
+
+    /** @return array{Article, list<OutlineItem>} */
+    private function outlineRoundOne(): array
+    {
+        $article = $this->planIn(ArticleState::Outline);
+        $items = [new OutlineItem($article, 1, 0, 'The old pain', 'Untyped properties.'), new OutlineItem($article, 1, 1, 'Typed properties', 'What they fix.')];
+        foreach ($items as $item) {
+            $this->em()->persist($item);
+        }
+        $this->em()->flush();
+        self::assertSame(0, $this->em()->getRepository(LlmJob::class)->count([]));
+
+        return [$article, $items];
+    }
+
+    private function itemUrl(Article $article, OutlineItem $item): string
+    {
+        return '/plans/'.$article->getId().'/outline/items/'.$item->getId();
+    }
+
+    private function outline(): OutlineItems
+    {
+        return self::getContainer()->get(OutlineItems::class);
+    }
+}

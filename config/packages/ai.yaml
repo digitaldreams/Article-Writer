@@ -2,20 +2,16 @@ ai:
     platform:
         ollama:
             endpoint: '%env(OLLAMA_ENDPOINT)%'
-            http_client: llm.ollama
+            http_client: llm.slow
         openai:
             api_key: '%env(OPENAI_API_KEY)%'
+            http_client: llm.slow
         anthropic:
             api_key: '%env(ANTHROPIC_API_KEY)%'
+            http_client: llm.slow
         gemini:
             api_key: '%env(GEMINI_API_KEY)%'
-
-    # gpt-6-luna is newer than the bundled OpenAI catalog; same entry as gpt-5.6-luna there.
-    model:
-        openai:
-            gpt-6-luna:
-                class: Symfony\AI\Platform\Bridge\OpenAi\Gpt
-                capabilities: [input-messages, output-text, output-streaming, tool-calling, output-structured, thinking, input-image, input-pdf]
+            http_client: llm.slow
 
     # One agent per LLM step. Each system prompt is a hand-edited prompts/*.md file (read when a worker starts);
     # {name} placeholders are filled from the call's template_vars option.
@@ -63,7 +59,7 @@ ai:
             model: '%env(AI_PRIMARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/article_agent.md'
-        # Rewrites one section on the Improve tab.
+        # Rewrites one section on the Article tab.
         rewrite:
             platform: '%app.ai.primary_platform%'
             model: '%env(AI_PRIMARY_MODEL)%'
@@ -93,6 +89,26 @@ ai:
             model: '%env(AI_PRIMARY_MODEL)%'
             prompt:
                 file: '%kernel.project_dir%/prompts/final_check_agent.md'
+        # Which older articles of the writer the article in progress should link to.
+        related:
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/related_agent.md'
+        # Same job as `related`, but it may call read_article on the candidates it is unsure about.
+        related_tools:
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/related_tools_agent.md'
+            tools:
+                - App\Planning\FindRelated\ReadArticle
+        # One call per candidate: does this ONE older article fit the article in progress? (sub-agent; context-engineering ch. 13)
+        related_judge:
+            platform: '%app.ai.primary_platform%'
+            model: '%env(AI_PRIMARY_MODEL)%'
+            prompt:
+                file: '%kernel.project_dir%/prompts/related_judge_agent.md'
         # Refactors the whole article from the final-check notes the writer picked.
         refactor:
             platform: '%app.ai.primary_platform%'

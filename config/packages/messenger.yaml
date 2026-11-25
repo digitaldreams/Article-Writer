@@ -39,18 +39,18 @@ framework:
             'App\Author\AnalyzeWriting\ExtractWritingNotes': llm_secondary
             'App\Author\AnalyzeWriting\MergeWritingProfile': llm_secondary
             'App\Author\CrossCheckProfile\CrossCheckProfile': llm_primary
-            'App\Planning\DigestReferences\ExtractReference': io
-            'App\Planning\DigestReferences\DigestReference': llm_secondary
-            'App\Planning\AskQuestions\AskQuestions': llm_primary
-            'App\Planning\GenerateOutline\GenerateOutline': llm_primary
-            'App\Planning\WriteArticle\WriteArticle': llm_primary
-            'App\Planning\SuggestTitles\SuggestTitles': llm_primary
-            'App\Planning\SuggestPunchlines\SuggestPunchlines': llm_primary
-            'App\Planning\SuggestPosters\SuggestPosters': llm_primary
-            'App\Planning\SuggestPosters\GeneratePoster': llm_primary
+            'App\Planning\References\ExtractReference': io
+            'App\Planning\References\DigestReference': llm_secondary
+            'App\Planning\Questions\AskQuestions': llm_primary
+            'App\Planning\Outline\GenerateOutline': llm_primary
+            'App\Planning\Article\WriteArticle': llm_primary
+            'App\Planning\Titles\SuggestTitles': llm_primary
+            'App\Planning\Share\SuggestPunchlines': llm_primary
+            'App\Planning\Poster\SuggestPosters': llm_primary
+            'App\Planning\Poster\GeneratePoster': llm_primary
             'App\Planning\FinalCheck\CheckArticle': llm_primary
             'App\Planning\FinalCheck\RefactorArticle': llm_primary
-            'App\Planning\RewriteSection\RewriteSection': llm_primary
+            'App\Planning\Article\RewriteSection': llm_primary
 
 when@test:
     framework:

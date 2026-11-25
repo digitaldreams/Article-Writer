@@ -1,0 +1,54 @@
+{
+  "note": "author-link = the article really links there (see its text). proposed = chosen by reading titles and headings; not reviewed by the author.",
+  "cases": [
+    {
+      "query": 24,
+      "expected": [
+        29,
+        25,
+        6
+      ],
+      "source": {
+        "29": "author-link",
+        "25": "proposed",
+        "6": "proposed"
+      }
+    },
+    {
+      "query": 29,
+      "expected": [
+        30
+      ],
+      "source": {
+        "30": "author-link"
+      }
+    },
+    {
+      "query": 12,
+      "expected": [
+        35
+      ],
+      "source": {
+        "35": "proposed"
+      }
+    },
+    {
+      "query": 26,
+      "expected": [
+        1
+      ],
+      "source": {
+        "1": "proposed"
+      }
+    },
+    {
+      "query": 36,
+      "expected": [
+        34
+      ],
+      "source": {
+        "34": "proposed"
+      }
+    }
+  ]
+}

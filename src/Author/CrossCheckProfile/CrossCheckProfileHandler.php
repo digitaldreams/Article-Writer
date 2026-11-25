@@ -2,7 +2,6 @@
 
 namespace App\Author\CrossCheckProfile;
 
-use App\Shared\Llm\AgentAnswer;
 use App\Shared\Llm\LlmJob;
 use App\Shared\User\User;
 use Doctrine\ORM\EntityManagerInterface;
@@ -31,9 +30,9 @@ final readonly class CrossCheckProfileHandler
     {
         $user = ($this->em->find(LlmJob::class, $message->llmJobId()) ?? throw new \RuntimeException('The job is gone.'))->getUser();
 
-        $answer = AgentAnswer::object($this->agent->call(new MessageBag(
+        $answer = $this->agent->call(new MessageBag(
             Message::ofUser($this->twig->render('author/cross_check_profile/_profile.md.twig', $user->getWritingProfile())),
-        ), ['response_format' => CrossCheckAnswer::class, 'template_vars' => ['language_level' => $user->getLanguageLevel()]]), CrossCheckAnswer::class);
+        ), ['response_format' => CrossCheckAnswer::class, 'template_vars' => ['language_level' => $user->getLanguageLevel()]])->asObject(CrossCheckAnswer::class);
 
         $fields = [...User::WRITING_STRUCTURE, ...User::WRITING_VOICE];
         $user->setWritingProfileCheck(array_map(static fn (CrossCheckPoint $point): array => [

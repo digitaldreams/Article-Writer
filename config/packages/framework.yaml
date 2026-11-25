@@ -9,8 +9,8 @@ framework:
 
     http_client:
         scoped_clients:
-            # One local call can run up to 30 minutes
-            llm.ollama:
+            # One LLM call can run up to 30 minutes, and non-streaming calls send no data until the answer is done
+            llm.slow:
                 scope: '.*'
                 timeout: 1800
                 max_duration: 1800
